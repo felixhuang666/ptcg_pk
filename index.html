@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,11 +16,12 @@
             margin: 0;
             color: white;
         }
+
         .controls {
             background: #2b2b36;
             padding: 15px 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
@@ -27,37 +29,57 @@
             align-items: center;
             justify-content: center;
         }
+
         .control-group {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        select, button {
+
+        select,
+        button {
             padding: 8px 15px;
             font-size: 16px;
             border-radius: 6px;
             border: 1px solid #444;
             cursor: pointer;
         }
-        select { background: #1e1e24; color: white; }
+
+        select {
+            background: #1e1e24;
+            color: white;
+        }
+
         button {
-            background: #e74c3c; color: white; font-weight: bold; border: none;
-            box-shadow: 0 4px 0 #c0392b; transition: 0.2s;
+            background: #e74c3c;
+            color: white;
+            font-weight: bold;
+            border: none;
+            box-shadow: 0 4px 0 #c0392b;
+            transition: 0.2s;
             padding: 8px 25px;
         }
-        button:hover { background: #ff5e4d; }
-        button:active { transform: translateY(4px); box-shadow: none; }
-        
+
+        button:hover {
+            background: #ff5e4d;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
         svg {
             background: #1e1e24;
             display: block;
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
         }
     </style>
 </head>
-<body>
 
+<body>
+    <img src="/my_icon_dark_blink_shake_tail.svg" />
     <div class="controls">
         <div class="control-group">
             <label>拋出方向：</label>
@@ -69,7 +91,7 @@
                 <option value="right">↙️ 從右側拋出</option>
             </select>
         </div>
-        
+
         <div class="control-group">
             <label>骰子數量：</label>
             <select id="diceCount">
@@ -77,7 +99,9 @@
                 <option value="5">5 顆</option>
                 <option value="10">10 顆</option>
                 <option value="15">15 顆</option>
-                <option value="20" selected>20 顆 (超絕壯觀)</option>
+                <option value="20">20 顆</option>
+                <option value="50">50 顆</option>
+                <option value="100" selected>100 顆 (超絕壯觀)</option>
             </select>
         </div>
 
@@ -87,7 +111,7 @@
     <svg id="canvas" width="800" height="500" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <filter id="shadow-blur">
-                <feGaussianBlur stdDeviation="3"/>
+                <feGaussianBlur stdDeviation="3" />
             </filter>
         </defs>
         <g id="scene"></g>
@@ -102,24 +126,24 @@
         const TABLE_W = 400, TABLE_D = 400, TABLE_H = 25;
         const S = 16, DOT_OFFSET = 8;
         const GRAVITY = 1.0, BOUNCE = 0.55, FLOOR_FRICTION = 0.8;
-        const ISO_ANGLE = Math.PI / 6; 
+        const ISO_ANGLE = Math.PI / 6;
         const COS_ISO = Math.cos(ISO_ANGLE), SIN_ISO = Math.sin(ISO_ANGLE);
 
-        let diceList =[];
+        let diceList = [];
         let animId = null;
         let frameCount = 0; // 全局幀數計時器
 
-        const V_local = [[-S, -S,  S], [ S, -S,  S],[ S,  S,  S],[-S,  S,  S], 
-            [-S, -S, -S],[ S, -S, -S],[ S,  S, -S], [-S,  S, -S]  
+        const V_local = [[-S, -S, S], [S, -S, S], [S, S, S], [-S, S, S],
+        [-S, -S, -S], [S, -S, -S], [S, S, -S], [-S, S, -S]
         ];
 
-        const FACES =[
-            { id: 1, v:[0,1,2,3], n:[0,0,1],   dots: [[0,0,S]] }, 
-            { id: 6, v: [5,4,7,6], n:[0,0,-1],  dots: [[-DOT_OFFSET,-DOT_OFFSET,-S],[-DOT_OFFSET,0,-S],[-DOT_OFFSET,DOT_OFFSET,-S],[DOT_OFFSET,-DOT_OFFSET,-S],[DOT_OFFSET,0,-S], [DOT_OFFSET,DOT_OFFSET,-S]] }, 
-            { id: 3, v:[1,5,6,2], n:[1,0,0],   dots: [[S,-DOT_OFFSET,-DOT_OFFSET], [S,0,0],[S,DOT_OFFSET,DOT_OFFSET]] }, 
-            { id: 4, v:[4,0,3,7], n:[-1,0,0],  dots: [[-S,-DOT_OFFSET,-DOT_OFFSET],[-S,DOT_OFFSET,-DOT_OFFSET],[-S,-DOT_OFFSET,DOT_OFFSET],[-S,DOT_OFFSET,DOT_OFFSET]] }, 
-            { id: 2, v:[4,5,1,0], n: [0,-1,0],  dots: [[-DOT_OFFSET,-S,-DOT_OFFSET], [DOT_OFFSET,-S,DOT_OFFSET]] }, 
-            { id: 5, v:[3,2,6,7], n:[0,1,0],   dots: [[-DOT_OFFSET,S,-DOT_OFFSET],[DOT_OFFSET,S,-DOT_OFFSET], [0,S,0], [-DOT_OFFSET,S,DOT_OFFSET],[DOT_OFFSET,S,DOT_OFFSET]] } 
+        const FACES = [
+            { id: 1, v: [0, 1, 2, 3], n: [0, 0, 1], dots: [[0, 0, S]] },
+            { id: 6, v: [5, 4, 7, 6], n: [0, 0, -1], dots: [[-DOT_OFFSET, -DOT_OFFSET, -S], [-DOT_OFFSET, 0, -S], [-DOT_OFFSET, DOT_OFFSET, -S], [DOT_OFFSET, -DOT_OFFSET, -S], [DOT_OFFSET, 0, -S], [DOT_OFFSET, DOT_OFFSET, -S]] },
+            { id: 3, v: [1, 5, 6, 2], n: [1, 0, 0], dots: [[S, -DOT_OFFSET, -DOT_OFFSET], [S, 0, 0], [S, DOT_OFFSET, DOT_OFFSET]] },
+            { id: 4, v: [4, 0, 3, 7], n: [-1, 0, 0], dots: [[-S, -DOT_OFFSET, -DOT_OFFSET], [-S, DOT_OFFSET, -DOT_OFFSET], [-S, -DOT_OFFSET, DOT_OFFSET], [-S, DOT_OFFSET, DOT_OFFSET]] },
+            { id: 2, v: [4, 5, 1, 0], n: [0, -1, 0], dots: [[-DOT_OFFSET, -S, -DOT_OFFSET], [DOT_OFFSET, -S, DOT_OFFSET]] },
+            { id: 5, v: [3, 2, 6, 7], n: [0, 1, 0], dots: [[-DOT_OFFSET, S, -DOT_OFFSET], [DOT_OFFSET, S, -DOT_OFFSET], [0, S, 0], [-DOT_OFFSET, S, DOT_OFFSET], [DOT_OFFSET, S, DOT_OFFSET]] }
         ];
 
         function rotate3D(p, rx, ry, rz) {
@@ -130,7 +154,7 @@
             let z2 = -x * Math.sin(ry) + z1 * Math.cos(ry);
             let x3 = x2 * Math.cos(rz) - y1 * Math.sin(rz);
             let y3 = x2 * Math.sin(rz) + y1 * Math.cos(rz);
-            return[x3, y3, z2];
+            return [x3, y3, z2];
         }
 
         function project(x, y, z) {
@@ -142,8 +166,8 @@
         }
 
         function getTableSVG() {
-            let f1 = project(0, 0, 0), f2 = project(TABLE_W, 0, 0);   
-            let f3 = project(TABLE_W, TABLE_D, 0), f4 = project(0, TABLE_D, 0);   
+            let f1 = project(0, 0, 0), f2 = project(TABLE_W, 0, 0);
+            let f3 = project(TABLE_W, TABLE_D, 0), f4 = project(0, TABLE_D, 0);
             let b2 = project(TABLE_W, 0, -TABLE_H), b3 = project(TABLE_W, TABLE_D, -TABLE_H), b4 = project(0, TABLE_D, -TABLE_H);
 
             let html = '';
@@ -155,23 +179,23 @@
 
         function throwDice() {
             if (animId) cancelAnimationFrame(animId);
-            diceList =[];
+            diceList = [];
             frameCount = 0; // 重置計時器
 
             const num = parseInt(countSelect.value);
             let chosenDir = dirSelect.value;
             if (chosenDir === 'random') {
-                const dirs =['top', 'bottom', 'left', 'right'];
+                const dirs = ['top', 'bottom', 'left', 'right'];
                 chosenDir = dirs[Math.floor(Math.random() * dirs.length)];
             }
 
             for (let i = 0; i < num; i++) {
                 let startX, startY, velX, velY;
-                switch(chosenDir) {
-                    case 'top':    startX = 30 + Math.random() * 80; startY = 30 + Math.random() * 80; velX = 5 + Math.random() * 8; velY = 5 + Math.random() * 8; break;
+                switch (chosenDir) {
+                    case 'top': startX = 30 + Math.random() * 80; startY = 30 + Math.random() * 80; velX = 5 + Math.random() * 8; velY = 5 + Math.random() * 8; break;
                     case 'bottom': startX = TABLE_W - 30 - Math.random() * 80; startY = TABLE_D - 30 - Math.random() * 80; velX = -5 - Math.random() * 8; velY = -5 - Math.random() * 8; break;
-                    case 'left':   startX = 30 + Math.random() * 80; startY = TABLE_D - 30 - Math.random() * 80; velX = 5 + Math.random() * 8; velY = -5 - Math.random() * 8; break;
-                    case 'right':  startX = TABLE_W - 30 - Math.random() * 80; startY = 30 + Math.random() * 80; velX = -5 - Math.random() * 8; velY = 5 + Math.random() * 8; break;
+                    case 'left': startX = 30 + Math.random() * 80; startY = TABLE_D - 30 - Math.random() * 80; velX = 5 + Math.random() * 8; velY = -5 - Math.random() * 8; break;
+                    case 'right': startX = TABLE_W - 30 - Math.random() * 80; startY = 30 + Math.random() * 80; velX = -5 - Math.random() * 8; velY = 5 + Math.random() * 8; break;
                 }
 
                 diceList.push({
@@ -195,7 +219,7 @@
                 if (!d.settled) isMoving = true;
                 if (d.settled) continue;
 
-                d.vz -= GRAVITY; 
+                d.vz -= GRAVITY;
                 d.x += d.vx; d.y += d.vy; d.z += d.vz;
                 d.rx += d.vrx; d.ry += d.vry; d.rz += d.vrz;
                 d.vx *= 0.99; d.vy *= 0.99;
@@ -222,16 +246,16 @@
 
                 // 【修復關鍵1】：準備靜止時的強力煞車與完全鎖定
                 if (d.z <= S + 0.5 && Math.abs(d.vx) < 1.0 && Math.abs(d.vy) < 1.0 && Math.abs(d.vz) < 1.0) {
-                    d.vx *= 0.7; d.vy *= 0.7; 
+                    d.vx *= 0.7; d.vy *= 0.7;
                     d.vrx *= 0.7; d.vry *= 0.7; d.vrz *= 0.7;
 
                     if (Math.abs(d.vrx) + Math.abs(d.vry) + Math.abs(d.vrz) < 0.25) {
-                        let tRx = Math.round(d.rx / (Math.PI/2)) * (Math.PI/2);
-                        let tRy = Math.round(d.ry / (Math.PI/2)) * (Math.PI/2);
-                        let tRz = Math.round(d.rz / (Math.PI/2)) * (Math.PI/2);
+                        let tRx = Math.round(d.rx / (Math.PI / 2)) * (Math.PI / 2);
+                        let tRy = Math.round(d.ry / (Math.PI / 2)) * (Math.PI / 2);
+                        let tRz = Math.round(d.rz / (Math.PI / 2)) * (Math.PI / 2);
 
                         d.rx += (tRx - d.rx) * 0.25; d.ry += (tRy - d.ry) * 0.25; d.rz += (tRz - d.rz) * 0.25;
-                        
+
                         // 鎖定旋轉與細微滑動
                         d.vrx = 0; d.vry = 0; d.vrz = 0;
                         if (Math.abs(d.vx) < 0.2) d.vx = 0;
@@ -241,7 +265,7 @@
                         if (Math.abs(tRx - d.rx) < 0.02 && Math.abs(tRy - d.ry) < 0.02 && Math.abs(tRz - d.rz) < 0.02) {
                             d.rx = tRx; d.ry = tRy; d.rz = tRz;
                             d.vx = 0; d.vy = 0; d.vz = 0;
-                            d.settled = true; 
+                            d.settled = true;
                         }
                     }
                 }
@@ -251,42 +275,42 @@
             for (let i = 0; i < diceList.length; i++) {
                 for (let j = i + 1; j < diceList.length; j++) {
                     let d1 = diceList[i], d2 = diceList[j];
-                    
+
                     // 【修復關鍵2】：如果兩顆骰子都已徹底靜止，忽略微小交疊，防止 Jittering 無限喚醒
                     if (d1.settled && d2.settled) continue;
 
                     let dx = d2.x - d1.x, dy = d2.y - d1.y, dz = d2.z - d1.z;
-                    let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-                    let minDist = S * 2.1; 
+                    let dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    let minDist = S * 2.1;
 
                     if (dist < minDist && dist > 0.01) {
                         let overlap = minDist - dist;
-                        let nx = dx/dist, ny = dy/dist, nz = dz/dist;
-                        
+                        let nx = dx / dist, ny = dy / dist, nz = dz / dist;
+
                         // 【修復關鍵3】：如果兩者垂直相疊，給予強制水平推力讓它們滑落，防止相疊卡死
                         if (Math.abs(nx) < 0.2 && Math.abs(ny) < 0.2) {
                             nx += (Math.random() - 0.5) * 0.8;
                             ny += (Math.random() - 0.5) * 0.8;
-                            let nLen = Math.sqrt(nx*nx + ny*ny + nz*nz);
+                            let nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
                             nx /= nLen; ny /= nLen; nz /= nLen;
                         }
-                        
+
                         // 推開避免重疊
                         d1.x -= nx * overlap * 0.5; d1.y -= ny * overlap * 0.5; d1.z -= nz * overlap * 0.5;
                         d2.x += nx * overlap * 0.5; d2.y += ny * overlap * 0.5; d2.z += nz * overlap * 0.5;
-                        if(d1.z < S) d1.z = S; if(d2.z < S) d2.z = S;
+                        if (d1.z < S) d1.z = S; if (d2.z < S) d2.z = S;
 
                         let kx = d1.vx - d2.vx, ky = d1.vy - d2.vy, kz = d1.vz - d2.vz;
-                        let p = (kx*nx + ky*ny + kz*nz);
+                        let p = (kx * nx + ky * ny + kz * nz);
 
                         if (p > 0) {
                             let impulse = p * 0.6;
                             d1.vx -= impulse * nx; d1.vy -= impulse * ny; d1.vz -= impulse * nz;
                             d2.vx += impulse * nx; d2.vy += impulse * ny; d2.vz += impulse * nz;
-                            
+
                             // 【修復關鍵4】：衝擊力大於 1 才賦予自轉，避免地板上的輕微推擠造成轉動
                             if (p > 1.0) {
-                                d1.vrx += (Math.random()-0.5)*0.3; d2.vrx += (Math.random()-0.5)*0.3;
+                                d1.vrx += (Math.random() - 0.5) * 0.3; d2.vrx += (Math.random() - 0.5) * 0.3;
                             }
                             d1.settled = false; d2.settled = false;
                         } else {
@@ -303,22 +327,22 @@
             if (frameCount > 350) {
                 for (let d of diceList) {
                     d.settled = true;
-                    d.rx = Math.round(d.rx / (Math.PI/2)) * (Math.PI/2);
-                    d.ry = Math.round(d.ry / (Math.PI/2)) * (Math.PI/2);
-                    d.rz = Math.round(d.rz / (Math.PI/2)) * (Math.PI/2);
+                    d.rx = Math.round(d.rx / (Math.PI / 2)) * (Math.PI / 2);
+                    d.ry = Math.round(d.ry / (Math.PI / 2)) * (Math.PI / 2);
+                    d.rz = Math.round(d.rz / (Math.PI / 2)) * (Math.PI / 2);
                     d.vx = d.vy = d.vz = d.vrx = d.vry = d.vrz = 0;
                 }
                 isMoving = false;
             }
 
             // 3. 渲染純 SVG 畫面
-            let svgHTML = getTableSVG(); 
-            let sortedDice = [...diceList].sort((a,b) => (a.x + a.y + a.z) - (b.x + b.y + b.z));
+            let svgHTML = getTableSVG();
+            let sortedDice = [...diceList].sort((a, b) => (a.x + a.y + a.z) - (b.x + b.y + b.z));
 
             for (let d of sortedDice) {
                 let shadowScale = Math.max(0, 1 - (d.z - S) / 200);
                 if (shadowScale > 0) {
-                    let p = project(d.x, d.y, 0); 
+                    let p = project(d.x, d.y, 0);
                     let op = shadowScale * 0.45;
                     svgHTML += `<ellipse cx="${p[0]}" cy="${p[1]}" rx="${24 * shadowScale}" ry="${12 * shadowScale}" fill="rgba(0,0,0,${op})" filter="url(#shadow-blur)"/>`;
                 }
@@ -326,17 +350,17 @@
 
             for (let d of sortedDice) {
                 let rotV = V_local.map(v => rotate3D(v, d.rx, d.ry, d.rz));
-                let visibleFaces =[];
+                let visibleFaces = [];
 
                 for (let face of FACES) {
                     let rn = rotate3D(face.n, d.rx, d.ry, d.rz);
-                    if (rn[0] + rn[1] + rn[2] > 0) { 
+                    if (rn[0] + rn[1] + rn[2] > 0) {
                         let p0 = rotV[face.v[0]], p1 = rotV[face.v[1]], p2 = rotV[face.v[2]], p3 = rotV[face.v[3]];
-                        let avgDepth = p0[0]+p1[0]+p2[0]+p3[0] + p0[1]+p1[1]+p2[1]+p3[1] + p0[2]+p1[2]+p2[2]+p3[2];
+                        let avgDepth = p0[0] + p1[0] + p2[0] + p3[0] + p0[1] + p1[1] + p2[1] + p3[1] + p0[2] + p1[2] + p2[2] + p3[2];
                         visibleFaces.push({ face, p0, p1, p2, p3, avgDepth, rn });
                     }
                 }
-                visibleFaces.sort((a,b) => a.avgDepth - b.avgDepth);
+                visibleFaces.sort((a, b) => a.avgDepth - b.avgDepth);
 
                 for (let df of visibleFaces) {
                     let s0 = project(d.x + df.p0[0], d.y + df.p0[1], d.z + df.p0[2]);
@@ -345,8 +369,8 @@
                     let s3 = project(d.x + df.p3[0], d.y + df.p3[1], d.z + df.p3[2]);
 
                     let pts = `${s0[0]},${s0[1]} ${s1[0]},${s1[1]} ${s2[0]},${s2[1]} ${s3[0]},${s3[1]}`;
-                    let lightIntensity = df.rn[0]*0.2 + df.rn[1]*0.2 + df.rn[2]*0.6;
-                    let colorVal = Math.floor(200 + lightIntensity * 55); 
+                    let lightIntensity = df.rn[0] * 0.2 + df.rn[1] * 0.2 + df.rn[2] * 0.6;
+                    let colorVal = Math.floor(200 + lightIntensity * 55);
                     let faceColor = `rgb(${colorVal}, ${colorVal}, ${colorVal})`;
 
                     svgHTML += `<polygon points="${pts}" fill="${faceColor}" stroke="#b3b3b3" stroke-width="1.5" stroke-linejoin="round" />`;
@@ -354,7 +378,7 @@
                     for (let dot of df.face.dots) {
                         let rDot = rotate3D(dot, d.rx, d.ry, d.rz);
                         let sDot = project(d.x + rDot[0], d.y + rDot[1], d.z + rDot[2]);
-                        
+
                         let dotColor = (df.face.id === 1 || df.face.id === 4) ? '#e74c3c' : '#2c3e50';
                         let r = (df.face.id === 1) ? 4.5 : 2.5;
                         svgHTML += `<circle cx="${sDot[0]}" cy="${sDot[1]}" r="${r}" fill="${dotColor}" />`;
@@ -370,4 +394,5 @@
         throwDice();
     </script>
 </body>
+
 </html>
