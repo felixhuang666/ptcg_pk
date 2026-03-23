@@ -1,0 +1,18 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "start_dev",
+            "type": "shell",
+            "command": "make start_dev",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "group": "AAA",
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

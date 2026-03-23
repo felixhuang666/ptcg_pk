@@ -5,6 +5,7 @@ PWD := $(shell pwd)
 USER := $(shell whoami)
 NPM_PATH := $(shell which npm || echo /usr/bin/npm)
 
+.SILENT:
 .PHONY: help all build install uninstall start stop status restart logs clean
 
 help:
@@ -59,11 +60,15 @@ uninstall:
 	sudo systemctl daemon-reload
 	@echo "Service $(SERVICE_NAME) uninstalled."
 
-start:
+start: stop
 	sudo systemctl start $(SERVICE_NAME)
 
 stop:
-	sudo systemctl stop $(SERVICE_NAME)
+	-lsof -i :3000 | grep :3000 | grep LISTEN| sort| uniq | awk '{print $$2}' | xargs -i kill {}
+	-if [ -f "$(SYSTEMD_DIR)/$(SERVICE_FILE)" ]; then \
+		sudo systemctl stop $(SERVICE_NAME); \
+	fi
+	-lsof -i :3000 | grep :3000 | grep LISTEN| sort| uniq | awk '{print $$2}' 
 
 status:
 	sudo systemctl status $(SERVICE_NAME)
@@ -76,3 +81,9 @@ logs:
 
 clean:
 	rm -f $(SERVICE_FILE)
+
+start_dev: stop
+	npm run dev
+
+stop_dev:
+	
