@@ -46,12 +46,12 @@ export default function TeamEditor({ onBack }: { onBack: () => void }) {
 
   if (editingTeam) {
     return (
-      <div className="p-8 max-w-4xl mx-auto bg-slate-900 min-h-screen text-white">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-amber-500">編輯隊伍</h2>
-          <div className="flex gap-4">
-            <button onClick={() => setEditingTeam(null)} className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-500">取消</button>
-            <button onClick={handleSave} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 font-bold">儲存</button>
+      <div className="p-4 md:p-8 max-w-4xl mx-auto bg-slate-900 min-h-screen text-white">
+        <div className="flex justify-between items-center mb-6 md:mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-amber-500">編輯隊伍</h2>
+          <div className="flex gap-2 md:gap-4">
+            <button onClick={() => setEditingTeam(null)} className="px-3 py-1.5 md:px-4 md:py-2 bg-gray-600 rounded hover:bg-gray-500 text-sm md:text-base">取消</button>
+            <button onClick={handleSave} className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 rounded hover:bg-blue-500 font-bold text-sm md:text-base">儲存</button>
           </div>
         </div>
 
@@ -66,8 +66,8 @@ export default function TeamEditor({ onBack }: { onBack: () => void }) {
         </div>
 
         <div className="mb-8">
-          <h3 className="text-xl font-bold mb-4 text-blue-400 border-b border-slate-700 pb-2">召喚師骰子 (每顆上限 10 點)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <h3 className="text-lg md:text-xl font-bold mb-4 text-blue-400 border-b border-slate-700 pb-2">召喚師骰子 (每顆上限 10 點)</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {editingTeam.dices.map((dice, dIndex) => {
               const totalCost = dice.faces.reduce((sum, face) => sum + DICE_COSTS[face], 0);
               return (
@@ -103,8 +103,8 @@ export default function TeamEditor({ onBack }: { onBack: () => void }) {
         </div>
 
         <div>
-          <h3 className="text-xl font-bold mb-4 text-blue-400 border-b border-slate-700 pb-2">出戰怪獸 (3 隻)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <h3 className="text-lg md:text-xl font-bold mb-4 text-blue-400 border-b border-slate-700 pb-2">出戰怪獸 (3 隻)</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
             {editingTeam.monsters.map((mId, mIndex) => (
               <div key={mIndex} className="bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <span className="block font-bold text-gray-300 mb-4">怪獸 {mIndex + 1}</span>
@@ -137,25 +137,25 @@ export default function TeamEditor({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto bg-slate-900 min-h-screen text-white">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-amber-500">隊伍管理</h2>
-        <div className="flex gap-4">
-          <button onClick={onBack} className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-500">返回主選單</button>
-          <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 font-bold">新增隊伍</button>
+    <div className="p-4 md:p-8 max-w-4xl mx-auto bg-slate-900 min-h-screen text-white">
+      <div className="flex justify-between items-center mb-6 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-amber-500">隊伍管理</h2>
+        <div className="flex gap-2 md:gap-4">
+          <button onClick={onBack} className="px-3 py-1.5 md:px-4 md:py-2 bg-gray-600 rounded hover:bg-gray-500 text-sm md:text-base">返回</button>
+          <button onClick={handleCreate} className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 rounded hover:bg-blue-500 font-bold text-sm md:text-base">新增</button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {teams.map(team => (
           <div 
             key={team.id} 
-            className={`bg-slate-800 p-6 rounded-2xl border-2 transition-colors ${
+            className={`bg-slate-800 p-4 md:p-6 rounded-2xl border-2 transition-colors ${
               currentTeamId === team.id ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'border-slate-700 hover:border-slate-500'
             }`}
           >
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-2xl font-bold text-blue-400">{team.name}</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-blue-400">{team.name}</h3>
               <div className="flex gap-2">
                 <button onClick={() => handleEdit(team)} className="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">編輯</button>
                 {teams.length > 1 && (

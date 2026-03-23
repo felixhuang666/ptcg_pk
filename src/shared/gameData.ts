@@ -14,7 +14,7 @@ export const DICE_COSTS: Record<DiceFace, number> = {
 };
 
 export const SETTINGS: GameSettings = {
-  "accuracyFormula": "attackerSpd / (defenderSpd * (1 + defenderDodgeBonus))",
+  "accuracyFormula": "(attackerSpd * 1.2) / (attackerSpd + defenderSpd * (1 + defenderDodgeBonus))",
   "damageFormula": "Math.floor((attackPower * attribBonus) - defenderDef)",
   "gameTick": 40,
   "engineeringMode": false
@@ -25,10 +25,10 @@ export const MONSTERS: Record<string, MonsterBase> = {
     "id": "m1",
     "name": "鑽地鼠",
     "type": "地",
-    "hp": 100,
-    "str": 25,
-    "con": 30,
-    "dex": 20,
+    "hp": 110,
+    "str": 28,
+    "con": 32,
+    "dex": 18,
     "skills": [
       "s1",
       "s2",
@@ -40,10 +40,10 @@ export const MONSTERS: Record<string, MonsterBase> = {
     "id": "m2",
     "name": "風狼",
     "type": "風",
-    "hp": 70,
-    "str": 20,
-    "con": 20,
-    "dex": 35,
+    "hp": 85,
+    "str": 22,
+    "con": 18,
+    "dex": 38,
     "skills": [
       "s4",
       "s5",
@@ -55,10 +55,10 @@ export const MONSTERS: Record<string, MonsterBase> = {
     "id": "m3",
     "name": "火鳥",
     "type": "火",
-    "hp": 60,
-    "str": 50,
-    "con": 20,
-    "dex": 30,
+    "hp": 75,
+    "str": 40,
+    "con": 15,
+    "dex": 32,
     "skills": [
       "s7",
       "s8",
@@ -70,10 +70,10 @@ export const MONSTERS: Record<string, MonsterBase> = {
     "id": "m4",
     "name": "水龜",
     "type": "水",
-    "hp": 80,
-    "str": 30,
-    "con": 30,
-    "dex": 25,
+    "hp": 100,
+    "str": 25,
+    "con": 40,
+    "dex": 22,
     "skills": [
       "s10",
       "s11",

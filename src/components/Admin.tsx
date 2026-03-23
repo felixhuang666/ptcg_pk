@@ -32,23 +32,56 @@ export default function Admin({ onBack }: { onBack: () => void }) {
     }, 100);
   };
 
+  const addMonster = () => {
+    const id = `m${Object.keys(monsters).length + 1}`;
+    setMonsters({
+      ...monsters,
+      [id]: {
+        id,
+        name: '新怪獸',
+        type: ElementType.NONE,
+        hp: 100,
+        str: 20,
+        con: 20,
+        dex: 20,
+        skills: [],
+        svgPath: ''
+      }
+    });
+  };
+
+  const addSkill = () => {
+    const id = `s${Object.keys(skills).length + 1}`;
+    setSkills({
+      ...skills,
+      [id]: {
+        id,
+        name: '新技能',
+        apCost: 40,
+        conditions: { [DiceFace.ATTACK]: 1 },
+        description: 'ATK=STR',
+        svgPath: ''
+      }
+    });
+  };
+
   if (loading) return <div className="p-8 text-white">載入中...</div>;
 
   return (
-    <div className="p-8 max-w-6xl mx-auto bg-slate-900 min-h-screen text-white">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-amber-500">管理者介面 - 遊戲數值設定</h2>
-        <div className="flex gap-4">
-          <button onClick={handleSave} className="px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold">儲存變更</button>
-          <button onClick={onBack} className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-500">返回主選單</button>
+    <div className="p-4 md:p-8 max-w-6xl mx-auto bg-slate-900 min-h-screen text-white">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-8 gap-4">
+        <h2 className="text-2xl md:text-3xl font-bold text-amber-500 text-center md:text-left">管理者介面</h2>
+        <div className="flex gap-2 md:gap-4 w-full md:w-auto">
+          <button onClick={handleSave} className="flex-1 md:flex-none px-4 py-2 bg-green-600 rounded hover:bg-green-500 font-bold text-sm md:text-base">儲存</button>
+          <button onClick={onBack} className="flex-1 md:flex-none px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 text-sm md:text-base">返回</button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Settings */}
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-2">
-          <h3 className="text-2xl font-bold mb-4 text-blue-400">全域設定</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-slate-800 p-4 md:p-6 rounded-xl border border-slate-700 lg:col-span-2">
+          <h3 className="text-xl md:text-2xl font-bold mb-4 text-blue-400">全域設定</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div>
               <label className="block text-sm text-gray-400 mb-1">攻擊命中率公式</label>
               <input 
@@ -96,8 +129,11 @@ export default function Admin({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Monsters */}
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-          <h3 className="text-2xl font-bold mb-4 text-blue-400">怪獸設定</h3>
+        <div className="bg-slate-800 p-4 md:p-6 rounded-xl border border-slate-700">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-blue-400">怪獸設定</h3>
+            <button onClick={addMonster} className="px-3 py-1 bg-blue-600 rounded text-sm hover:bg-blue-500 font-bold">+ 新增</button>
+          </div>
           <div className="space-y-6">
             {Object.entries(monsters).map(([id, m]: [string, MonsterBase]) => (
               <div key={id} className="bg-slate-700 p-4 rounded-lg border border-slate-600">
@@ -186,8 +222,23 @@ export default function Admin({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Skills */}
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-          <h3 className="text-2xl font-bold mb-4 text-blue-400">技能設定</h3>
+        <div className="bg-slate-800 p-4 md:p-6 rounded-xl border border-slate-700">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-blue-400">技能設定</h3>
+            <button onClick={addSkill} className="px-3 py-1 bg-blue-600 rounded text-sm hover:bg-blue-500 font-bold">+ 新增</button>
+          </div>
+          <div className="bg-slate-900 p-4 rounded-lg mb-6 border border-amber-900/50">
+            <h4 className="text-amber-500 font-bold mb-2">效果語法說明 (逗號分隔):</h4>
+            <ul className="text-xs text-gray-400 space-y-1 font-mono">
+              <li>• ATK=X*STR (攻擊力=倍率*力量)</li>
+              <li>• ATK=X (設定固定攻擊力)</li>
+              <li>• DEF*=X (防禦力乘上倍率, 上限100)</li>
+              <li>• SPD*=X (速度乘上倍率, 上限50)</li>
+              <li>• SPD=DEX (重設速度為基礎敏捷)</li>
+              <li>• dodge-bonus+=X (增加閃避加成)</li>
+              <li>• dodge-bonus=0 (清除閃避加成)</li>
+            </ul>
+          </div>
           <div className="space-y-6">
             {Object.entries(skills).map(([id, s]: [string, SkillBase]) => (
               <div key={id} className="bg-slate-700 p-4 rounded-lg border border-slate-600">
