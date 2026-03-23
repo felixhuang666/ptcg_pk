@@ -23,11 +23,16 @@ npm install
 若需啟用 Supabase 以儲存戰鬥紀錄及對手資料，請將 `.env.example` 複製為 `.env` 並填入：
 
 ```env
+# 後端設定
 SUPABASE_URL="https://your-project.supabase.co"
-SUPERBASE_API_KEY="your-anon-or-service-key"
+SUPERBASE_API_KEY="your-service-key"
+
+# 前端設定
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPERBASE_API_KEY="your-anon-key"
 ```
 
-如果您要建立對應的資料表結構，可以執行 `scripts/migrate_20260323_1927_init_supabase.py` 參考 SQL 語法。
+如果您要建立對應的資料表結構，可以執行 `scripts/migrate_20260323_2000_game_data_oauth.py` 參考 SQL 語法。
 
 ### 3. 啟動開發伺服器
 執行以下指令啟動前端與後端伺服器：

@@ -12,15 +12,110 @@ import { useAppStore } from './store/appStore';
 import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
 import { TeamConfig } from './shared/types';
 import { io } from 'socket.io-client';
+import { createClient } from '@supabase/supabase-js';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPERBASE_API_KEY || import.meta.env.VITE_SUPABASE_API_KEY || '';
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default function App() {
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN'>('MENU');
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'LOGIN'>('MENU');
   const [roomCode, setRoomCode] = useState('');
   const [showRoomInput, setShowRoomInput] = useState(false);
   const [selectedBossTeam, setSelectedBossTeam] = useState<TeamConfig | null>(null);
-  const { teams, currentTeamId } = useAppStore();
+  const { teams, currentTeamId, setTeams } = useAppStore();
+  const [session, setSession] = useState<any>(null);
+  const [hasSynced, setHasSynced] = useState(false);
   
   const [gameDataVersion, setGameDataVersion] = useState(0);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (session && view === 'LOGIN') {
+      setView('MENU');
+    }
+  }, [session, view]);
+
+  // Sync teams with Supabase when logged in
+  useEffect(() => {
+    if (!supabase || !session?.user) {
+      setHasSynced(false);
+      return;
+    }
+
+    const syncTeams = async () => {
+      // First fetch
+      const { data, error } = await supabase.from('user_teams').select('*').eq('user_id', session.user.id);
+      if (error) {
+        console.error('Failed to fetch teams:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // We found cloud teams. Use them to override local if this is the first sync
+        if (!hasSynced) {
+          const cloudTeams = data.map(row => ({
+            id: row.id,
+            name: row.name,
+            dices: row.dices,
+            monsters: row.monsters
+          }));
+          setTeams(cloudTeams);
+          setHasSynced(true);
+        } else {
+          // If already synced, local teams -> cloud
+          const currentCloudIds = new Set(data.map(t => t.id));
+          for (const t of teams) {
+            await supabase.from('user_teams').upsert({
+              id: t.id,
+              user_id: session.user.id,
+              name: t.name,
+              dices: t.dices,
+              monsters: t.monsters,
+              updated_at: new Date().toISOString()
+            });
+            currentCloudIds.delete(t.id);
+          }
+          // Delete ones that are gone locally
+          for (const idToDelete of Array.from(currentCloudIds)) {
+            await supabase.from('user_teams').delete().eq('id', idToDelete).eq('user_id', session.user.id);
+          }
+        }
+      } else if (!hasSynced && data?.length === 0) {
+        // Cloud is empty, push local up
+        setHasSynced(true);
+        for (const t of teams) {
+          await supabase.from('user_teams').upsert({
+            id: t.id,
+            user_id: session.user.id,
+            name: t.name,
+            dices: t.dices,
+            monsters: t.monsters,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+    };
+
+    syncTeams();
+  }, [session, teams, hasSynced]);
 
   useEffect(() => {
     const socket = io();
@@ -106,6 +201,40 @@ export default function App() {
     return <Admin onBack={() => setView('MENU')} />;
   }
 
+  if (view === 'LOGIN') {
+    if (!supabase) {
+      return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8">
+          <div className="max-w-md w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700 text-center">
+             <p className="text-red-400 font-bold">請先在 .env 中設定 VITE_SUPABASE_URL 與 VITE_SUPABASE_API_KEY</p>
+             <button onClick={() => setView('MENU')} className="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">返回</button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8">
+        <div className="max-w-md w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700">
+          <h2 className="text-3xl font-black mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-600">
+            玩家登入
+          </h2>
+          <Auth
+            supabaseClient={supabase}
+            appearance={{ theme: ThemeSupa }}
+            theme="dark"
+            providers={['google', 'github']}
+          />
+          <button
+            onClick={() => setView('MENU')}
+            className="w-full mt-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold transition-all"
+          >
+            返回選單
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleJoinPrivate = () => {
     if (roomCode.trim()) {
       handleStartBattle('BATTLE_PRIVATE');
@@ -120,6 +249,29 @@ export default function App() {
         </h1>
         <p className="text-slate-400 mb-12 font-medium tracking-wide">Active Time Battle</p>
         
+        <div className="flex justify-center mb-8">
+          {!session ? (
+            <button
+              onClick={() => setView('LOGIN')}
+              className="px-6 py-2 bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 hover:text-blue-300 rounded-full font-bold border border-blue-500/30 transition-all text-sm flex items-center gap-2"
+            >
+              登入遊戲帳號 (包含雲端存檔)
+            </button>
+          ) : (
+            <div className="flex items-center gap-4 bg-slate-900/50 px-6 py-2 rounded-full border border-slate-700">
+              <span className="text-sm text-slate-300">
+                Hi, {session.user.email}
+              </span>
+              <button
+                onClick={() => supabase.auth.signOut()}
+                className="text-xs text-red-400 hover:text-red-300 font-bold"
+              >
+                登出
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="space-y-4">
           <button 
             onClick={() => handleStartBattle('BATTLE_PVE')}

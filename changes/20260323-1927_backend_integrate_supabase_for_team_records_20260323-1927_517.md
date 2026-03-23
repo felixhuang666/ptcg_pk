@@ -6,7 +6,7 @@
 - **Major Category**: backend
 - **Summary in one line**: integrate_supabase_for_team_records
 - **Original Branch Commit ID**: N/A
-- **User Prompt**: Objective:use superbase to save game data. you can use tmp SUPERBASE_API_KEY=sbp_4b2a3309760b070ddbadb68f9858f2e1a17a2555
+- **User Prompt**: Objective:use superbase to save game data. you can use tmp SUPERBASE_API_KEY=[REDACTED]
 
 ## Root Cause
 The game data, particularly `teamRecords` (which are used to determine the top bosses), was previously stored entirely in-memory on the backend (`server.ts`). This meant that game data was lost upon server restart, preventing persistence of game outcomes and player statistics.

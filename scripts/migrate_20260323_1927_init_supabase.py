@@ -3,7 +3,7 @@ import os
 import sys
 
 # Replace with your actual Supabase project URL and service role key if not using env vars
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://dfsuxhfampflgvjabzzc.supabase.co")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://your-project.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPERBASE_API_KEY", "")
 
 if not SUPABASE_KEY:

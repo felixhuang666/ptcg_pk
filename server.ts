@@ -9,9 +9,9 @@ import { MONSTERS, SKILLS, SETTINGS } from './src/shared/gameData.js';
 import { checkSkillConditions, applySkillEffect } from './src/shared/gameLogic.js';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://dfsuxhfampflgvjabzzc.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPERBASE_API_KEY || '';
-const supabase = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 const app = express();
 const PORT = 3000;
@@ -397,7 +397,7 @@ io.on('connection', (socket) => {
     callback({ MONSTERS, SKILLS, SETTINGS });
   });
 
-  socket.on('updateGameData', (data: { MONSTERS: any, SKILLS: any, SETTINGS?: any }) => {
+  socket.on('updateGameData', async (data: { MONSTERS: any, SKILLS: any, SETTINGS?: any }) => {
     // Modify the imported objects in place
     Object.keys(MONSTERS).forEach(k => delete MONSTERS[k]);
     Object.assign(MONSTERS, data.MONSTERS);
@@ -411,6 +411,20 @@ io.on('connection', (socket) => {
       startGameLoop();
     }
     
+    if (supabase) {
+      const { error } = await supabase.from('game_data').upsert({
+        id: 'default',
+        monsters: MONSTERS,
+        skills: SKILLS,
+        settings: SETTINGS
+      });
+      if (error) {
+        console.error('Failed to save game data to Supabase:', error);
+      } else {
+        console.log('Successfully saved game data to Supabase');
+      }
+    }
+
     try {
       const gameDataPath = path.join(process.cwd(), 'src', 'shared', 'gameData.ts');
       const fileContent = `import { ElementType, DiceFace, MonsterBase, SkillBase, GameSettings } from './types.js';
@@ -437,7 +451,7 @@ export const SKILLS: Record<string, SkillBase> = ${JSON.stringify(SKILLS, null, 
       fs.writeFileSync(gameDataPath, fileContent, 'utf-8');
       console.log('Successfully saved game data to gameData.ts');
     } catch (err) {
-      console.error('Failed to save game data:', err);
+      console.error('Failed to save game data locally:', err);
     }
 
     // Broadcast to all clients
@@ -623,6 +637,29 @@ export const SKILLS: Record<string, SkillBase> = ${JSON.stringify(SKILLS, null, 
 });
 
 async function startServer() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('game_data').select('*').eq('id', 'default').single();
+      if (!error && data) {
+        if (data.monsters) {
+          Object.keys(MONSTERS).forEach(k => delete MONSTERS[k]);
+          Object.assign(MONSTERS, data.monsters);
+        }
+        if (data.skills) {
+          Object.keys(SKILLS).forEach(k => delete SKILLS[k]);
+          Object.assign(SKILLS, data.skills);
+        }
+        if (data.settings) {
+          Object.assign(SETTINGS, data.settings);
+          startGameLoop(); // restart loop with new tick
+        }
+        console.log('Successfully loaded game data from Supabase');
+      }
+    } catch (err) {
+      console.error('Failed to load game data from Supabase:', err);
+    }
+  }
+
   // API routes FIRST
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });

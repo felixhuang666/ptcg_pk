@@ -9,11 +9,13 @@ interface AppState {
   updateTeam: (team: TeamConfig) => void;
   deleteTeam: (id: string) => void;
   setCurrentTeamId: (id: string) => void;
+  setTeams: (teams: TeamConfig[]) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
+      setTeams: (teams: TeamConfig[]) => set({ teams }),
       teams: [
         {
           id: 'default-team',
