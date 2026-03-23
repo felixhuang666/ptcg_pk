@@ -128,7 +128,9 @@ export function applySkillEffect(
     const accuracy = calculateAccuracy(attacker.monster.spd, defender.monster.spd, defender.monster.dodgeBonus);
     
     if (SETTINGS.engineeringMode) {
-      logs.push(`[工程模式] 命中率計算: 攻擊方SPD=${attacker.monster.spd.toFixed(1)}, 防禦方SPD=${defender.monster.spd.toFixed(1)}, 閃避加成=${defender.monster.dodgeBonus} => 命中率=${(accuracy * 100).toFixed(1)}%`);
+      const msg = `[工程模式] 招式: ${skill?.name || '未知'}, 命中率計算: 攻擊方SPD=${attacker.monster.spd.toFixed(1)}, 防禦方SPD=${defender.monster.spd.toFixed(1)}, 閃避加成=${defender.monster.dodgeBonus} => 命中率=${(accuracy * 100).toFixed(1)}%`;
+      logs.push(msg);
+      console.log(msg);
     }
 
     if (Math.random() <= accuracy) {
@@ -137,7 +139,9 @@ export function applySkillEffect(
       if (damage < 1) damage = 1; // Minimum 1 damage if hit
       
       if (SETTINGS.engineeringMode) {
-        logs.push(`[工程模式] 傷害計算: 攻擊力=${attackPower.toFixed(1)}, 屬性加成=${attribBonus}, 防禦力=${defender.monster.def.toFixed(1)} => 傷害=${damage}`);
+        const msg = `[工程模式] 招式: ${skill?.name || '未知'}, 傷害計算: 攻擊力=${attackPower.toFixed(1)}, 屬性加成=${attribBonus}, 防禦力=${defender.monster.def.toFixed(1)} => 傷害=${damage}`;
+        logs.push(msg);
+        console.log(msg);
       }
 
       defender.monster.hp -= damage;

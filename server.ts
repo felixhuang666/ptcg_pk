@@ -502,7 +502,9 @@ export const SKILLS: Record<string, SkillBase> = ${JSON.stringify(SKILLS, null, 
     if (!state || state.status !== 'PLAYING' || !SETTINGS.engineeringMode) return;
 
     state.isPaused = !state.isPaused;
-    state.logs.push(`[工程模式] 遊戲已${state.isPaused ? '暫停' : '恢復'}！`);
+    const msg = `[工程模式] 遊戲已${state.isPaused ? '暫停' : '恢復'}！`;
+    state.logs.push(msg);
+    if (SETTINGS.engineeringMode) console.log(msg);
     io.to(roomId).emit('gameStateUpdate', state);
   });
 
