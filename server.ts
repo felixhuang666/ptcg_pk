@@ -7,6 +7,11 @@ import fs from 'fs';
 import { GameState, PlayerState, DiceFace, TeamConfig, BattleMonsterState } from './src/shared/types.js';
 import { MONSTERS, SKILLS, SETTINGS } from './src/shared/gameData.js';
 import { checkSkillConditions, applySkillEffect } from './src/shared/gameLogic.js';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL || 'https://dfsuxhfampflgvjabzzc.supabase.co';
+const supabaseKey = process.env.SUPERBASE_API_KEY || '';
+const supabase = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 const app = express();
 const PORT = 3000;
@@ -81,16 +86,58 @@ const teamRecords: Record<string, TeamRecord> = {
   }
 };
 
-function updateTeamRecord(team: TeamConfig, isWinner: boolean, playerName: string) {
-  const key = team.id;
-  if (!teamRecords[key]) {
-    teamRecords[key] = { team, wins: 0, losses: 0, winRate: 0, playerName };
+async function updateTeamRecord(team: TeamConfig, isWinner: boolean, playerName: string) {
+  try {
+    const key = team.id;
+    // Local cache update
+    if (!teamRecords[key]) {
+      teamRecords[key] = { team, wins: 0, losses: 0, winRate: 0, playerName };
+    }
+    if (isWinner) teamRecords[key].wins++;
+    else teamRecords[key].losses++;
+
+    const total = teamRecords[key].wins + teamRecords[key].losses;
+    teamRecords[key].winRate = teamRecords[key].wins / total;
+
+    // Supabase update
+    if (supabase) {
+      const { data: existing, error: fetchErr } = await supabase
+        .from('team_records')
+        .select('*')
+        .eq('id', key)
+        .single();
+
+      if (fetchErr && fetchErr.code !== 'PGRST116') { // PGRST116 is not found
+        console.error('Error fetching team_record:', fetchErr);
+      }
+
+      let wins = existing ? existing.wins : 0;
+      let losses = existing ? existing.losses : 0;
+
+      if (isWinner) wins++;
+      else losses++;
+
+      const newTotal = wins + losses;
+      const winRate = newTotal > 0 ? wins / newTotal : 0;
+
+      const { error: upsertErr } = await supabase
+        .from('team_records')
+        .upsert({
+          id: key,
+          team: team,
+          wins,
+          losses,
+          win_rate: winRate,
+          player_name: playerName
+        });
+
+      if (upsertErr) {
+        console.error('Error upserting team_record:', upsertErr);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to update team record:', err);
   }
-  if (isWinner) teamRecords[key].wins++;
-  else teamRecords[key].losses++;
-  
-  const total = teamRecords[key].wins + teamRecords[key].losses;
-  teamRecords[key].winRate = teamRecords[key].wins / total;
 }
 
 function createBattleMonster(baseId: string): BattleMonsterState {
@@ -397,7 +444,37 @@ export const SKILLS: Record<string, SkillBase> = ${JSON.stringify(SKILLS, null, 
     io.emit('gameDataUpdated', { MONSTERS, SKILLS, SETTINGS });
   });
 
-  socket.on('getTopBosses', (callback: (bosses: TeamRecord[]) => void) => {
+  socket.on('getTopBosses', async (callback: (bosses: TeamRecord[]) => void) => {
+    try {
+      if (supabase) {
+        // Fetch more rows to filter by matches >= 5 locally, since Supabase REST API doesn't support derived column filtering easily without a view
+        const { data, error } = await supabase
+          .from('team_records')
+          .select('*')
+          .order('win_rate', { ascending: false })
+          .limit(100);
+
+        if (!error && data && data.length > 0) {
+          const qualifiedBosses = data.filter((row: any) => row.wins + row.losses >= 5);
+          const topBosses = qualifiedBosses.slice(0, 10);
+
+          if (topBosses.length > 0) {
+            const mappedBosses = topBosses.map((row: any) => ({
+              team: row.team,
+              wins: row.wins,
+              losses: row.losses,
+              winRate: row.win_rate,
+              playerName: row.player_name
+            }));
+            return callback(mappedBosses);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch bosses from Supabase:', err);
+    }
+
+    // Fallback to local cache if no Supabase data or error
     const topBosses = Object.values(teamRecords)
       .filter(record => record.wins + record.losses >= 5) // Minimum 5 matches to qualify
       .sort((a, b) => b.winRate - a.winRate)

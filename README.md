@@ -19,7 +19,17 @@
 npm install
 ```
 
-### 2. 啟動開發伺服器
+### 2. 環境變數設定 (選填)
+若需啟用 Supabase 以儲存戰鬥紀錄及對手資料，請將 `.env.example` 複製為 `.env` 並填入：
+
+```env
+SUPABASE_URL="https://your-project.supabase.co"
+SUPERBASE_API_KEY="your-anon-or-service-key"
+```
+
+如果您要建立對應的資料表結構，可以執行 `scripts/migrate_20260323_1927_init_supabase.py` 參考 SQL 語法。
+
+### 3. 啟動開發伺服器
 執行以下指令啟動前端與後端伺服器：
 
 ```bash
@@ -28,7 +38,7 @@ npm run dev
 
 伺服器啟動後，您可以在瀏覽器中開啟 `http://localhost:3000` 來遊玩遊戲。
 
-### 3. 專案結構
+### 4. 專案結構
 - `src/components/`：React UI 元件 (戰鬥畫面、隊伍編輯器等)
 - `src/shared/`：前後端共用的型別與遊戲資料 (怪獸、技能、骰子設定)
 - `src/store/`：Zustand 狀態管理 (儲存本地隊伍)
