@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { GameState, PlayerState, SkillBase, TeamConfig } from '../shared/types';
-import { MONSTERS, SKILLS } from '../shared/gameData';
+import { MONSTERS, SKILLS, SETTINGS } from '../shared/gameData';
 import { checkSkillConditions } from '../shared/gameLogic';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -327,6 +327,14 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
               </div>
             </div>
             <div className="flex gap-1 md:gap-2">
+            {SETTINGS.engineeringMode && (
+              <button
+                onClick={() => socket.emit('togglePause')}
+                className={`px-2 py-1 md:px-4 md:py-2 rounded font-bold text-[10px] md:text-sm ${gameState.isPaused ? 'bg-amber-600 animate-pulse' : 'bg-slate-700'}`}
+              >
+                {gameState.isPaused ? '恢復' : '暫停'}
+              </button>
+            )}
               <button
                 onClick={() => socket.emit('toggleAuto')}
                 className={`px-2 py-1 md:px-4 md:py-2 rounded font-bold text-[10px] md:text-sm ${me.isAuto ? 'bg-green-600' : 'bg-gray-600'}`}

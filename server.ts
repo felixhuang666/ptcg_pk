@@ -131,6 +131,7 @@ function startMatch(p1: Socket, p2: Socket, team1: TeamConfig, team2: TeamConfig
   const state: GameState = {
     roomId,
     status: 'PLAYING',
+    isPaused: false,
     players: {
       [p1.id]: {
         id: p1.id,
@@ -176,7 +177,7 @@ function startGameLoop() {
   gameLoopInterval = setInterval(() => {
     for (const roomId in rooms) {
       const state = rooms[roomId];
-      if (state.status !== 'PLAYING') continue;
+      if (state.status !== 'PLAYING' || state.isPaused) continue;
 
       let stateChanged = false;
 
@@ -310,6 +311,7 @@ io.on('connection', (socket) => {
     const state: GameState = {
       roomId,
       status: 'PLAYING',
+      isPaused: false,
       players: {
         [socket.id]: {
           id: socket.id,
@@ -416,6 +418,7 @@ export const SKILLS: Record<string, SkillBase> = ${JSON.stringify(SKILLS, null, 
     const state: GameState = {
       roomId,
       status: 'PLAYING',
+      isPaused: false,
       players: {
         [socket.id]: {
           id: socket.id,
@@ -490,6 +493,17 @@ export const SKILLS: Record<string, SkillBase> = ${JSON.stringify(SKILLS, null, 
       player.isAuto = !player.isAuto;
       io.to(roomId).emit('gameStateUpdate', state);
     }
+  });
+
+  socket.on('togglePause', () => {
+    const roomId = Array.from(socket.rooms).find(r => r.startsWith('room_'));
+    if (!roomId) return;
+    const state = rooms[roomId];
+    if (!state || state.status !== 'PLAYING' || !SETTINGS.engineeringMode) return;
+
+    state.isPaused = !state.isPaused;
+    state.logs.push(`[工程模式] 遊戲已${state.isPaused ? '暫停' : '恢復'}！`);
+    io.to(roomId).emit('gameStateUpdate', state);
   });
 
   socket.on('disconnect', () => {
