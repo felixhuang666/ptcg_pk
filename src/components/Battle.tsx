@@ -1,8 +1,63 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { GameState, PlayerState, SkillBase, TeamConfig } from '../shared/types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { GameState, PlayerState, SkillBase, TeamConfig, ElementType } from '../shared/types';
 import { MONSTERS, SKILLS } from '../shared/gameData';
 import { checkSkillConditions } from '../shared/gameLogic';
+
+const MonsterIcon = ({ type, className }: { type: ElementType, className?: string }) => {
+  switch (type) {
+    case ElementType.FIRE:
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.434-4.5 0-6 0 0-1 1-1 2.5 0 .644.105 1.233.232 1.796A5 5 0 1 1 8.5 14.5z" />
+          <path d="M12 18.5c.348-.12.695-.316 1.042-.587A5 5 0 0 0 16 13c0-1.38-.5-2-1-3-1.072-2.143-.434-4.5 0-6 0 0-1 1-1 2.5 0 .644.105 1.233.232 1.796A5 5 0 0 1 12 18.5z" />
+        </svg>
+      );
+    case ElementType.WATER:
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+        </svg>
+      );
+    case ElementType.WIND:
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" />
+          <path d="M9.6 4.6A2 2 0 1 1 11 8H2" />
+          <path d="M12.6 19.4A2 2 0 1 0 14 16H2" />
+        </svg>
+      );
+    case ElementType.EARTH:
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 10h2a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2z" />
+          <path d="M15.5 14h.5a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-.5" />
+          <path d="M8.5 14h-.5a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-.5" />
+          <path d="M10 6h4l.5 4h-5z" />
+        </svg>
+      );
+    default:
+      return <div className={className}>❓</div>;
+  }
+};
+
+interface DamageNumberProps {
+  value: number;
+  isCritical: boolean;
+}
+
+const DamageNumber: React.FC<DamageNumberProps> = ({ value, isCritical }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 0, scale: 0.5 }}
+    animate={{ opacity: 1, y: -50, scale: isCritical ? 1.5 : 1 }}
+    exit={{ opacity: 0 }}
+    className={`absolute font-black text-2xl z-50 ${isCritical ? 'text-yellow-400 text-3xl' : 'text-red-500'}`}
+    style={{ textShadow: '2px 2px 0 #000' }}
+  >
+    -{value}{isCritical && '!'}
+  </motion.div>
+);
 
 interface BattleProps {
   team: TeamConfig;
@@ -16,8 +71,13 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
   const [socket, setSocket] = useState<Socket | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [status, setStatus] = useState<'CONNECTING' | 'MATCHMAKING' | 'PLAYING' | 'FINISHED'>('CONNECTING');
-
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  const [damagePopup, setDamagePopup] = useState<{ id: number, value: number, isCritical: boolean, target: 'me' | 'opponent' } | null>(null);
+  const [isShaking, setIsShaking] = useState<'me' | 'opponent' | null>(null);
+  const [attackerAnimating, setAttackerAnimating] = useState<'me' | 'opponent' | null>(null);
+
+  const prevHpRef = useRef<{ me: number, opponent: number }>({ me: 0, opponent: 0 });
 
   useEffect(() => {
     const newSocket = io();
@@ -45,6 +105,44 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
     });
 
     newSocket.on('gameStateUpdate', (state: GameState) => {
+      const myId = newSocket.id;
+      const opponentId = Object.keys(state.players).find(id => id !== myId)!;
+      const me = state.players[myId];
+      const opponent = state.players[opponentId];
+
+      if (me && opponent) {
+        // Detect Damage
+        if (prevHpRef.current.me > me.monster.hp) {
+          const diff = prevHpRef.current.me - me.monster.hp;
+          setDamagePopup({ id: Date.now(), value: diff, isCritical: diff > 50, target: 'me' });
+          setIsShaking('me');
+          setTimeout(() => setIsShaking(null), 500);
+        }
+        if (prevHpRef.current.opponent > opponent.monster.hp) {
+          const diff = prevHpRef.current.opponent - opponent.monster.hp;
+          setDamagePopup({ id: Date.now(), value: diff, isCritical: diff > 50, target: 'opponent' });
+          setIsShaking('opponent');
+          setTimeout(() => setIsShaking(null), 500);
+        }
+
+        // Detect Attack Animation (if active player changed or log updated)
+        if (state.phase === 'RESOLUTION' || (gameState && state.logs.length > gameState.logs.length)) {
+          const lastLog = state.logs[state.logs.length - 1];
+          if (lastLog.includes('使用了')) {
+             const attackerName = lastLog.split(' ')[0];
+             if (attackerName === me.name) {
+               setAttackerAnimating('me');
+               setTimeout(() => setAttackerAnimating(null), 600);
+             } else {
+               setAttackerAnimating('opponent');
+               setTimeout(() => setAttackerAnimating(null), 600);
+             }
+          }
+        }
+
+        prevHpRef.current = { me: me.monster.hp, opponent: opponent.monster.hp };
+      }
+
       setGameState(state);
       if (state.status === 'FINISHED') {
         setStatus('FINISHED');
@@ -74,6 +172,7 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
   const opponentId = Object.keys(gameState.players).find(id => id !== myId)!;
   const me = gameState.players[myId];
   const opponent = gameState.players[opponentId];
+  const isMyTurn = gameState.activePlayerId === myId;
 
   const myMonsterBase = MONSTERS[me.monster.baseId];
   const oppMonsterBase = MONSTERS[opponent.monster.baseId];
@@ -121,7 +220,9 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
                 );
               })}
             </div>
-            <div className="text-lg font-bold text-red-400">{opponent.name}</div>
+            <div className={`text-lg font-bold ${gameState.activePlayerId === opponentId ? 'text-red-400 ring-2 ring-red-500 px-2 rounded animate-pulse' : 'text-gray-400'}`}>
+              {opponent.name} {gameState.activePlayerId === opponentId && '(行動中)'}
+            </div>
           </div>
           <div className="flex items-center gap-4 mt-2">
             <div className="w-64">
@@ -147,9 +248,22 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
                 {opponent.monster.dodgeBonus > 0 && <span className="ml-2 text-green-400">閃避+{opponent.monster.dodgeBonus}</span>}
               </div>
             </div>
-            <div className="w-24 h-24 bg-red-900/50 rounded-lg flex items-center justify-center text-4xl border-2 border-red-500">
-              😈
-            </div>
+            <motion.div
+              animate={{
+                x: attackerAnimating === 'opponent' ? -100 : 0,
+                scale: isShaking === 'opponent' ? [1, 1.2, 0.9, 1.1, 1] : 1,
+                rotate: isShaking === 'opponent' ? [0, -10, 10, -10, 0] : 0
+              }}
+              transition={{ duration: 0.4 }}
+              className={`w-24 h-24 bg-red-900/50 rounded-lg flex items-center justify-center border-2 ${gameState.activePlayerId === opponentId ? 'border-red-400 shadow-[0_0_20px_rgba(239,68,68,0.6)]' : 'border-red-900'}`}
+            >
+              <MonsterIcon type={oppMonsterBase.type} className="w-16 h-16 text-red-400" />
+              <AnimatePresence mode="wait">
+                {damagePopup?.target === 'opponent' && (
+                  <DamageNumber key={damagePopup.id} value={damagePopup.value} isCritical={damagePopup.isCritical} />
+                )}
+              </AnimatePresence>
+            </motion.div>
           </div>
 
           <div className="flex gap-2 mt-2 items-center">
@@ -195,9 +309,22 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
         {/* Me */}
         <div className="flex flex-col items-start w-full">
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-24 h-24 bg-blue-900/50 rounded-lg flex items-center justify-center text-4xl border-2 border-blue-500">
-              😎
-            </div>
+            <motion.div
+              animate={{
+                x: attackerAnimating === 'me' ? 100 : 0,
+                scale: isShaking === 'me' ? [1, 1.2, 0.9, 1.1, 1] : 1,
+                rotate: isShaking === 'me' ? [0, 10, -10, 10, 0] : 0
+              }}
+              transition={{ duration: 0.4 }}
+              className={`w-24 h-24 bg-blue-900/50 rounded-lg flex items-center justify-center border-2 ${isMyTurn ? 'border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : 'border-blue-900'}`}
+            >
+              <MonsterIcon type={myMonsterBase.type} className="w-16 h-16 text-blue-400" />
+              <AnimatePresence mode="wait">
+                {damagePopup?.target === 'me' && (
+                  <DamageNumber key={damagePopup.id} value={damagePopup.value} isCritical={damagePopup.isCritical} />
+                )}
+              </AnimatePresence>
+            </motion.div>
             <div className="w-48">
               <div className="flex justify-between text-sm">
                 <span>{myMonsterBase.name} ({myMonsterBase.type})</span>
@@ -216,7 +343,9 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
             </div>
           </div>
           <div className="flex justify-between items-center w-full mt-2">
-            <div className="text-lg font-bold text-blue-400">{me.name}</div>
+            <div className={`text-lg font-bold ${isMyTurn ? 'text-blue-400 ring-2 ring-blue-500 px-2 rounded animate-pulse' : 'text-gray-400'}`}>
+              {me.name} {isMyTurn && '(你的回合)'}
+            </div>
             <div className="flex gap-1">
               {me.team.monsters.map((mId, idx) => {
                 const isDead = idx < me.currentMonsterIndex;
@@ -261,10 +390,10 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
             </button>
             <button 
               onClick={() => socket.emit('giveUp')}
-              disabled={me.ap < 30 || status === 'FINISHED' || me.isAuto}
+              disabled={!isMyTurn || status === 'FINISHED' || me.isAuto}
               className="px-4 py-2 bg-red-600 rounded font-bold disabled:opacity-50"
             >
-              放棄 (-30 AP)
+              重新擲骰
             </button>
           </div>
         </div>
@@ -288,7 +417,7 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
               <button
                 key={sId}
                 onClick={() => socket.emit('executeSkill', sId)}
-                disabled={!isSatisfied || !canAfford || status === 'FINISHED' || me.isAuto}
+                disabled={!isMyTurn || !isSatisfied || !canAfford || status === 'FINISHED' || me.isAuto}
                 className={buttonClass}
               >
                 <div className="flex justify-between font-bold text-lg mb-1">

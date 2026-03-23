@@ -61,6 +61,15 @@ export function calculateAccuracy(attackerSpd: number, defenderSpd: number, defe
   return attackerSpd / (defenderSpd * (1 + defenderDodgeBonus));
 }
 
+export function calculateDamage(attackPower: number, attackerType: ElementType, defenderType: ElementType, defenderDef: number): { damage: number, isCritical: boolean } {
+  const attribBonus = getAttributeBonus(attackerType, defenderType);
+  // Percentage-based formula: Damage = ATK * (100 / (100 + DEF))
+  const damageMultiplier = 100 / (100 + defenderDef);
+  let damage = Math.floor(attackPower * attribBonus * damageMultiplier);
+  if (damage < 1) damage = 1;
+  return { damage, isCritical: attribBonus > 1 };
+}
+
 export function applySkillEffect(
   skillId: string, 
   attacker: PlayerState, 
@@ -137,12 +146,10 @@ export function applySkillEffect(
   if (attackPower > 0) {
     const accuracy = calculateAccuracy(attacker.monster.spd, defender.monster.spd, defender.monster.dodgeBonus);
     if (Math.random() <= accuracy) {
-      const attribBonus = getAttributeBonus(mAttacker.type, mDefender.type);
-      let damage = Math.floor((attackPower * attribBonus) - defender.monster.def);
-      if (damage < 1) damage = 1; // Minimum 1 damage if hit
+      const { damage, isCritical } = calculateDamage(attackPower, mAttacker.type, mDefender.type, defender.monster.def);
       defender.monster.hp -= damage;
       logs.push(`${attacker.name} 的 ${mAttacker.name} 使用了 ${SKILLS[skillId].name}，造成了 ${damage} 點傷害！`);
-      if (attribBonus > 1) {
+      if (isCritical) {
         logs.push(`屬性剋制！傷害增加！`);
       }
     } else {

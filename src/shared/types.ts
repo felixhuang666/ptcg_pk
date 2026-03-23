@@ -72,9 +72,14 @@ export interface PlayerState {
   connected: boolean;
 }
 
+export type GamePhase = 'ROLLING' | 'WAITING_FOR_ACTION' | 'RESOLUTION' | 'TRANSITION';
+
 export interface GameState {
   roomId: string;
   status: 'WAITING' | 'PLAYING' | 'FINISHED';
+  phase: GamePhase;
+  activePlayerId: string | null;
+  turnCount: number;
   players: Record<string, PlayerState>;
   logs: string[];
   winnerId: string | null;

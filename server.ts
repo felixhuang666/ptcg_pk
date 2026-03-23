@@ -127,19 +127,25 @@ function rollDicesWithGuarantee(team: TeamConfig, monsterBaseId: string): DiceFa
 function startMatch(p1: Socket, p2: Socket, team1: TeamConfig, team2: TeamConfig) {
   const roomId = `room_${Math.random().toString(36).substring(7)}`;
   
+  const p1Monster = createBattleMonster(team1.monsters[0]);
+  const p2Monster = createBattleMonster(team2.monsters[0]);
+
   const state: GameState = {
     roomId,
     status: 'PLAYING',
+    phase: 'WAITING_FOR_ACTION',
+    activePlayerId: p1Monster.spd >= p2Monster.spd ? p1.id : p2.id,
+    turnCount: 1,
     players: {
       [p1.id]: {
         id: p1.id,
         name: 'Player 1',
         team: team1,
         currentMonsterIndex: 0,
-        monster: createBattleMonster(team1.monsters[0]),
-        ap: 0,
+        monster: p1Monster,
+        ap: 100, // In turn-based, we start with full AP or treat it as per-turn
         rolledDices: rollDicesWithGuarantee(team1, team1.monsters[0]),
-        isAuto: true,
+        isAuto: false, // Default to manual for players
         connected: true
       },
       [p2.id]: {
@@ -147,10 +153,10 @@ function startMatch(p1: Socket, p2: Socket, team1: TeamConfig, team2: TeamConfig
         name: 'Player 2',
         team: team2,
         currentMonsterIndex: 0,
-        monster: createBattleMonster(team2.monsters[0]),
-        ap: 0,
+        monster: p2Monster,
+        ap: 100,
         rolledDices: rollDicesWithGuarantee(team2, team2.monsters[0]),
-        isAuto: true,
+        isAuto: false,
         connected: true
       }
     },
@@ -163,53 +169,69 @@ function startMatch(p1: Socket, p2: Socket, team1: TeamConfig, team2: TeamConfig
   p2.join(roomId);
   
   io.to(roomId).emit('gameStart', state);
+
+  // Initial check for auto
+  processAutoTurn(state);
 }
 
-// Game Loop
-setInterval(() => {
-  for (const roomId in rooms) {
-    const state = rooms[roomId];
-    if (state.status !== 'PLAYING') continue;
+function processAutoTurn(state: GameState) {
+  if (state.status !== 'PLAYING' || state.phase !== 'WAITING_FOR_ACTION') return;
 
-    let stateChanged = false;
+  const activeId = state.activePlayerId;
+  if (!activeId) return;
 
-    // Increase AP
-    for (const playerId in state.players) {
-      const p = state.players[playerId];
-      if (p.ap < 100) {
-        p.ap = Math.min(100, p.ap + p.monster.spd);
-        stateChanged = true;
+  const p = state.players[activeId];
+  if (p.isAuto || activeId.startsWith('ai_') || activeId.startsWith('boss_')) {
+    setTimeout(() => {
+      const base = MONSTERS[p.monster.baseId];
+      const satisfiedSkills = base.skills
+        .map(sId => SKILLS[sId])
+        .filter(s => checkSkillConditions(s, p.rolledDices));
+
+      if (satisfiedSkills.length > 0) {
+        const bestSkill = satisfiedSkills.reduce((prev, current) => (prev.apCost > current.apCost) ? prev : current);
+        executeSkill(state, activeId, bestSkill.id);
+      } else {
+        // Force re-roll if no skills possible (though guarantee should prevent this)
+        p.rolledDices = rollDicesWithGuarantee(p.team, p.monster.baseId);
+        state.logs.push(`${p.name} 重新擲骰！`);
+        nextTurn(state);
       }
-
-      // Auto execution
-      if (p.isAuto) {
-        const base = MONSTERS[p.monster.baseId];
-        const satisfiedSkills = base.skills
-          .map(sId => SKILLS[sId])
-          .filter(s => checkSkillConditions(s, p.rolledDices));
-        
-        if (satisfiedSkills.length > 0) {
-          // Find highest AP skill
-          const bestSkill = satisfiedSkills.reduce((prev, current) => (prev.apCost > current.apCost) ? prev : current);
-          if (p.ap >= bestSkill.apCost) {
-            executeSkill(state, playerId, bestSkill.id);
-            stateChanged = true;
-          }
-        } else if (p.ap >= 30) {
-          // Give up if no skills satisfied
-          p.ap -= 30;
-          p.rolledDices = rollDicesWithGuarantee(p.team, p.monster.baseId);
-          state.logs.push(`${p.name} 放棄回合並重新擲骰！`);
-          stateChanged = true;
-        }
-      }
-    }
-
-    if (stateChanged) {
-      io.to(roomId).emit('gameStateUpdate', state);
-    }
+      io.to(state.roomId).emit('gameStateUpdate', state);
+    }, 1000);
   }
-}, 1000); // 1 tick per second
+}
+
+function nextTurn(state: GameState) {
+  const playerIds = Object.keys(state.players);
+  const currentIndex = playerIds.indexOf(state.activePlayerId!);
+  const nextIndex = (currentIndex + 1) % playerIds.length;
+
+  if (nextIndex === 0) {
+    // Round ended
+    state.turnCount++;
+    state.phase = 'ROLLING';
+
+    // New dices for everyone
+    for (const id of playerIds) {
+      const p = state.players[id];
+      p.rolledDices = rollDicesWithGuarantee(p.team, p.monster.baseId);
+      p.ap = 100; // Reset AP for turn-based
+    }
+
+    state.logs.push(`第 ${state.turnCount} 回合開始！`);
+
+    // Determine who goes first based on current monster speed
+    const p1 = state.players[playerIds[0]];
+    const p2 = state.players[playerIds[1]];
+    state.activePlayerId = p1.monster.spd >= p2.monster.spd ? p1.id : p2.id;
+  } else {
+    state.activePlayerId = playerIds[nextIndex];
+  }
+
+  state.phase = 'WAITING_FOR_ACTION';
+  processAutoTurn(state);
+}
 
 function executeSkill(state: GameState, attackerId: string, skillId: string) {
   const attacker = state.players[attackerId];
@@ -245,7 +267,7 @@ function executeSkill(state: GameState, attackerId: string, skillId: string) {
   }
 
   if (state.status === 'PLAYING') {
-    attacker.rolledDices = rollDicesWithGuarantee(attacker.team, attacker.monster.baseId);
+    nextTurn(state);
   }
 }
 
@@ -296,20 +318,25 @@ io.on('connection', (socket) => {
     };
 
     const roomId = `room_${Math.random().toString(36).substring(7)}`;
-    
+    const p1Monster = createBattleMonster(team.monsters[0]);
+    const aiMonster = createBattleMonster(aiTeam.monsters[0]);
+
     const state: GameState = {
       roomId,
       status: 'PLAYING',
+      phase: 'WAITING_FOR_ACTION',
+      activePlayerId: p1Monster.spd >= aiMonster.spd ? socket.id : aiId,
+      turnCount: 1,
       players: {
         [socket.id]: {
           id: socket.id,
           name: 'Player 1',
           team: team,
           currentMonsterIndex: 0,
-          monster: createBattleMonster(team.monsters[0]),
-          ap: 0,
+          monster: p1Monster,
+          ap: 100,
           rolledDices: rollDicesWithGuarantee(team, team.monsters[0]),
-          isAuto: true,
+          isAuto: false,
           connected: true
         },
         [aiId]: {
@@ -317,8 +344,8 @@ io.on('connection', (socket) => {
           name: '電腦',
           team: aiTeam,
           currentMonsterIndex: 0,
-          monster: createBattleMonster(aiTeam.monsters[0]),
-          ap: 0,
+          monster: aiMonster,
+          ap: 100,
           rolledDices: rollDicesWithGuarantee(aiTeam, aiTeam.monsters[0]),
           isAuto: true, // AI is always auto
           connected: true
@@ -332,6 +359,7 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     
     io.to(roomId).emit('gameStart', state);
+    processAutoTurn(state);
   });
 
   socket.on('getTopBosses', (callback: (bosses: TeamRecord[]) => void) => {
@@ -351,20 +379,25 @@ io.on('connection', (socket) => {
   socket.on('startBossBattle', ({ team, bossTeam }: { team: TeamConfig, bossTeam: TeamConfig }) => {
     const aiId = `boss_${Math.random().toString(36).substring(7)}`;
     const roomId = `room_${Math.random().toString(36).substring(7)}`;
-    
+    const p1Monster = createBattleMonster(team.monsters[0]);
+    const bossMonster = createBattleMonster(bossTeam.monsters[0]);
+
     const state: GameState = {
       roomId,
       status: 'PLAYING',
+      phase: 'WAITING_FOR_ACTION',
+      activePlayerId: p1Monster.spd >= bossMonster.spd ? socket.id : aiId,
+      turnCount: 1,
       players: {
         [socket.id]: {
           id: socket.id,
           name: 'Player 1',
           team: team,
           currentMonsterIndex: 0,
-          monster: createBattleMonster(team.monsters[0]),
-          ap: 0,
+          monster: p1Monster,
+          ap: 100,
           rolledDices: rollDicesWithGuarantee(team, team.monsters[0]),
-          isAuto: true,
+          isAuto: false,
           connected: true
         },
         [aiId]: {
@@ -372,8 +405,8 @@ io.on('connection', (socket) => {
           name: `BOSS: ${bossTeam.name}`,
           team: bossTeam,
           currentMonsterIndex: 0,
-          monster: createBattleMonster(bossTeam.monsters[0]),
-          ap: 0,
+          monster: bossMonster,
+          ap: 100,
           rolledDices: rollDicesWithGuarantee(bossTeam, bossTeam.monsters[0]),
           isAuto: true,
           connected: true
@@ -387,13 +420,14 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     
     io.to(roomId).emit('gameStart', state);
+    processAutoTurn(state);
   });
 
   socket.on('executeSkill', (skillId: string) => {
     const roomId = Array.from(socket.rooms).find(r => r.startsWith('room_'));
     if (!roomId) return;
     const state = rooms[roomId];
-    if (!state || state.status !== 'PLAYING') return;
+    if (!state || state.status !== 'PLAYING' || state.activePlayerId !== socket.id) return;
 
     const player = state.players[socket.id];
     const skill = SKILLS[skillId];
@@ -407,15 +441,13 @@ io.on('connection', (socket) => {
     const roomId = Array.from(socket.rooms).find(r => r.startsWith('room_'));
     if (!roomId) return;
     const state = rooms[roomId];
-    if (!state || state.status !== 'PLAYING') return;
+    if (!state || state.status !== 'PLAYING' || state.activePlayerId !== socket.id) return;
 
     const player = state.players[socket.id];
-    if (player && player.ap >= 30) {
-      player.ap -= 30;
-      player.rolledDices = rollDicesWithGuarantee(player.team, player.monster.baseId);
-      state.logs.push(`${player.name} 放棄回合並重新擲骰！`);
-      io.to(roomId).emit('gameStateUpdate', state);
-    }
+    player.rolledDices = rollDicesWithGuarantee(player.team, player.monster.baseId);
+    state.logs.push(`${player.name} 放棄行動並重新擲骰！`);
+    nextTurn(state);
+    io.to(roomId).emit('gameStateUpdate', state);
   });
 
   socket.on('toggleAuto', () => {
@@ -427,6 +459,9 @@ io.on('connection', (socket) => {
     const player = state.players[socket.id];
     if (player) {
       player.isAuto = !player.isAuto;
+      if (player.isAuto && state.activePlayerId === socket.id) {
+        processAutoTurn(state);
+      }
       io.to(roomId).emit('gameStateUpdate', state);
     }
   });

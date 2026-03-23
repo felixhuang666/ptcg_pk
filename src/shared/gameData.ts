@@ -14,10 +14,10 @@ export const DICE_COSTS: Record<DiceFace, number> = {
 };
 
 export const MONSTERS: Record<string, MonsterBase> = {
-  'm1': { id: 'm1', name: '鑽地鼠', type: ElementType.EARTH, hp: 100, str: 25, con: 40, dex: 30, skills: ['s1', 's2', 's3'] },
-  'm2': { id: 'm2', name: '風狼', type: ElementType.WIND, hp: 60, str: 20, con: 20, dex: 60, skills: ['s4', 's5', 's6'] },
-  'm3': { id: 'm3', name: '火鳥', type: ElementType.FIRE, hp: 50, str: 50, con: 40, dex: 15, skills: ['s7', 's8', 's9'] },
-  'm4': { id: 'm4', name: '水龜', type: ElementType.WATER, hp: 80, str: 30, con: 30, dex: 30, skills: ['s10', 's11', 's12'] },
+  'm1': { id: 'm1', name: '鑽地鼠', type: ElementType.EARTH, hp: 500, str: 120, con: 200, dex: 30, skills: ['s1', 's2', 's3'] },
+  'm2': { id: 'm2', name: '風狼', type: ElementType.WIND, hp: 300, str: 100, con: 100, dex: 60, skills: ['s4', 's5', 's6'] },
+  'm3': { id: 'm3', name: '火鳥', type: ElementType.FIRE, hp: 250, str: 250, con: 150, dex: 25, skills: ['s7', 's8', 's9'] },
+  'm4': { id: 'm4', name: '水龜', type: ElementType.WATER, hp: 400, str: 150, con: 150, dex: 30, skills: ['s10', 's11', 's12'] },
 };
 
 export const SKILLS: Record<string, SkillBase> = {
