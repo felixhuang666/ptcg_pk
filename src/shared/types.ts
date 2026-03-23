@@ -84,6 +84,7 @@ export interface PlayerState {
 export interface GameState {
   roomId: string;
   status: 'WAITING' | 'PLAYING' | 'FINISHED';
+  isPaused: boolean;
   players: Record<string, PlayerState>;
   logs: string[];
   winnerId: string | null;

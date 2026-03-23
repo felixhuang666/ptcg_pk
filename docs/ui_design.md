@@ -11,7 +11,7 @@ The UI for "Monster Battle" is designed to be modern, dark-themed, and fully res
 - **Arena Area**: Central area showing both monsters facing each other. On mobile, this may be simplified to show icons or smaller versions of the SVGs.
 - **Player Section**: Located below the arena. Shows player's HP bar and monster info.
 - **Log Window**: A small, scrollable area above the controls.
-- **Controls (Bottom)**: Sticky bottom area with dice results and skill buttons. Skill buttons are arranged in a 2x2 or 3x1 grid depending on screen width.
+- **Controls (Bottom)**: Sticky bottom area with dice results and skill buttons. Contains an "Engineering Pause" toggle when engineering mode is active.
 
 ### 2.2 Desktop View (Landscape)
 - **Layout**: 3-column or split layout.
@@ -41,6 +41,7 @@ The UI for "Monster Battle" is designed to be modern, dark-themed, and fully res
   - Floating damage numbers (red for damage, green for healing/buffs).
 - **AP Bar**: Smooth transition as it fills up.
 - **Skill Ready**: Pulse effect on the skill button when AP is sufficient and conditions are met.
+- **Game Paused**: The "Pause" button pulses with an amber glow when active to indicate the game loop is halted.
 
 ## 5. Responsive Breakpoints
 - **Mobile (< 640px)**: Vertical stack layout.
