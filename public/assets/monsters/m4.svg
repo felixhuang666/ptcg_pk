@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .turtle { animation: swim 3s infinite alternate ease-in-out; transform-origin: center; }
+    @keyframes swim {
+      0% { transform: translateY(-2px) rotate(-2deg); }
+      100% { transform: translateY(2px) rotate(2deg); }
+    }
+  </style>
+  <g className="turtle">
+    <ellipse cx="50" cy="65" rx="35" ry="20" fill="#2E8B57" />
+    <path d="M 15 65 Q 50 30 85 65 Z" fill="#006400" />
+    <circle cx="20" cy="65" r="10" fill="#2E8B57" />
+    <circle cx="15" cy="62" r="2" fill="#000" />
+    <ellipse cx="40" cy="85" rx="8" ry="5" fill="#2E8B57" />
+    <ellipse cx="60" cy="85" rx="8" ry="5" fill="#2E8B57" />
+    <path d="M 85 65 Q 95 70 90 75" fill="none" stroke="#2E8B57" stroke-width="4" />
+    <path d="M 30 50 L 40 40 L 50 50 L 60 40 L 70 50" fill="none" stroke="#3CB371" stroke-width="2" />
+  </g>
+</svg>

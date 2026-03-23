@@ -28,6 +28,7 @@ export interface MonsterBase {
   con: number;
   dex: number;
   skills: string[];
+  svgPath?: string;
 }
 
 export interface SkillBase {
@@ -36,6 +37,14 @@ export interface SkillBase {
   apCost: number;
   conditions: Partial<Record<DiceFace, number>>;
   description: string;
+  svgPath?: string;
+}
+
+export interface GameSettings {
+  accuracyFormula: string;
+  damageFormula: string;
+  gameTick: number;
+  engineeringMode: boolean;
 }
 
 export interface DiceConfig {

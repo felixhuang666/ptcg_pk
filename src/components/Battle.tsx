@@ -106,9 +106,17 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
       </div>
 
       {/* Battle Arena */}
-      <div className="flex-1 flex flex-col justify-between relative">
+      <div className="flex-1 flex flex-col justify-between relative bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
+        {/* Arena Background */}
+        <div className="absolute inset-0 pointer-events-none opacity-20" style={{
+          backgroundImage: `radial-gradient(ellipse at center, #4ade80 0%, #166534 100%)`,
+          backgroundSize: '100% 100%'
+        }}>
+          <div className="absolute inset-0 border-8 border-slate-900/50 rounded-full scale-x-150 scale-y-50 translate-y-1/4"></div>
+        </div>
+
         {/* Opponent */}
-        <div className="flex flex-col items-end w-full">
+        <div className="flex flex-col items-end w-full p-6 z-10">
           <div className="flex justify-between items-center w-full">
             <div className="flex gap-1">
               {opponent.team.monsters.map((mId, idx) => {
@@ -124,60 +132,65 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
             <div className="text-lg font-bold text-red-400">{opponent.name}</div>
           </div>
           <div className="flex items-center gap-4 mt-2">
-            <div className="w-64">
-              <div className="flex justify-between text-sm">
+            <div className="w-64 bg-slate-900/80 p-3 rounded-lg border border-slate-700 backdrop-blur-sm">
+              <div className="flex justify-between text-sm font-bold text-white">
                 <span>{oppMonsterBase.name} ({oppMonsterBase.type})</span>
                 <span>{opponent.monster.hp} / {opponent.monster.maxHp}</span>
               </div>
-              <div className="h-4 bg-gray-700 rounded-full overflow-hidden mt-1">
+              <div className="h-4 bg-gray-800 rounded-full overflow-hidden mt-2 border border-slate-700">
                 <div 
-                  className="h-full bg-red-500 transition-all" 
+                  className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-300" 
                   style={{ width: `${Math.max(0, (opponent.monster.hp / opponent.monster.maxHp) * 100)}%` }}
                 />
               </div>
-              <div className="flex justify-between text-xs mt-1">
+              <div className="flex justify-between text-xs mt-2 text-amber-200 font-bold">
                 <span>AP</span>
                 <span>{Math.floor(opponent.ap)} / 100</span>
               </div>
-              <div className="h-2 bg-gray-900 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 transition-all" style={{ width: `${opponent.ap}%` }} />
+              <div className="h-2 bg-gray-800 rounded-full overflow-hidden border border-slate-700">
+                <div className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-100" style={{ width: `${opponent.ap}%` }} />
               </div>
-              <div className="text-xs text-gray-400 mt-1">
+              <div className="text-xs text-gray-400 mt-2 font-mono">
                 ATK: {opponent.monster.atk} | DEF: {Math.round(opponent.monster.def)} | SPD: {Math.round(opponent.monster.spd)}
                 {opponent.monster.dodgeBonus > 0 && <span className="ml-2 text-green-400">閃避+{opponent.monster.dodgeBonus}</span>}
               </div>
             </div>
-            <div className="w-24 h-24 bg-red-900/50 rounded-lg flex items-center justify-center text-4xl border-2 border-red-500">
-              😈
+            <div className="w-32 h-32 flex items-center justify-center relative">
+              {oppMonsterBase.svgPath ? (
+                <img src={oppMonsterBase.svgPath} alt={oppMonsterBase.name} className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+              ) : (
+                <div className="w-24 h-24 bg-red-900/50 rounded-lg flex items-center justify-center text-4xl border-2 border-red-500">😈</div>
+              )}
             </div>
           </div>
 
-          <div className="flex gap-2 mt-2 items-center">
-            <div className="px-2 py-1 bg-slate-700 rounded text-xs">骰子:</div>
+          <div className="flex gap-2 mt-3 items-center bg-slate-900/80 p-2 rounded-lg border border-slate-700 backdrop-blur-sm">
+            <div className="px-2 py-1 text-xs text-gray-400">骰子:</div>
             {opponent.rolledDices.map((d, i) => (
-              <div key={i} className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center font-bold text-amber-400 text-xs">
+              <div key={i} className="w-6 h-6 bg-slate-800 border border-slate-600 rounded flex items-center justify-center font-bold text-amber-400 text-xs shadow-inner">
                 {d}
               </div>
             ))}
           </div>
 
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-3">
             {oppMonsterBase.skills.map(sId => {
               const skill = SKILLS[sId];
               const isSatisfied = oppSatisfiedSkills.some(s => s.id === sId);
               const canAfford = opponent.ap >= skill.apCost;
               
-              let badgeClass = 'px-2 py-1 rounded text-xs border transition-all ';
+              let badgeClass = 'px-3 py-1.5 rounded text-xs border transition-all font-bold flex items-center gap-2 ';
               if (!isSatisfied) {
-                badgeClass += 'border-gray-600 bg-gray-800 text-gray-500';
+                badgeClass += 'border-gray-700 bg-gray-800/80 text-gray-500';
               } else if (isSatisfied && !canAfford) {
-                badgeClass += 'border-amber-500 bg-amber-900/40 text-amber-200';
+                badgeClass += 'border-amber-700 bg-amber-900/60 text-amber-500';
               } else if (isSatisfied && canAfford) {
-                badgeClass += 'border-red-400 bg-red-600/40 text-red-100 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.4)]';
+                badgeClass += 'border-red-500 bg-red-900/80 text-red-100 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.6)]';
               }
               
               return (
                 <div key={sId} className={badgeClass} title={skill.description}>
+                  {skill.svgPath && <img src={skill.svgPath} className="w-4 h-4 opacity-70" alt="" />}
                   {skill.name} ({skill.apCost} AP)
                 </div>
               );
@@ -186,30 +199,34 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
         </div>
 
         {/* Logs */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-black/60 rounded-lg p-4 overflow-y-auto border border-gray-700 flex flex-col-reverse">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-64 bg-slate-900/90 rounded-xl p-4 overflow-y-auto border border-slate-600 flex flex-col-reverse shadow-2xl z-20 backdrop-blur-md">
           {gameState.logs.slice().reverse().map((log, i) => (
-            <div key={i} className="text-sm mb-1">{log}</div>
+            <div key={i} className={`text-sm mb-1.5 pb-1.5 border-b border-slate-800/50 ${i === 0 ? 'text-white font-medium' : 'text-gray-400'}`}>{log}</div>
           ))}
         </div>
 
         {/* Me */}
-        <div className="flex flex-col items-start w-full">
+        <div className="flex flex-col items-start w-full p-6 z-10">
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-24 h-24 bg-blue-900/50 rounded-lg flex items-center justify-center text-4xl border-2 border-blue-500">
-              😎
+            <div className="w-32 h-32 flex items-center justify-center relative">
+              {myMonsterBase.svgPath ? (
+                <img src={myMonsterBase.svgPath} alt={myMonsterBase.name} className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-x-[-1]" />
+              ) : (
+                <div className="w-24 h-24 bg-blue-900/50 rounded-lg flex items-center justify-center text-4xl border-2 border-blue-500">😎</div>
+              )}
             </div>
-            <div className="w-48">
-              <div className="flex justify-between text-sm">
+            <div className="w-64 bg-slate-900/80 p-3 rounded-lg border border-slate-700 backdrop-blur-sm">
+              <div className="flex justify-between text-sm font-bold text-white">
                 <span>{myMonsterBase.name} ({myMonsterBase.type})</span>
                 <span>{me.monster.hp} / {me.monster.maxHp}</span>
               </div>
-              <div className="h-4 bg-gray-700 rounded-full overflow-hidden mt-1">
+              <div className="h-4 bg-gray-800 rounded-full overflow-hidden mt-2 border border-slate-700">
                 <div 
-                  className="h-full bg-blue-500 transition-all" 
+                  className="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-300" 
                   style={{ width: `${Math.max(0, (me.monster.hp / me.monster.maxHp) * 100)}%` }}
                 />
               </div>
-              <div className="text-xs text-gray-400 mt-1">
+              <div className="text-xs text-gray-400 mt-2 font-mono">
                 ATK: {me.monster.atk} | DEF: {Math.round(me.monster.def)} | SPD: {Math.round(me.monster.spd)}
                 {me.monster.dodgeBonus > 0 && <span className="ml-2 text-green-400">閃避+{me.monster.dodgeBonus}</span>}
               </div>

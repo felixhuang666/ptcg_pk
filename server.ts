@@ -3,8 +3,9 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
+import fs from 'fs';
 import { GameState, PlayerState, DiceFace, TeamConfig, BattleMonsterState } from './src/shared/types.js';
-import { MONSTERS, SKILLS } from './src/shared/gameData.js';
+import { MONSTERS, SKILLS, SETTINGS } from './src/shared/gameData.js';
 import { checkSkillConditions, applySkillEffect } from './src/shared/gameLogic.js';
 
 const app = express();
@@ -100,7 +101,7 @@ function createBattleMonster(baseId: string): BattleMonsterState {
     hp: base.hp,
     maxHp: base.hp,
     atk: base.str,
-    def: base.con,
+    def: Math.min(100, base.con),
     spd: Math.min(50, base.dex),
     dodgeBonus: 0
   };
@@ -166,50 +167,59 @@ function startMatch(p1: Socket, p2: Socket, team1: TeamConfig, team2: TeamConfig
 }
 
 // Game Loop
-setInterval(() => {
-  for (const roomId in rooms) {
-    const state = rooms[roomId];
-    if (state.status !== 'PLAYING') continue;
+let gameLoopInterval: NodeJS.Timeout | null = null;
 
-    let stateChanged = false;
+function startGameLoop() {
+  if (gameLoopInterval) clearInterval(gameLoopInterval);
+  const tickMs = 10000 / SETTINGS.gameTick;
+  
+  gameLoopInterval = setInterval(() => {
+    for (const roomId in rooms) {
+      const state = rooms[roomId];
+      if (state.status !== 'PLAYING') continue;
 
-    // Increase AP
-    for (const playerId in state.players) {
-      const p = state.players[playerId];
-      if (p.ap < 100) {
-        p.ap = Math.min(100, p.ap + p.monster.spd);
-        stateChanged = true;
-      }
+      let stateChanged = false;
 
-      // Auto execution
-      if (p.isAuto) {
-        const base = MONSTERS[p.monster.baseId];
-        const satisfiedSkills = base.skills
-          .map(sId => SKILLS[sId])
-          .filter(s => checkSkillConditions(s, p.rolledDices));
-        
-        if (satisfiedSkills.length > 0) {
-          // Find highest AP skill
-          const bestSkill = satisfiedSkills.reduce((prev, current) => (prev.apCost > current.apCost) ? prev : current);
-          if (p.ap >= bestSkill.apCost) {
-            executeSkill(state, playerId, bestSkill.id);
-            stateChanged = true;
-          }
-        } else if (p.ap >= 30) {
-          // Give up if no skills satisfied
-          p.ap -= 30;
-          p.rolledDices = rollDicesWithGuarantee(p.team, p.monster.baseId);
-          state.logs.push(`${p.name} 放棄回合並重新擲骰！`);
+      // Increase AP
+      for (const playerId in state.players) {
+        const p = state.players[playerId];
+        if (p.ap < 100) {
+          p.ap = Math.min(100, p.ap + p.monster.spd);
           stateChanged = true;
         }
+
+        // Auto execution
+        if (p.isAuto) {
+          const base = MONSTERS[p.monster.baseId];
+          const satisfiedSkills = base.skills
+            .map(sId => SKILLS[sId])
+            .filter(s => checkSkillConditions(s, p.rolledDices));
+          
+          if (satisfiedSkills.length > 0) {
+            // Find highest AP skill
+            const bestSkill = satisfiedSkills.reduce((prev, current) => (prev.apCost > current.apCost) ? prev : current);
+            if (p.ap >= bestSkill.apCost) {
+              executeSkill(state, playerId, bestSkill.id);
+              stateChanged = true;
+            }
+          } else if (p.ap >= 30) {
+            // Give up if no skills satisfied
+            p.ap -= 30;
+            p.rolledDices = rollDicesWithGuarantee(p.team, p.monster.baseId);
+            state.logs.push(`${p.name} 放棄回合並重新擲骰！`);
+            stateChanged = true;
+          }
+        }
+      }
+
+      if (stateChanged) {
+        io.to(roomId).emit('gameStateUpdate', state);
       }
     }
+  }, tickMs);
+}
 
-    if (stateChanged) {
-      io.to(roomId).emit('gameStateUpdate', state);
-    }
-  }
-}, 1000); // 1 tick per second
+startGameLoop();
 
 function executeSkill(state: GameState, attackerId: string, skillId: string) {
   const attacker = state.players[attackerId];
@@ -332,6 +342,57 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     
     io.to(roomId).emit('gameStart', state);
+  });
+
+  socket.on('getGameData', (callback: (data: any) => void) => {
+    callback({ MONSTERS, SKILLS, SETTINGS });
+  });
+
+  socket.on('updateGameData', (data: { MONSTERS: any, SKILLS: any, SETTINGS?: any }) => {
+    // Modify the imported objects in place
+    Object.keys(MONSTERS).forEach(k => delete MONSTERS[k]);
+    Object.assign(MONSTERS, data.MONSTERS);
+    
+    Object.keys(SKILLS).forEach(k => delete SKILLS[k]);
+    Object.assign(SKILLS, data.SKILLS);
+    
+    if (data.SETTINGS) {
+      Object.assign(SETTINGS, data.SETTINGS);
+      // Restart game loop with new tick rate if it changed
+      startGameLoop();
+    }
+    
+    try {
+      const gameDataPath = path.join(process.cwd(), 'src', 'shared', 'gameData.ts');
+      const fileContent = `import { ElementType, DiceFace, MonsterBase, SkillBase, GameSettings } from './types.js';
+
+export const DICE_COSTS: Record<DiceFace, number> = {
+  [DiceFace.ATTACK]: 5,
+  [DiceFace.DEFENSE]: 1,
+  [DiceFace.DODGE]: 1,
+  [DiceFace.EARTH]: 1,
+  [DiceFace.WATER]: 1,
+  [DiceFace.FIRE]: 1,
+  [DiceFace.WIND]: 1,
+  [DiceFace.EARTH_FIRE]: 2,
+  [DiceFace.WATER_WIND]: 2,
+  [DiceFace.EMPTY]: 0,
+};
+
+export const SETTINGS: GameSettings = ${JSON.stringify(SETTINGS, null, 2)};
+
+export const MONSTERS: Record<string, MonsterBase> = ${JSON.stringify(MONSTERS, null, 2)} as any;
+
+export const SKILLS: Record<string, SkillBase> = ${JSON.stringify(SKILLS, null, 2)} as any;
+`;
+      fs.writeFileSync(gameDataPath, fileContent, 'utf-8');
+      console.log('Successfully saved game data to gameData.ts');
+    } catch (err) {
+      console.error('Failed to save game data:', err);
+    }
+
+    // Broadcast to all clients
+    io.emit('gameDataUpdated', { MONSTERS, SKILLS, SETTINGS });
   });
 
   socket.on('getTopBosses', (callback: (bosses: TeamRecord[]) => void) => {

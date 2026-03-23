@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .bird { animation: fly 1s infinite alternate ease-in-out; transform-origin: center; }
+    .wing { animation: flap 0.2s infinite alternate ease-in-out; transform-origin: 50px 50px; }
+    @keyframes fly {
+      0% { transform: translateY(-5px); }
+      100% { transform: translateY(5px); }
+    }
+    @keyframes flap {
+      0% { transform: rotate(-20deg); }
+      100% { transform: rotate(20deg); }
+    }
+  </style>
+  <g className="bird">
+    <ellipse cx="50" cy="50" rx="20" ry="15" fill="#FF4500" />
+    <circle cx="30" cy="45" r="12" fill="#FF6347" />
+    <polygon points="18,45 5,40 18,50" fill="#FFD700" />
+    <circle cx="25" cy="40" r="2" fill="#000" />
+    <path d="M 70 50 Q 90 40 85 60" fill="none" stroke="#FF4500" stroke-width="4" />
+    <path className="wing" d="M 50 50 Q 60 20 80 30 Q 70 40 50 50" fill="#FFA500" />
+  </g>
+</svg>

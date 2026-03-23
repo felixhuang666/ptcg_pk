@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .rat { animation: dig 2s infinite alternate ease-in-out; transform-origin: center bottom; }
+    @keyframes dig {
+      0% { transform: translateY(0) scaleY(1); }
+      50% { transform: translateY(10px) scaleY(0.9); }
+      100% { transform: translateY(-5px) scaleY(1.05); }
+    }
+  </style>
+  <g className="rat">
+    <ellipse cx="50" cy="70" rx="30" ry="20" fill="#8B4513" />
+    <circle cx="30" cy="65" r="12" fill="#A0522D" />
+    <circle cx="25" cy="60" r="3" fill="#000" />
+    <path d="M 80 70 Q 95 60 90 80" fill="none" stroke="#8B4513" stroke-width="3" />
+    <polygon points="35,50 40,40 45,50" fill="#8B4513" />
+    <polygon points="25,55 20,45 30,52" fill="#8B4513" />
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .firewall { animation: burn 0.5s infinite alternate ease-in-out; transform-origin: bottom; }
+    @keyframes burn {
+      0% { transform: scaleY(1); }
+      100% { transform: scaleY(1.2); }
+    }
+  </style>
+  <g className="firewall">
+    <path d="M 20 80 Q 30 40 40 80 Q 50 30 60 80 Q 70 50 80 80 Z" fill="#FF4500" />
+    <path d="M 30 80 Q 40 50 50 80 Q 60 40 70 80 Z" fill="#FF8C00" />
+    <path d="M 40 80 Q 50 60 60 80 Z" fill="#FFD700" />
+  </g>
+</svg>

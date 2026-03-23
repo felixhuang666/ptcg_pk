@@ -5,7 +5,23 @@ PWD := $(shell pwd)
 USER := $(shell whoami)
 NPM_PATH := $(shell which npm || echo /usr/bin/npm)
 
-.PHONY: all build install uninstall start stop status restart logs clean
+.PHONY: help all build install uninstall start stop status restart logs clean
+
+help:
+	@echo "Available commands:"
+	@echo "  make help       - Show this help message"
+	@echo "  make build      - Install dependencies and build the project"
+	@echo "  make install    - Install, enable, and start the systemd service"
+	@echo "  make uninstall  - Stop and uninstall the systemd service"
+	@echo "  make start      - Start the service"
+	@echo "  make stop       - Stop the service"
+	@echo "  make restart    - Restart the service"
+	@echo "  make status     - Check the service status"
+	@echo "  make logs       - Tail the service logs"
+	@echo "  make clean      - Remove the generated service file"
+
+run:
+	npm run dev
 
 all: build
 

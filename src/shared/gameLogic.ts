@@ -1,5 +1,5 @@
 import { DiceFace, ElementType, MonsterBase, PlayerState, SkillBase } from './types.js';
-import { MONSTERS, SKILLS } from './gameData.js';
+import { MONSTERS, SKILLS, SETTINGS } from './gameData.js';
 
 export function rollDices(faces: DiceFace[][]): DiceFace[] {
   return faces.map(dice => dice[Math.floor(Math.random() * dice.length)]);
@@ -58,7 +58,23 @@ export function getAttributeBonus(attackerType: ElementType, defenderType: Eleme
 }
 
 export function calculateAccuracy(attackerSpd: number, defenderSpd: number, defenderDodgeBonus: number): number {
-  return attackerSpd / (defenderSpd * (1 + defenderDodgeBonus));
+  try {
+    const fn = new Function('attackerSpd', 'defenderSpd', 'defenderDodgeBonus', `return ${SETTINGS.accuracyFormula};`);
+    return fn(attackerSpd, defenderSpd, defenderDodgeBonus);
+  } catch (e) {
+    console.error('Error evaluating accuracy formula:', e);
+    return attackerSpd / (defenderSpd * (1 + defenderDodgeBonus));
+  }
+}
+
+export function calculateDamage(attackPower: number, attribBonus: number, defenderDef: number): number {
+  try {
+    const fn = new Function('attackPower', 'attribBonus', 'defenderDef', `return ${SETTINGS.damageFormula};`);
+    return fn(attackPower, attribBonus, defenderDef);
+  } catch (e) {
+    console.error('Error evaluating damage formula:', e);
+    return Math.floor((attackPower * attribBonus) - defenderDef);
+  }
 }
 
 export function applySkillEffect(
@@ -72,75 +88,63 @@ export function applySkillEffect(
   
   let attackPower = 0;
   
-  // Apply specific skill effects based on ID
-  switch (skillId) {
-    case 's1': // 咬
-      attackPower = attacker.monster.atk;
-      break;
-    case 's2': // 鑽地閃
-      attackPower = 0;
-      attacker.monster.def *= 1.1;
-      attacker.monster.spd *= 1.2;
-      attacker.monster.dodgeBonus += 1;
-      break;
-    case 's3': // 瘋狂撕咬
-      attackPower = 2 * attacker.monster.atk;
-      attacker.monster.def *= 0.6;
-      attacker.monster.spd = mAttacker.dex;
-      attacker.monster.dodgeBonus = 0;
-      break;
-    case 's4': // 飛爪
-      attackPower = attacker.monster.atk;
-      attacker.monster.spd *= 1.1;
-      break;
-    case 's5': // 閃躲
-      attackPower = 0;
-      attacker.monster.spd *= 1.5;
-      attacker.monster.dodgeBonus += 1;
-      break;
-    case 's6': // 雙倍奉還
-      attackPower = 2 * attacker.monster.atk;
-      attacker.monster.spd = mAttacker.dex;
-      attacker.monster.def *= 0.6;
-      attacker.monster.dodgeBonus = 0;
-      break;
-    case 's7': // 火球
-      attackPower = attacker.monster.atk;
-      break;
-    case 's8': // 火牆
-      attackPower = 0;
-      attacker.monster.def *= 1.1;
-      break;
-    case 's9': // 火柱
-      attackPower = 2 * attacker.monster.atk;
-      attacker.monster.spd = mAttacker.dex;
-      attacker.monster.def *= 0.6;
-      attacker.monster.dodgeBonus = 0;
-      break;
-    case 's10': // 龜縮
-      attackPower = 0;
-      attacker.monster.def *= 1.3;
-      attacker.monster.dodgeBonus += 1;
-      break;
-    case 's11': // 水槍
-      attackPower = attacker.monster.atk;
-      break;
-    case 's12': // 水柱
-      attackPower = 2 * attacker.monster.atk;
-      attacker.monster.dodgeBonus = 0;
-      break;
+  // Apply specific skill effects based on description
+  const skill = SKILLS[skillId];
+  if (skill && skill.description) {
+    const effects = skill.description.split(',').map(s => s.trim());
+    for (const effect of effects) {
+      const normalizedEffect = effect.replace(/\s+/g, '');
+      if (normalizedEffect === 'ATK=STR') {
+        attackPower = attacker.monster.atk;
+      } else if (normalizedEffect.startsWith('ATK=')) {
+        const match = normalizedEffect.match(/ATK=([\d.]+)\*STR/);
+        if (match) {
+          attackPower = parseFloat(match[1]) * attacker.monster.atk;
+        } else if (normalizedEffect === 'ATK=0') {
+          attackPower = 0;
+        }
+      } else if (normalizedEffect.startsWith('DEF*=')) {
+        const val = parseFloat(normalizedEffect.split('*=')[1]);
+        if (!isNaN(val)) attacker.monster.def *= val;
+      } else if (normalizedEffect.startsWith('SPD*=')) {
+        const val = parseFloat(normalizedEffect.split('*=')[1]);
+        if (!isNaN(val)) attacker.monster.spd *= val;
+      } else if (normalizedEffect === 'SPD=DEX') {
+        attacker.monster.spd = mAttacker.dex;
+      } else if (normalizedEffect.startsWith('dodge-bonus+=')) {
+        const val = parseInt(normalizedEffect.split('+=')[1]);
+        if (!isNaN(val)) attacker.monster.dodgeBonus += val;
+      } else if (normalizedEffect === 'dodge-bonus=0') {
+        attacker.monster.dodgeBonus = 0;
+      }
+    }
   }
 
-  // Cap SPD at 50
+  // Cap SPD at 50 and DEF at 100
   attacker.monster.spd = Math.min(50, attacker.monster.spd);
+  attacker.monster.def = Math.min(100, attacker.monster.def);
 
   if (attackPower > 0) {
     const accuracy = calculateAccuracy(attacker.monster.spd, defender.monster.spd, defender.monster.dodgeBonus);
+    
+    if (SETTINGS.engineeringMode) {
+      logs.push(`[工程模式] 命中率計算: 攻擊方SPD=${attacker.monster.spd.toFixed(1)}, 防禦方SPD=${defender.monster.spd.toFixed(1)}, 閃避加成=${defender.monster.dodgeBonus} => 命中率=${(accuracy * 100).toFixed(1)}%`);
+    }
+
     if (Math.random() <= accuracy) {
       const attribBonus = getAttributeBonus(mAttacker.type, mDefender.type);
-      let damage = Math.floor((attackPower * attribBonus) - defender.monster.def);
+      let damage = calculateDamage(attackPower, attribBonus, defender.monster.def);
       if (damage < 1) damage = 1; // Minimum 1 damage if hit
+      
+      if (SETTINGS.engineeringMode) {
+        logs.push(`[工程模式] 傷害計算: 攻擊力=${attackPower.toFixed(1)}, 屬性加成=${attribBonus}, 防禦力=${defender.monster.def.toFixed(1)} => 傷害=${damage}`);
+      }
+
       defender.monster.hp -= damage;
+      
+      // Defense decreases by 5% after being attacked
+      defender.monster.def *= 0.95;
+      
       logs.push(`${attacker.name} 的 ${mAttacker.name} 使用了 ${SKILLS[skillId].name}，造成了 ${damage} 點傷害！`);
       if (attribBonus > 1) {
         logs.push(`屬性剋制！傷害增加！`);

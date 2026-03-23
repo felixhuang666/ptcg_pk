@@ -3,20 +3,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Battle from './components/Battle';
 import TeamEditor from './components/TeamEditor';
 import BossSelect from './components/BossSelect';
+import Admin from './components/Admin';
 import { useAppStore } from './store/appStore';
-import { DICE_COSTS } from './shared/gameData';
+import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
 import { TeamConfig } from './shared/types';
+import { io } from 'socket.io-client';
 
 export default function App() {
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS'>('MENU');
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN'>('MENU');
   const [roomCode, setRoomCode] = useState('');
   const [showRoomInput, setShowRoomInput] = useState(false);
   const [selectedBossTeam, setSelectedBossTeam] = useState<TeamConfig | null>(null);
   const { teams, currentTeamId } = useAppStore();
+  
+  const [gameDataVersion, setGameDataVersion] = useState(0);
+
+  useEffect(() => {
+    const socket = io();
+    socket.emit('getGameData', (data: { MONSTERS: any, SKILLS: any }) => {
+      Object.keys(MONSTERS).forEach(k => delete MONSTERS[k]);
+      Object.assign(MONSTERS, data.MONSTERS);
+      Object.keys(SKILLS).forEach(k => delete SKILLS[k]);
+      Object.assign(SKILLS, data.SKILLS);
+      setGameDataVersion(v => v + 1);
+    });
+
+    socket.on('gameDataUpdated', (data: { MONSTERS: any, SKILLS: any }) => {
+      Object.keys(MONSTERS).forEach(k => delete MONSTERS[k]);
+      Object.assign(MONSTERS, data.MONSTERS);
+      Object.keys(SKILLS).forEach(k => delete SKILLS[k]);
+      Object.assign(SKILLS, data.SKILLS);
+      setGameDataVersion(v => v + 1);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
   
   const currentTeam = teams.find(t => t.id === currentTeamId);
 
@@ -73,6 +100,10 @@ export default function App() {
 
   if (view === 'EDITOR') {
     return <TeamEditor onBack={() => setView('MENU')} />;
+  }
+
+  if (view === 'ADMIN') {
+    return <Admin onBack={() => setView('MENU')} />;
   }
 
   const handleJoinPrivate = () => {
@@ -152,6 +183,13 @@ export default function App() {
             className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-xl transition-all border border-slate-600 hover:border-slate-500"
           >
             編輯隊伍
+          </button>
+
+          <button 
+            onClick={() => setView('ADMIN')}
+            className="w-full py-2 mt-4 bg-slate-800 hover:bg-slate-700 text-gray-400 rounded-xl font-bold text-sm shadow-lg transition-all border border-slate-700"
+          >
+            管理者介面
           </button>
         </div>
 

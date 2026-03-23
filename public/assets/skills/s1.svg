@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .bite { animation: chomp 0.5s infinite alternate ease-in-out; transform-origin: center; }
+    @keyframes chomp {
+      0% { transform: scaleY(1); }
+      100% { transform: scaleY(0.5); }
+    }
+  </style>
+  <g className="bite">
+    <path d="M 20 40 L 30 50 L 40 40 L 50 50 L 60 40 L 70 50 L 80 40" fill="none" stroke="#FFF" stroke-width="5" />
+    <path d="M 20 60 L 30 50 L 40 60 L 50 50 L 60 60 L 70 50 L 80 60" fill="none" stroke="#FFF" stroke-width="5" />
+  </g>
+</svg>

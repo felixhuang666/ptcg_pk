@@ -36,49 +36,43 @@
 * 施放技能需要消耗對應的 AP，且當前的骰子結果必須滿足該技能的條件。
 * 玩家可以選擇「放棄回合」：消耗 30 AP，重新擲骰。
 * 支援「自動戰鬥」模式，AI 會自動選擇可施放且 AP 消耗最高的技能。
+* **Game Tick**: AP 的增加速度可以透過管理者介面的 `Game Tick` 設定來調整 (1-100，預設 10)。數值越大，遊戲節奏越快。
 
-### 2.5 命中與閃避 (Accuracy & Evasion)
-* 攻擊命中率公式：`Attacker SPD / (Defender SPD * (1 + Defender Dodge Bonus))`
-* 命中率最高為 100%。如果隨機數大於命中率，則攻擊會被閃避。
+### 2.5 命中與傷害公式 (Accuracy & Damage Formulas)
+* 這些公式可以在管理者介面中動態設定：
+* **攻擊命中率公式** (預設): `attackerSpd / (defenderSpd * (1 + defenderDodgeBonus))`
+  * 命中率最高為 100%。如果隨機數大於命中率，則攻擊會被閃避。
+* **傷害計算公式** (預設): `Math.floor((attackPower * attribBonus) - defenderDef)`
 
-## 3. 怪獸圖鑑 (Monsters)
+### 2.6 動態技能解析 (Dynamic Skill Parsing)
+* 技能效果透過解析 `description` 欄位動態生成，支援小數點運算。
+* 支援的語法包含：
+  * `ATK=X*STR` 或 `ATK=X` (設定攻擊力)
+  * `DEF*=X` 或 `DEF=X` (修改防禦力)
+  * `SPD*=X` 或 `SPD=DEX` (修改速度)
+  * `dodge-bonus+=X` 或 `dodge-bonus=X` (修改閃避加成)
 
-1. **鑽地鼠 (Earth)**
-   * HP: 100 | STR: 25 | CON: 40 | DEX: 30
-   * 技能: 咬, 鑽地閃, 瘋狂撕咬
-2. **風狼 (Wind)**
-   * HP: 60 | STR: 20 | CON: 20 | DEX: 60
-   * 技能: 飛爪, 閃躲, 雙倍奉還
-3. **火鳥 (Fire)**
-   * HP: 50 | STR: 50 | CON: 40 | DEX: 15
-   * 技能: 火球, 火牆, 火柱
-4. **水龜 (Water)**
-   * HP: 80 | STR: 30 | CON: 30 | DEX: 30
-   * 技能: 龜縮, 水槍, 水柱
+## 3. 管理者介面 (Admin Interface)
+* 允許即時修改怪獸與技能的各項數值。
+* **全域設定**:
+  * 可修改命中率與傷害計算公式。
+  * 可調整 `Game Tick` 以控制遊戲節奏。
+  * 可切換 `工程模式 (Engineering Mode)`，啟用後會在戰鬥對話框中顯示詳細的命中與傷害計算參數。
+* **視覺設定**:
+  * 可為每隻怪獸與技能指定 SVG 圖片路徑 (`svgPath`)。
 
-## 4. 技能列表 (Skills)
-
-* **咬 (Bite)**: 消耗 20 AP。條件: 攻擊x1。傷害 = STR。
-* **鑽地閃 (Burrow)**: 消耗 50 AP。條件: 閃避x2。傷害 = 0。DEF * 1.1, SPD * 1.2, 閃避加成 + 1。
-* **瘋狂撕咬 (Frenzy Bite)**: 消耗 90 AP。條件: 攻擊x3。傷害 = 2*STR。DEF * 0.6, SPD 重置為 DEX, 閃避加成歸零。
-* **飛爪 (Flying Claw)**: 消耗 40 AP。條件: 攻擊x1, 閃避x1。傷害 = STR。SPD * 1.1。
-* **閃躲 (Dodge)**: 消耗 40 AP。條件: 閃避x1, 風x1。傷害 = 0。SPD * 1.5, 閃避加成 + 1。
-* **雙倍奉還 (Counter)**: 消耗 90 AP。條件: 攻擊x2, 閃避x1, 風x1。傷害 = 2*STR。SPD 重置為 DEX, DEF * 0.6, 閃避加成歸零。
-* **火球 (Fireball)**: 消耗 40 AP。條件: 攻擊x1, 火x1。傷害 = STR。
-* **火牆 (Firewall)**: 消耗 40 AP。條件: 防禦x1, 火x1。傷害 = 0。DEF * 1.1。
-* **火柱 (Fire Pillar)**: 消耗 90 AP。條件: 攻擊x1, 火x1, 風x1。傷害 = 2*STR。SPD 重置為 DEX, DEF * 0.6, 閃避加成歸零。
-* **龜縮 (Withdraw)**: 消耗 40 AP。條件: 防禦x2。傷害 = 0。DEF * 1.3, 閃避加成 + 1。
-* **水槍 (Water Gun)**: 消耗 40 AP。條件: 攻擊x1, 水x1。傷害 = STR。
-* **水柱 (Water Pillar)**: 消耗 90 AP。條件: 攻擊x2, 水x1。傷害 = 2*STR。閃避加成歸零。
+## 4. 視覺與場景 (Visuals & Arena)
+* 戰鬥畫面採用競技場 (Arena) 視角，怪獸圖片 (SVG) 分別位於畫面兩側。
+* 怪獸與技能支援 SVG 動畫，提供更生動的戰鬥體驗。
 
 ## 5. 遊戲模式 (Game Modes)
-
 1. **人機對戰 (PvE)**: 玩家與預設的電腦 AI 進行對戰。
 2. **線上對戰 (PvP - 隨機)**: 透過 Matchmaking 系統，隨機配對兩名正在尋找對手的玩家。
 3. **私人對戰 (PvP - 房號)**: 玩家輸入自訂的房號 (Room Code)，與輸入相同房號的玩家進行對戰。
+4. **挑戰 Boss (Boss Battle)**: 玩家可以選擇挑戰強大的 Boss 隊伍。
 
 ## 6. 網路架構 (Networking)
 * 使用 Socket.IO 進行即時雙向通訊。
-* 伺服器 (Server) 負責維護所有遊戲房間的狀態 (GameState)，並以每秒 1 次 (1 tick/sec) 的頻率更新 AP 與處理自動戰鬥邏輯。
+* 伺服器 (Server) 負責維護所有遊戲房間的狀態 (GameState)，並根據 `Game Tick` 的頻率更新 AP 與處理自動戰鬥邏輯。
 * 所有的擲骰、技能結算、傷害計算皆在伺服器端進行，確保遊戲公平性。
 * 客戶端 (Client) 負責渲染畫面並發送玩家操作指令 (`executeSkill`, `giveUp`, `toggleAuto`)。
