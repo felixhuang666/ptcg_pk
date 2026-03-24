@@ -8,19 +8,37 @@ import Battle from './components/Battle';
 import TeamEditor from './components/TeamEditor';
 import BossSelect from './components/BossSelect';
 import Admin from './components/Admin';
+import Auth from './components/Auth';
 import { useAppStore } from './store/appStore';
 import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
 import { TeamConfig } from './shared/types';
 import { io } from 'socket.io-client';
+import { supabase } from './lib/supabase';
 
 export default function App() {
   const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN'>('MENU');
   const [roomCode, setRoomCode] = useState('');
   const [showRoomInput, setShowRoomInput] = useState(false);
   const [selectedBossTeam, setSelectedBossTeam] = useState<TeamConfig | null>(null);
-  const { teams, currentTeamId } = useAppStore();
+  const { teams, currentTeamId, user, setUser } = useAppStore();
   
   const [gameDataVersion, setGameDataVersion] = useState(0);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUser]);
 
   useEffect(() => {
     const socket = io();
@@ -112,6 +130,16 @@ export default function App() {
     }
   };
 
+  const handleLogout = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+  };
+
+  if (!supabase || !user) {
+    return <Auth />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8">
       <div className="max-w-md w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700 text-center">
@@ -199,6 +227,13 @@ export default function App() {
             <div className="font-bold text-amber-500">{currentTeam.name}</div>
           </div>
         )}
+
+        <button
+          onClick={handleLogout}
+          className="w-full py-4 mt-8 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-xl transition-all border border-slate-600 hover:border-slate-500 text-red-400"
+        >
+          登出
+        </button>
       </div>
     </div>
   );

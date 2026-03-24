@@ -5,15 +5,19 @@ import { DiceFace, TeamConfig } from '../shared/types';
 interface AppState {
   teams: TeamConfig[];
   currentTeamId: string | null;
+  user: any | null;
   addTeam: (team: TeamConfig) => void;
   updateTeam: (team: TeamConfig) => void;
   deleteTeam: (id: string) => void;
   setCurrentTeamId: (id: string) => void;
+  setUser: (user: any | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
+      user: null,
+      setUser: (user) => set({ user }),
       teams: [
         {
           id: 'default-team',
