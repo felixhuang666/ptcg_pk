@@ -123,6 +123,26 @@ async def auth_callback(code: str, response: Response):
         # Redirect back to frontend
         return RedirectResponse(url="/")
 
+@app.get("/api/auth/me")
+async def get_current_user(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return {"authenticated": False}
+
+    user_data = get_user_data(session_id)
+    if not user_data or "oauth_data" not in user_data:
+        return {"authenticated": False}
+
+    return {
+        "authenticated": True,
+        "user": user_data["oauth_data"]
+    }
+
+@app.post("/api/auth/logout")
+async def logout(response: Response):
+    response.delete_cookie("session_id")
+    return {"success": True}
+
 @app.get("/")
 async def root():
     if os.path.exists("dist/index.html"):
