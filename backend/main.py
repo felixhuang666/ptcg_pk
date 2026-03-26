@@ -12,6 +12,10 @@ from .socket_app import sio, game_loop
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Load game data from Supabase
+    from backend.game.data import load_game_data_from_supabase
+    await load_game_data_from_supabase()
+
     # Startup: Create game loop task
     loop_task = asyncio.create_task(game_loop())
     yield

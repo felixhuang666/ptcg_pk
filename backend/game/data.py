@@ -165,3 +165,80 @@ SKILLS = {
         svgPath="/assets/skills/s12.svg"
     )
 }
+
+async def load_game_data_from_supabase():
+    try:
+        from .supabase_client import get_supabase_client
+        client = await get_supabase_client()
+        if not client:
+            print("Supabase client not available. Using local default game data.")
+            return
+
+        # Fetch from game_data table where id = 1
+        # Currently the id might be a string "default" or integer 1.
+        # I tested with id=1 in the exploration but some tables use string ids.
+        # If we use .eq('id', 'default') it might also work if the id is a string.
+        # Let's try to query limit 1
+        res = await client.table('game_data').select('*').limit(1).execute()
+
+        if res.data and len(res.data) > 0:
+            row = res.data[0]
+            print("Successfully loaded game data from Supabase.")
+
+            # Load MONSTERS
+            if 'monsters' in row and isinstance(row['monsters'], dict):
+                MONSTERS.clear()
+                for k, v in row['monsters'].items():
+                    # v is dict
+                    m = MonsterBase(
+                        id=v.get('id', k),
+                        name=v.get('name', ''),
+                        type=ElementType(v.get('type', ElementType.NONE.value)),
+                        hp=v.get('hp', 1),
+                        str=v.get('str', 1),
+                        con=v.get('con', 1),
+                        dex=v.get('dex', 1),
+                        skills=v.get('skills', []),
+                        svgPath=v.get('svgPath')
+                    )
+                    MONSTERS[k] = m
+
+            # Load SKILLS
+            if 'skills' in row and isinstance(row['skills'], dict):
+                SKILLS.clear()
+                for k, v in row['skills'].items():
+                    # Parse conditions (dict of str -> int)
+                    conditions = {}
+                    for ck, cv in v.get('conditions', {}).items():
+                        # The client uses '攻' etc. directly, convert to DiceFace enum if needed,
+                        # but DiceFace enum IS a string enum: DiceFace.ATTACK = '攻'
+                        # We can just construct it directly or check.
+                        try:
+                            conditions[DiceFace(ck)] = cv
+                        except ValueError:
+                            pass # Skip unknown dice faces
+
+                    s = SkillBase(
+                        id=v.get('id', k),
+                        name=v.get('name', ''),
+                        apCost=v.get('apCost', 0),
+                        conditions=conditions,
+                        description=v.get('description', ''),
+                        svgPath=v.get('svgPath')
+                    )
+                    SKILLS[k] = s
+
+            # Load SETTINGS
+            if 'settings' in row and isinstance(row['settings'], dict):
+                settings_data = row['settings']
+                SETTINGS.accuracyFormula = settings_data.get('accuracyFormula', SETTINGS.accuracyFormula)
+                SETTINGS.damageFormula = settings_data.get('damageFormula', SETTINGS.damageFormula)
+                SETTINGS.gameTick = settings_data.get('gameTick', SETTINGS.gameTick)
+                SETTINGS.engineeringMode = settings_data.get('engineeringMode', SETTINGS.engineeringMode)
+
+        else:
+            print("No game data found in Supabase. Using local defaults.")
+
+    except Exception as e:
+        print(f"Error loading game data from Supabase: {e}")
+        print("Using local default game data.")
