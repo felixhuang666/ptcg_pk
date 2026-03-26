@@ -117,11 +117,12 @@ async def auth_callback(code: str, response: Response):
 
         save_user_data(user_id, existing_data)
 
-        # Set a simple cookie session (In production use proper session management)
-        response.set_cookie(key="session_id", value=user_id, httponly=True)
-
         # Redirect back to frontend
-        return RedirectResponse(url="/")
+        redirect_res = RedirectResponse(url="/")
+
+        # Set a simple cookie session (In production use proper session management)
+        redirect_res.set_cookie(key="session_id", value=user_id, httponly=True, samesite="lax")
+        return redirect_res
 
 @app.get("/api/auth/me")
 async def get_current_user(request: Request):
@@ -140,7 +141,7 @@ async def get_current_user(request: Request):
 
 @app.post("/api/auth/logout")
 async def logout(response: Response):
-    response.delete_cookie("session_id")
+    response.delete_cookie("session_id", samesite="lax")
     return {"success": True}
 
 @app.get("/")
