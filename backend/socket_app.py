@@ -173,9 +173,9 @@ async def start_match(p1_id: str, p2_id: str, team1: TeamConfig, team2: TeamConf
     )
 
     rooms[room_id] = state
-    sio.enter_room(p1_id, room_id)
+    await sio.enter_room(p1_id, room_id)
     if not p2_id.startswith('ai_') and not p2_id.startswith('boss_'):
-        sio.enter_room(p2_id, room_id)
+        await sio.enter_room(p2_id, room_id)
 
     await sio.emit('gameStart', state.to_dict(), room=room_id)
 
