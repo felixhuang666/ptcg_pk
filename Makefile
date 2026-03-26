@@ -43,6 +43,11 @@ build:
 	$(PWD)/venv/bin/python -m build
 	@echo "Build complete."
 
+build-frontend:
+	@echo "Building frontend..."
+	npm run build
+	@echo "Build complete."
+
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf dist build *.egg-info __pycache__ users venv tmp
@@ -90,12 +95,15 @@ bg-start: stop
 	nohup $(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port $$APP_BACKEND_PORT > uvicorn.log 2>&1 &
 	@echo "Uvicorn started. Logs in uvicorn.log"
 
+run: stop
+	$(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5000 --reload
+
 stop:
 	-lsof -t -i :5000 | xargs -i kill {} 2>/dev/null || true
-	-lsof -t -i :3000 | xargs -i kill {} 2>/dev/null || true
 	-if [ -f "$(SYSTEMD_DIR)/$(SERVICE_FILE)" ]; then \
 		sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true; \
 	fi
+	sleep 1
 
 status:
 	sudo systemctl status $(SERVICE_NAME)
@@ -105,3 +113,12 @@ restart:
 
 logs:
 	sudo journalctl -u $(SERVICE_NAME) -f
+
+proxy:
+	- ps -eo pid,cmd | grep ":5000" | grep -v grep | awk '{print $$1}' && echo "Kill old ssh tunnel..."
+	- ps -eo pid,cmd | grep ":5000" | grep -v grep | awk '{print $$1}' | xargs -i kill {}
+	sleep 1
+	@echo "Launching ssh tunnel..."
+	ssh -f -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -R 5000:127.0.0.1:5000 pi@felix9977.mooo.com
+	sleep 1
+	ps -eo pid,cmd | grep ":5000" | grep -v grep

@@ -2,6 +2,32 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "build-frontend proxy run",
+            "type": "shell",
+            "command": "make build-frontend proxy run",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "group": "RUN",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "run",
+            "type": "shell",
+            "command": "make run",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "group": "RUN",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "start_dev",
             "type": "shell",
             "command": "make start_dev",

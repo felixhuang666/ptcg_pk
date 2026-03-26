@@ -9,7 +9,7 @@ import { MONSTERS, SKILLS, SETTINGS } from './src/shared/gameData.js';
 import { checkSkillConditions, applySkillEffect } from './src/shared/gameLogic.js';
 
 const app = express();
-const PORT = 3000;
+const PORT = 5000;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: '*' }

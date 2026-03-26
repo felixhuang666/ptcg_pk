@@ -4,6 +4,14 @@ dist/
 coverage/
 .DS_Store
 *.log
-.env*
-!.env.example
+.env
 venv/
+backend/__pycache__/
+backend/game/__pycache__/
+backend/game/utils/__pycache__/
+backend/game/models/__pycache__/
+backend/game/services/__pycache__/
+backend/game/api/__pycache__/
+__pycache__
+backend/*.pyc
+backend/*.pyo
