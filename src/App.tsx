@@ -23,7 +23,7 @@ export default function App() {
   const [gameDataVersion, setGameDataVersion] = useState(0);
 
   useEffect(() => {
-    const socket = io();
+    const socket = io(window.location.origin);
     socket.emit('getGameData', (data: { MONSTERS: any, SKILLS: any }) => {
       Object.keys(MONSTERS).forEach(k => delete MONSTERS[k]);
       Object.assign(MONSTERS, data.MONSTERS);

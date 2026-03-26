@@ -10,7 +10,7 @@ export default function Admin({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const socket = io();
+    const socket = io(window.location.origin);
     socket.emit('getGameData', (data: { MONSTERS: any, SKILLS: any, SETTINGS: any }) => {
       setMonsters(data.MONSTERS);
       setSkills(data.SKILLS);
@@ -24,7 +24,7 @@ export default function Admin({ onBack }: { onBack: () => void }) {
   }, []);
 
   const handleSave = () => {
-    const socket = io();
+    const socket = io(window.location.origin);
     socket.emit('updateGameData', { MONSTERS: monsters, SKILLS: skills, SETTINGS: settings });
     setTimeout(() => {
       socket.disconnect();

@@ -23,7 +23,7 @@ export default function Battle({ team, mode, roomCode, bossTeam, onExit }: Battl
   const prevHpRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
-    const newSocket = io();
+    const newSocket = io(window.location.origin);
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
