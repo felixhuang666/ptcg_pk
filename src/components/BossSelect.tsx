@@ -17,7 +17,7 @@ export default function BossSelect({ onBack, onStartBattle }: { onBack: () => vo
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const socket = io();
+    const socket = io(window.location.origin);
     socket.emit('getTopBosses', (data: TeamRecord[]) => {
       setBosses(data);
       if (data.length > 0) setSelectedBoss(data[0]);
