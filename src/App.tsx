@@ -14,6 +14,9 @@ import { TeamConfig } from './shared/types';
 import { io } from 'socket.io-client';
 
 export default function App() {
+  const [authChecked, setAuthChecked] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
   const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN'>('MENU');
   const [roomCode, setRoomCode] = useState('');
   const [showRoomInput, setShowRoomInput] = useState(false);
@@ -23,6 +26,22 @@ export default function App() {
   const [gameDataVersion, setGameDataVersion] = useState(0);
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setUser(data.user);
+        }
+        setAuthChecked(true);
+      })
+      .catch(err => {
+        console.error('Error checking auth', err);
+        setAuthChecked(true);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
     const socket = io(window.location.origin);
     socket.emit('getGameData', (data: { MONSTERS: any, SKILLS: any }) => {
       Object.keys(MONSTERS).forEach(k => delete MONSTERS[k]);
@@ -43,7 +62,40 @@ export default function App() {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [user]);
+
+  const handleLogout = () => {
+    fetch('/api/auth/logout', { method: 'POST' }).then(() => {
+      setUser(null);
+    });
+  };
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+        <div className="text-2xl animate-pulse">載入中...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8">
+        <div className="max-w-md w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700 text-center">
+          <h1 className="text-5xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-600 tracking-tight">
+            怪獸對戰
+          </h1>
+          <p className="text-slate-400 mb-12 font-medium tracking-wide">請先登入以繼續遊玩</p>
+          <a
+            href="/auth/login"
+            className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl font-bold text-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Google 登入
+          </a>
+        </div>
+      </div>
+    );
+  }
   
   const currentTeam = teams.find(t => t.id === currentTeamId);
 
@@ -113,8 +165,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8">
-      <div className="max-w-md w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700 text-center">
+    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-4 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
+        <img src={user.picture} alt="Avatar" className="w-8 h-8 rounded-full" />
+        <span className="text-sm font-medium">{user.name}</span>
+        <button onClick={handleLogout} className="text-sm text-red-400 hover:text-red-300 font-bold ml-2">登出</button>
+      </div>
+
+      <div className="max-w-md w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700 text-center mt-12">
         <h1 className="text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-600 tracking-tight">
           怪獸對戰
         </h1>
