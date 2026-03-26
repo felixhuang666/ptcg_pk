@@ -16,6 +16,7 @@ pydantic==2.12.5
 pydantic_core==2.41.5
 python-dotenv==1.2.2
 python-engineio==4.13.1
+supabase==2.28.3
 python-socketio==5.16.1
 simple-websocket==1.1.0
 starlette==1.0.0

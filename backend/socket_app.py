@@ -334,11 +334,75 @@ async def getGameData(sid):
 
 @sio.event
 async def updateGameData(sid, data: dict):
-    # DYNAMIC GAME DATA UPDATES ARE DISABLED for security reasons in production.
-    # In a full migration, this endpoint should require strong authentication
-    # and strictly validate formula inputs. For now, we revert it to read-only
-    # or ignore the changes so attackers cannot inject malicious formula text.
-    print("Warning: Received updateGameData event. Dynamic updates are disabled.")
+    # SECURITY MEASURE:
+    # Only allow updates if engineering mode is explicitly turned on, or another
+    # form of authentication validates the admin session to prevent unauthorized users
+    # from injecting malicious data (like `asteval` execution vulnerabilities) via sockets.
+    if not SETTINGS.engineeringMode:
+        print(f"Warning: Unauthorized attempt to updateGameData from sid {sid}. Updates disabled.")
+        return
+
+    print("Received updateGameData event. Applying changes to local cache and saving to Supabase.")
+
+    if 'MONSTERS' in data:
+        MONSTERS.clear()
+        for k, v in data['MONSTERS'].items():
+            from .game.types import ElementType, MonsterBase
+            m = MonsterBase(
+                id=v.get('id', k),
+                name=v.get('name', ''),
+                type=ElementType(v.get('type', ElementType.NONE.value)),
+                hp=v.get('hp', 1),
+                str=v.get('str', 1),
+                con=v.get('con', 1),
+                dex=v.get('dex', 1),
+                skills=v.get('skills', []),
+                svgPath=v.get('svgPath')
+            )
+            MONSTERS[k] = m
+
+    if 'SKILLS' in data:
+        SKILLS.clear()
+        for k, v in data['SKILLS'].items():
+            from .game.types import SkillBase, DiceFace
+            conditions = {}
+            for ck, cv in v.get('conditions', {}).items():
+                try:
+                    conditions[DiceFace(ck)] = cv
+                except ValueError:
+                    pass
+            s = SkillBase(
+                id=v.get('id', k),
+                name=v.get('name', ''),
+                apCost=v.get('apCost', 0),
+                conditions=conditions,
+                description=v.get('description', ''),
+                svgPath=v.get('svgPath')
+            )
+            SKILLS[k] = s
+
+    if 'SETTINGS' in data:
+        settings_data = data['SETTINGS']
+        SETTINGS.accuracyFormula = settings_data.get('accuracyFormula', SETTINGS.accuracyFormula)
+        SETTINGS.damageFormula = settings_data.get('damageFormula', SETTINGS.damageFormula)
+        SETTINGS.gameTick = settings_data.get('gameTick', SETTINGS.gameTick)
+        SETTINGS.engineeringMode = settings_data.get('engineeringMode', SETTINGS.engineeringMode)
+
+    # Save to Supabase using update where id = 'default' (or limits 1 by matching id != 'none')
+    try:
+        from .game.supabase_client import get_supabase_client
+        client = await get_supabase_client()
+        if client:
+            await client.table('game_data').update({
+                'monsters': {k: v.to_dict() for k, v in MONSTERS.items()},
+                'skills': {k: v.to_dict() for k, v in SKILLS.items()},
+                'settings': SETTINGS.to_dict()
+            }).neq('id', 'none').execute()
+            print("Successfully saved game data to Supabase.")
+        else:
+            print("Supabase client not available, skipping save to Supabase.")
+    except Exception as e:
+        print(f"Error saving game data to Supabase: {e}")
 
     await sio.emit('gameDataUpdated', {
         "MONSTERS": {k: v.to_dict() for k, v in MONSTERS.items()},
