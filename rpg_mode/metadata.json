@@ -1,0 +1,5 @@
+{
+  "name": "Phaser RPG with Map Editor",
+  "description": "A multiplayer RPG game with a GM map editor, built with Phaser, Express, and Supabase.",
+  "requestFramePermissions": []
+}

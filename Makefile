@@ -114,7 +114,7 @@ restart:
 logs:
 	sudo journalctl -u $(SERVICE_NAME) -f
 
-proxy:
+proxy-start:
 	- ps -eo pid,cmd | grep ":5000" | grep -v grep | awk '{print $$1}' && echo "Kill old ssh tunnel..."
 	- ps -eo pid,cmd | grep ":5000" | grep -v grep | awk '{print $$1}' | xargs -i kill {}
 	sleep 1
@@ -122,3 +122,12 @@ proxy:
 	ssh -f -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -R 5000:127.0.0.1:5000 pi@felix9977.mooo.com
 	sleep 1
 	ps -eo pid,cmd | grep ":5000" | grep -v grep
+
+proxy: proxy-start
+
+proxy-stop:
+	- ps -eo pid,cmd | grep ":5000" | grep -v grep | awk '{print $$1}' && echo "Kill old ssh tunnel..."
+	- ps -eo pid,cmd | grep ":5000" | grep -v grep | awk '{print $$1}' | xargs -i kill {}
+
+proxy-status:
+	- ps -eo pid,cmd | grep ":5000" | grep -v grep
