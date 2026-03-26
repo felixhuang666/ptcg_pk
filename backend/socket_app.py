@@ -19,6 +19,9 @@ waiting_players: List[str] = []
 private_rooms: Dict[str, str] = {}  # roomCode -> sid
 socket_teams: Dict[str, TeamConfig] = {}
 
+# RPG Mode players
+rpg_players: Dict[str, dict] = {}
+
 class TeamRecord:
     def __init__(self, team: TeamConfig, wins: int, losses: int, winRate: float, playerName: str):
         self.team = team
@@ -263,6 +266,10 @@ async def disconnect(sid):
         if p_sid == sid:
             del private_rooms[room_code]
 
+    if sid in rpg_players:
+        del rpg_players[sid]
+        await sio.emit("player_left", sid)
+
     for room_id, state in rooms.items():
         if sid in state.players and state.status == 'PLAYING':
             state.players[sid].connected = False
@@ -278,6 +285,22 @@ async def disconnect(sid):
                 update_team_record(loser.team, False, loser.name)
 
             await sio.emit('gameStateUpdate', state.to_dict(), room=room_id)
+
+@sio.event
+async def rpg_connect(sid):
+    print('Player joined RPG mode:', sid)
+    rpg_players[sid] = {'x': 100, 'y': 100, 'id': sid, 'frame': 1, 'isRpg': True}
+    await sio.emit("current_players", rpg_players, to=sid)
+    await sio.emit("player_joined", rpg_players[sid], skip_sid=sid)
+
+@sio.event
+async def player_moved(sid, movement_data: dict):
+    if sid in rpg_players:
+        rpg_players[sid]['x'] = movement_data.get('x', rpg_players[sid]['x'])
+        rpg_players[sid]['y'] = movement_data.get('y', rpg_players[sid]['y'])
+        rpg_players[sid]['anim'] = movement_data.get('anim')
+        rpg_players[sid]['frame'] = movement_data.get('frame')
+        await sio.emit("player_moved", rpg_players[sid], skip_sid=sid)
 
 @sio.event
 async def joinMatchmaking(sid, team_data: dict):

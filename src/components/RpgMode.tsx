@@ -1,14 +1,13 @@
-import { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
+import { Map, Edit3, Settings, ArrowLeft } from 'lucide-react';
 
-interface PhaserGameProps {
-  key?: string | number;
-  mode: 'play' | 'edit';
-  onMapSaved?: () => void;
+interface RpgModeProps {
+  onBack: () => void;
 }
 
-export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
+function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: () => void }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -62,41 +61,32 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
       }
 
       preload() {
-        // We will just use colored rectangles for tiles to keep it simple
-        // Load the character image from the public folder
-        // Add a timestamp to prevent browser caching issues when replacing the image
         this.load.image('player_img', `/character.png?t=${Date.now()}`);
         this.load.image('player_atk_img', `/character_atk.png?t=${Date.now()}`);
       }
 
       async create() {
-        // Generate a simple tileset texture programmatically
         const graphics = this.make.graphics({ x: 0, y: 0, add: false });
         
-        // Grass (Tile index 1)
         graphics.fillStyle(0x228b22);
         graphics.fillRect(0, 0, 32, 32);
         graphics.lineStyle(1, 0x000000, 0.2);
         graphics.strokeRect(0, 0, 32, 32);
         
-        // Water (Tile index 2)
         graphics.fillStyle(0x1e90ff);
         graphics.fillRect(32, 0, 32, 32);
         graphics.strokeRect(32, 0, 32, 32);
         
-        // Mountain (Tile index 3)
         graphics.fillStyle(0x808080);
         graphics.fillRect(64, 0, 32, 32);
         graphics.strokeRect(64, 0, 32, 32);
         
         graphics.generateTexture('tileset', 96, 32);
 
-        // Dynamically create spritesheet from loaded image to handle any resolution
         const processImage = (imgKey: string, spriteKey: string) => {
           if (this.textures.exists(imgKey)) {
             const img = this.textures.get(imgKey).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
             if (img && img.width > 0) {
-              // Create a canvas to process the image and remove background
               const canvas = document.createElement('canvas');
               canvas.width = img.width;
               canvas.height = img.height;
@@ -107,18 +97,15 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imageData.data;
                 
-                // Use top-left pixel as the background color key
                 const bgR = data[0];
                 const bgG = data[1];
                 const bgB = data[2];
                 const bgA = data[3];
                 
-                const tolerance = 30; // Tolerance for JPEG/compression artifacts
+                const tolerance = 30;
                 
-                // Only process if the background isn't already fully transparent
                 if (bgA > 10) {
                   for (let i = 0; i < data.length; i += 4) {
-                    // If pixel matches background color within tolerance, make it transparent
                     if (Math.abs(data[i] - bgR) <= tolerance && 
                         Math.abs(data[i+1] - bgG) <= tolerance && 
                         Math.abs(data[i+2] - bgB) <= tolerance) {
@@ -149,7 +136,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
         processImage('player_img', 'player');
         processImage('player_atk_img', 'player_atk');
 
-        // Create animations (Row 1: Down, Row 2: Left, Row 3: Up, Row 4: Right)
         this.anims.create({ key: 'walk-down', frames: this.anims.generateFrameNumbers('player', { start: 0, end: 2 }), frameRate: 8, repeat: -1 });
         this.anims.create({ key: 'walk-left', frames: this.anims.generateFrameNumbers('player', { start: 3, end: 5 }), frameRate: 8, repeat: -1 });
         this.anims.create({ key: 'walk-up', frames: this.anims.generateFrameNumbers('player', { start: 6, end: 8 }), frameRate: 8, repeat: -1 });
@@ -162,23 +148,19 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
 
         this.cursors = this.input.keyboard!.createCursorKeys();
 
-        // Fetch map data
         try {
           const res = await fetch('/api/map');
           if (!res.ok) throw new Error('Failed to fetch map');
           this.mapData = await res.json();
         } catch (err) {
           console.error('Failed to load map', err);
-          // Fallback map
           this.mapData = { width: 200, height: 200, tiles: Array(200 * 200).fill(0) };
         }
 
         if (isDestroyed || !this.sys || !this.sys.game) return;
 
-        // Disable context menu for right click panning
         this.input.mouse!.disableContextMenu();
 
-        // Zoom controls
         this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any, deltaX: number, deltaY: number) => {
           if (pointer.y >= 480) return;
           let newZoom = this.cameras.main.zoom - deltaY * 0.001;
@@ -186,7 +168,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           this.cameras.main.setZoom(newZoom);
         });
 
-        // Info Text (Top Right)
         this.infoText = this.add.text(630, 10, '', {
           fontSize: '14px',
           color: '#ffffff',
@@ -200,13 +181,10 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           this.setupEditorUI();
           
           this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            // Convert screen coordinates to world coordinates for UI check
             const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
             
-            // UI area is at the bottom of the screen (fixed to camera)
             if (pointer.y >= 480) return; 
             
-            // Middle mouse or right click to pan
             if (pointer.middleButtonDown() || pointer.rightButtonDown()) {
               this.isPanning = true;
               this.panStart.set(pointer.x, pointer.y);
@@ -214,7 +192,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
               return;
             }
 
-            // Save state for undo before drawing
             this.undoStack.push([...this.mapData.tiles]);
             this.redoStack = [];
             
@@ -240,17 +217,14 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           });
 
         } else {
-          // Player setup
           this.player = this.physics.add.sprite(100, 100, 'player', 1);
           
-          // Scale down if the image is high-res (target height ~64px)
           if (this.textures.exists('player_img')) {
             const img = this.textures.get('player_img').getSourceImage() as HTMLImageElement | HTMLCanvasElement;
             if (img && img.height > 0) {
                const scale = 64 / (img.height / 4);
                this.player.setScale(scale);
                
-               // Adjust physics body to be smaller than the sprite (bottom half)
                const bodyWidth = (img.width / 3) * 0.4;
                const bodyHeight = (img.height / 4) * 0.3;
                this.player.body!.setSize(bodyWidth, bodyHeight);
@@ -263,13 +237,12 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           
           this.renderMap();
           
-          // Socket events
           socket.on('current_players', (players: any) => {
             if (isDestroyed || !this.sys || !this.sys.game) return;
             Object.keys(players).forEach(id => {
-              if (id !== socket.id) {
+              if (id !== socket.id && players[id].isRpg) {
                 this.addOtherPlayer(id, players[id].x, players[id].y, players[id].anim, players[id].frame);
-              } else {
+              } else if (id === socket.id && players[id].isRpg) {
                 this.player!.setPosition(players[id].x, players[id].y);
               }
             });
@@ -277,7 +250,9 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
 
           socket.on('player_joined', (player: any) => {
             if (isDestroyed || !this.sys || !this.sys.game) return;
-            this.addOtherPlayer(player.id, player.x, player.y, player.anim, player.frame);
+            if (player.isRpg) {
+                this.addOtherPlayer(player.id, player.x, player.y, player.anim, player.frame);
+            }
           });
 
           socket.on('player_moved', (player: any) => {
@@ -302,14 +277,14 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
             }
           });
 
-          // Virtual Joystick Setup
+          // Connect as RPG player
+          socket.emit('rpg_connect');
+
           const joyX = 80;
           const joyY = 400;
           
-          // Base
           this.joystickBase = this.add.circle(joyX, joyY, 60, 0x000000, 0.3).setScrollFactor(0).setDepth(1000).setInteractive();
           
-          // D-pad cross graphics
           const graphics = this.add.graphics().setScrollFactor(0).setDepth(1000);
           graphics.lineStyle(6, 0xffffff, 0.2);
           graphics.beginPath();
@@ -319,13 +294,12 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           graphics.lineTo(joyX, joyY + 40);
           graphics.strokePath();
 
-          // Thumb
           this.joystickThumb = this.add.circle(joyX, joyY, 30, 0xffffff, 0.6).setScrollFactor(0).setDepth(1001);
 
           this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             if (this.isEditor) return;
             const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, this.joystickBase!.x, this.joystickBase!.y);
-            if (dist <= 120) { // Allow slightly larger hit area
+            if (dist <= 120) {
               this.joystickActive = true;
               this.updateJoystick(pointer);
             }
@@ -347,7 +321,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           this.input.on('pointerup', resetJoystick);
           this.input.on('pointerout', resetJoystick);
 
-          // Mode Toggle Button
           this.modeButton = this.add.text(500, 20, 'Mode: Walk', {
             color: '#ffffff',
             backgroundColor: '#0000aa',
@@ -368,7 +341,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
             }
           });
 
-          // Attack Button (hidden by default)
           this.attackButton = this.add.text(520, 380, 'ATTACK', {
             color: '#ffffff',
             backgroundColor: '#aa0000',
@@ -398,7 +370,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
         const animKey = `atk-${this.currentDirection}`;
         this.player.anims.play(animKey, true);
         
-        // Send attack event to other players
         socketRef.current?.emit('player_moved', {
           x: this.player.x,
           y: this.player.y,
@@ -408,7 +379,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
 
         this.player.once('animationcomplete', () => {
           this.isAttacking = false;
-          // Return to idle frame
           if (this.currentDirection === 'left') this.player!.setFrame(4);
           else if (this.currentDirection === 'right') this.player!.setFrame(10);
           else if (this.currentDirection === 'up') this.player!.setFrame(7);
@@ -433,7 +403,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
         this.joystickThumb.x = this.joystickBase.x + Math.cos(angle) * dist;
         this.joystickThumb.y = this.joystickBase.y + Math.sin(angle) * dist;
 
-        // Normalize vector from -1 to 1
         this.joystickVector.x = (this.joystickThumb.x - this.joystickBase.x) / maxDist;
         this.joystickVector.y = (this.joystickThumb.y - this.joystickBase.y) / maxDist;
       }
@@ -448,7 +417,7 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           }
         }
         
-        other.setTint(0xffdddd); // Slight red tint for other players to distinguish
+        other.setTint(0xffdddd);
         other.setDepth(10);
         if (anim) other.anims.play(anim, true);
         this.otherPlayers[id] = other;
@@ -457,7 +426,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
       renderMap() {
         if (!this.mapData) return;
 
-        // Convert 1D array to 2D array for Tilemap, adding 1 to indices (0=empty in Phaser tilemaps)
         const data2D: number[][] = [];
         for (let y = 0; y < this.mapData.height; y++) {
           const row: number[] = [];
@@ -479,14 +447,12 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
         this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
         this.layer.setDepth(0);
 
-        // Set collision for Water (index 1+1=2) and Mountain (index 2+1=3)
         this.layer.setCollision([2, 3]);
 
         if (this.player) {
           this.physics.add.collider(this.player, this.layer);
         }
 
-        // Set world and camera bounds
         this.physics.world.setBounds(0, 0, this.mapData.width * 32, this.mapData.height * 32);
         this.cameras.main.setBounds(0, 0, this.mapData.width * 32, this.mapData.height * 32);
 
@@ -496,7 +462,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
       }
 
       setupEditorUI() {
-        // UI Background
         this.add.rectangle(320, 520, 640, 80, 0x333333).setScrollFactor(0).setDepth(10);
         
         this.tileSelector = this.add.text(20, 510, 'Selected: Water (Press 1:Grass, 2:Water, 3:Mountain)', { color: '#ffffff', fontSize: '14px' }).setScrollFactor(0).setDepth(11);
@@ -507,7 +472,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           padding: { x: 10, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
 
-        // Undo Button
         const undoBtn = this.add.text(350, 505, 'UNDO', {
           color: '#ffffff', backgroundColor: '#555555', padding: { x: 8, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
@@ -520,7 +484,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           }
         });
 
-        // Redo Button
         const redoBtn = this.add.text(420, 505, 'REDO', {
           color: '#ffffff', backgroundColor: '#555555', padding: { x: 8, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
@@ -561,7 +524,7 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
       }
 
       handlePointerDown(pointer: Phaser.Input.Pointer) {
-        if (!this.mapData || pointer.y >= 480) return; // Don't draw over UI
+        if (!this.mapData || pointer.y >= 480) return;
 
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
         const tileSize = 32;
@@ -572,7 +535,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           const index = y * this.mapData.width + x;
           if (this.mapData.tiles[index] !== this.currentTileType) {
             this.mapData.tiles[index] = this.currentTileType;
-            // Update tilemap directly for performance instead of full re-render
             if (this.layer) {
               this.layer.putTileAt(this.currentTileType + 1, x, y);
             }
@@ -591,7 +553,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
         }
 
         if (this.isEditor) {
-          // Camera panning with keyboard
           const camSpeed = 10 / this.cameras.main.zoom;
           if (this.cursors?.left.isDown) this.cameras.main.scrollX -= camSpeed;
           else if (this.cursors?.right.isDown) this.cameras.main.scrollX += camSpeed;
@@ -603,17 +564,13 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
 
         if (!this.player || !this.cursors) return;
 
-        // Continuous attack check
         if (!this.isAttacking && this.actionMode === 'attack') {
           if (this.cursors.space.isDown || this.attackButtonDown) {
             this.triggerAttack();
           }
         }
 
-        if (this.isAttacking) {
-          // Don't allow movement while attacking
-          return;
-        }
+        if (this.isAttacking) return;
 
         const speed = 150;
         const body = this.player.body as Phaser.Physics.Arcade.Body;
@@ -660,7 +617,7 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
           if (this.currentDirection === 'left') this.player.setFrame(4);
           else if (this.currentDirection === 'right') this.player.setFrame(10);
           else if (this.currentDirection === 'up') this.player.setFrame(7);
-          else this.player.setFrame(1); // down idle
+          else this.player.setFrame(1);
         }
 
         if (moved || justStopped) {
@@ -700,8 +657,6 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
     };
 
     phaserGameRef.current = new Phaser.Game(config);
-    
-    // Pass mode to scene
     phaserGameRef.current.scene.start('MainScene', { mode });
 
     return () => {
@@ -714,4 +669,82 @@ export default function PhaserGame({ mode, onMapSaved }: PhaserGameProps) {
   }, [mode]);
 
   return <div ref={gameRef} className="w-full h-full flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl" />;
+}
+
+export default function RpgMode({ onBack }: RpgModeProps) {
+  const [mode, setMode] = useState<'play' | 'edit'>('play');
+  const [showSettings, setShowSettings] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans w-full absolute inset-0 z-50">
+      <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center shadow-md">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="p-2 bg-slate-700 text-slate-300 hover:text-white rounded-lg hover:bg-slate-600 transition-colors flex items-center gap-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium">返回</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <Map className="w-6 h-6 text-emerald-500" />
+            <h1 className="text-xl font-bold tracking-tight text-white">RPG 模式</h1>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
+
+      <main className="flex-1 flex flex-col items-center justify-center p-4 relative w-full bg-slate-900">
+        {showSettings && (
+          <div className="absolute top-4 right-4 bg-slate-800 border border-slate-700 p-6 rounded-xl shadow-2xl z-[100] max-w-md w-full">
+            <h2 className="text-lg font-semibold mb-4 text-white">系統設定</h2>
+            <p className="text-sm text-slate-400 mb-4">
+              RPG 模式的資料會透過 API 進行同步。
+            </p>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="mt-6 w-full bg-slate-700 text-white font-medium py-2 rounded hover:bg-slate-600 transition-colors"
+            >
+              關閉
+            </button>
+          </div>
+        )}
+
+        <div className="w-[90vw] h-[80vh] max-w-6xl max-h-[800px] bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative">
+          <PhaserGame key={mode} mode={mode} />
+        </div>
+
+        <div className="mt-4 text-center text-slate-400 text-sm">
+          {mode === 'play' ? (
+            <p>使用 <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">方向鍵</kbd> 移動。點擊 <b>Mode: Walk</b> 切換為攻擊模式，長按 <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">空白鍵</kbd> 或 ATTACK 按鈕連續攻擊。</p>
+          ) : (
+            <p>點擊塗抹地塊。使用 <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">1</kbd> <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">2</kbd> <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">3</kbd> 切換地形。右鍵或方向鍵拖曳視野，滾輪縮放。</p>
+          )}
+        </div>
+
+        <div className="fixed bottom-6 right-6 z-50 flex bg-slate-800 rounded-lg p-1 shadow-xl border border-slate-700">
+          <button
+            onClick={() => setMode('play')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'play' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            遊玩模式
+          </button>
+          <button
+            onClick={() => setMode('edit')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            <Edit3 className="w-4 h-4" /> 地圖編輯
+          </button>
+        </div>
+      </main>
+    </div>
+  );
 }
