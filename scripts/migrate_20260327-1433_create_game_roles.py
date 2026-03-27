@@ -1,8 +1,12 @@
 import os
 import asyncio
 from supabase import create_async_client
+from dotenv import load_dotenv
 
 async def migrate():
+    # Ensure environment variables are loaded from .env
+    load_dotenv()
+
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
 
