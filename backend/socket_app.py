@@ -21,6 +21,9 @@ socket_teams: Dict[str, TeamConfig] = {}
 
 # RPG Mode players
 rpg_players: Dict[str, dict] = {}
+rpg_npcs: Dict[str, dict] = {}
+
+# Load NPCs cache from db (this could be done async in lifespan too, but simple dict is fine)
 
 class TeamRecord:
     def __init__(self, team: TeamConfig, wins: int, losses: int, winRate: float, playerName: str):
@@ -287,10 +290,30 @@ async def disconnect(sid):
             await sio.emit('gameStateUpdate', state.to_dict(), room=room_id)
 
 @sio.event
-async def rpg_connect(sid):
-    print('Player joined RPG mode:', sid)
-    rpg_players[sid] = {'x': 100, 'y': 100, 'id': sid, 'frame': 1, 'isRpg': True}
+async def rpg_connect(sid, user_info: dict = None):
+    print('Player joined RPG mode:', sid, user_info)
+    name = "Player"
+    role_walk_sprite = "character.png"
+    role_atk_sprite = "character_atk.png"
+
+    if user_info:
+        name = user_info.get('name', 'Player')
+        role_walk_sprite = user_info.get('roleWalkSprite', 'character.png')
+        role_atk_sprite = user_info.get('roleAtkSprite', 'character_atk.png')
+
+    rpg_players[sid] = {
+        'x': 100,
+        'y': 100,
+        'id': sid,
+        'frame': 1,
+        'isRpg': True,
+        'type': 'player',
+        'name': name,
+        'role_walk_sprite': role_walk_sprite,
+        'role_atk_sprite': role_atk_sprite
+    }
     await sio.emit("current_players", rpg_players, to=sid)
+    await sio.emit("current_npcs", rpg_npcs, to=sid)
     await sio.emit("player_joined", rpg_players[sid], skip_sid=sid)
 
 @sio.event
@@ -301,6 +324,13 @@ async def player_moved(sid, movement_data: dict):
         rpg_players[sid]['anim'] = movement_data.get('anim')
         rpg_players[sid]['frame'] = movement_data.get('frame')
         await sio.emit("player_moved", rpg_players[sid], skip_sid=sid)
+
+@sio.event
+async def chat_message(sid, data: dict):
+    if sid in rpg_players:
+        name = rpg_players[sid].get('name', 'Player')
+        message = data.get('message', '')
+        await sio.emit("chat_message", {'id': sid, 'name': name, 'message': message})
 
 @sio.event
 async def joinMatchmaking(sid, team_data: dict):
