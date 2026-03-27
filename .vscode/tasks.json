@@ -39,6 +39,19 @@
                 "clear": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "stop",
+            "type": "shell",
+            "command": "make proxy-stop stop",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "group": "AAA",
+                "clear": true
+            },
+            "problemMatcher": []
         }
     ]
 }
