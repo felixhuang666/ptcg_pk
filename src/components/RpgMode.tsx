@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -1043,48 +1043,42 @@ export default function RpgMode({ onBack }: RpgModeProps) {
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="p-2 bg-slate-700 text-slate-300 hover:text-white rounded-lg hover:bg-slate-600 transition-colors flex items-center gap-2"
+            className="p-2 bg-slate-700 text-slate-300 hover:text-white rounded-lg hover:bg-slate-600 transition-colors flex items-center justify-center group relative"
+            title="返回"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">返回</span>
+            <span className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">返回</span>
           </button>
-          <div className="flex items-center gap-2">
-            <Map className="w-6 h-6 text-emerald-500" />
-            <h1 className="text-xl font-bold tracking-tight text-white">RPG 模式</h1>
-          </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex bg-slate-700 rounded-lg p-1 mr-2">
-            <button
-              onClick={() => setMode('play')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'play' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'}`}
-            >
-              遊玩模式
-            </button>
-            <button
-              onClick={() => setMode('edit')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'}`}
-            >
-              <Edit3 className="w-4 h-4" /> 地圖編輯
-            </button>
-          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700 group relative"
+            title="重整"
+          >
+            <RefreshCw className="w-5 h-5" />
+            <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">重整</span>
+          </button>
 
           {mode === 'play' && playerName !== 'Player' && (
             <button
               onClick={() => setIsChatMinimized(!isChatMinimized)}
-              className={`p-2 transition-colors rounded-full ${!isChatMinimized ? 'bg-emerald-600/20 text-emerald-400' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+              className={`p-2 transition-colors rounded-full group relative ${!isChatMinimized ? 'bg-emerald-600/20 text-emerald-400' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
               title={isChatMinimized ? "展開聊天" : "收起聊天"}
             >
               <MessageSquare className="w-5 h-5" />
+              <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">{isChatMinimized ? "展開聊天" : "收起聊天"}</span>
             </button>
           )}
 
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700"
+            className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700 group relative"
+            title="設定"
           >
             <Settings className="w-5 h-5" />
+            <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">設定</span>
           </button>
         </div>
       </header>
@@ -1135,6 +1129,25 @@ export default function RpgMode({ onBack }: RpgModeProps) {
             <p className="text-sm text-slate-400 mb-4">
               RPG 模式的資料會透過 API 進行同步。
             </p>
+
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-slate-300 mb-2">模式切換</h3>
+              <div className="flex bg-slate-700 rounded-lg p-1">
+                <button
+                  onClick={() => setMode('play')}
+                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'play' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-600'}`}
+                >
+                  遊玩模式
+                </button>
+                <button
+                  onClick={() => setMode('edit')}
+                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-600'}`}
+                >
+                  <Edit3 className="w-4 h-4" /> 地圖編輯
+                </button>
+              </div>
+            </div>
+
             <button
               onClick={() => setShowSettings(false)}
               className="mt-6 w-full bg-slate-700 text-white font-medium py-2 rounded hover:bg-slate-600 transition-colors"
@@ -1203,21 +1216,6 @@ export default function RpgMode({ onBack }: RpgModeProps) {
               </div>
             )}
           </div>
-        </div>
-
-        <div className="fixed bottom-6 right-6 z-50 flex bg-slate-800 rounded-lg p-1 shadow-xl border border-slate-700">
-          <button
-            onClick={() => setMode('play')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'play' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            遊玩模式
-          </button>
-          <button
-            onClick={() => setMode('edit')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            <Edit3 className="w-4 h-4" /> 地圖編輯
-          </button>
         </div>
       </main>
     </div>

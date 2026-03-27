@@ -1,0 +1,12 @@
+# Task Summary
+- TID: 541
+- Prompt: 在RPG模式下 上面工具列 新增 重整的按鈕\n\n在RPG模式下\n- 按下重整後 要整個重整\n- 將遊玩模式 按鈕, 地圖模式按鈕 放進設定中\n- 不用顯示標題 "RPG模式"\n- "返回" 改成hint, 要盡量維持工具列乾淨
+- Original Branch Commit ID: N/A
+- Root Cause: User requested UI changes in RPG Mode to simplify the top toolbar, add a full page refresh button, and move the mode toggle buttons into the settings panel.
+- Solution:
+  - In `src/components/RpgMode.tsx`, updated `lucide-react` imports to include `RefreshCw`.
+  - Removed the "RPG 模式" title and icon from the top header.
+  - Changed the "Back" button to use a hover tooltip instead of the word "返回", to keep the toolbar clean. Applied the same tooltip style to other toolbar buttons for consistency.
+  - Added a "Refresh" button (`RefreshCw` icon) to the toolbar that calls `window.location.reload()`.
+  - Moved the "Play Mode" and "Map Edit" toggle buttons into the Settings dropdown (`showSettings`).
+  - Removed the duplicate floating mode switcher from the bottom right of the screen.
