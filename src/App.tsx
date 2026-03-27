@@ -9,6 +9,7 @@ import TeamEditor from './components/TeamEditor';
 import BossSelect from './components/BossSelect';
 import Admin from './components/Admin';
 import RpgMode from './components/RpgMode';
+import RoleSetting from './components/RoleSetting';
 import { useAppStore } from './store/appStore';
 import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
 import { TeamConfig } from './shared/types';
@@ -18,7 +19,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE'>('MENU');
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING'>('MENU');
   const [roomCode, setRoomCode] = useState('');
   const [showRoomInput, setShowRoomInput] = useState(false);
   const [selectedBossTeam, setSelectedBossTeam] = useState<TeamConfig | null>(null);
@@ -39,6 +40,23 @@ export default function App() {
         console.error('Error checking auth', err);
         setAuthChecked(true);
       });
+
+    // Also fetch roles globally on app start
+    fetch('/api/roles')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          useAppStore.getState().setRoles(data);
+          if (data.length > 0) {
+            const currentSelected = useAppStore.getState().selectedRoleId;
+            const isValid = data.find((r: any) => r.id === currentSelected);
+            if (!currentSelected || !isValid) {
+              useAppStore.getState().setSelectedRoleId(data[0].id);
+            }
+          }
+        }
+      })
+      .catch(err => console.error('Failed to fetch global roles:', err));
   }, []);
 
   useEffect(() => {
@@ -163,6 +181,10 @@ export default function App() {
     return <RpgMode onBack={() => setView('MENU')} />;
   }
 
+  if (view === 'ROLE_SETTING') {
+    return <RoleSetting onBack={() => setView('MENU')} />;
+  }
+
   const handleJoinPrivate = () => {
     if (roomCode.trim()) {
       handleStartBattle('BATTLE_PRIVATE');
@@ -253,6 +275,13 @@ export default function App() {
             className="w-full py-4 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 rounded-xl font-bold text-xl shadow-lg shadow-orange-900/50 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
           >
             RPG 模式
+          </button>
+
+          <button
+            onClick={() => setView('ROLE_SETTING')}
+            className="w-full py-4 bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 rounded-xl font-bold text-xl shadow-lg shadow-pink-900/50 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            角色設定
           </button>
 
           <button 
