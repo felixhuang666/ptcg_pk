@@ -228,7 +228,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
 
         this.input.on('pointerup', () => {
           if (!this.input.pointer1.isDown || !this.input.pointer2.isDown) {
-             this.initialZoomDistance = 0;
+            this.initialZoomDistance = 0;
           }
         });
 
@@ -531,9 +531,9 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           }
 
           if (this.isEditor) {
-             // Let's reposition editor UI at bottom
-             // The old UI is at y=520, but we need to update it to use height
-             // For now we'll just adjust the infoText. Editor UI will need more advanced repositioning if we care, but RpgMode edit isn't the main issue.
+            // Let's reposition editor UI at bottom
+            // The old UI is at y=520, but we need to update it to use height
+            // For now we'll just adjust the infoText. Editor UI will need more advanced repositioning if we care, but RpgMode edit isn't the main issue.
           }
         });
       }
@@ -1020,6 +1020,14 @@ export default function RpgMode({ onBack }: RpgModeProps) {
 
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
 
+  const [speechSupported, setSpeechSupported] = useState(false);
+
+  useEffect(() => {
+    // Check if browser supports speech recognition
+    const isSupported = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+    setSpeechSupported(isSupported);
+  }, []);
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentMessage.trim() || !socketInstance) return;
@@ -1106,7 +1114,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 </>
               ) : (
                 <>
-                  <p className="text-slate-300 mb-8">您的瀏覽器目前不支援自動全螢幕功能。<br/><br/>為了獲得最佳體驗，建議您使用瀏覽器的<br/><strong className="text-emerald-400">「加入主畫面」</strong>功能，將遊戲安裝至桌面後開啟。</p>
+                  <p className="text-slate-300 mb-8">您的瀏覽器目前不支援自動全螢幕功能。<br /><br />為了獲得最佳體驗，建議您使用瀏覽器的<br /><strong className="text-emerald-400">「加入主畫面」</strong>功能，將遊戲安裝至桌面後開啟。</p>
                   <div className="flex gap-4 justify-center">
                     <button
                       onClick={() => setShowFullscreenPrompt(false)}
@@ -1148,32 +1156,32 @@ export default function RpgMode({ onBack }: RpgModeProps) {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {chatMessages.map((msg, idx) => (
-                      <div key={idx} className="flex flex-col">
-                        <span className="text-xs text-slate-400 mb-1">{msg.name}</span>
-                        <div className="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm w-fit break-all">
-                          {msg.message}
-                        </div>
-                      </div>
-                    ))}
-                    <div ref={chatEndRef} />
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className="flex flex-col">
+                    <span className="text-xs text-slate-400 mb-1">{msg.name}</span>
+                    <div className="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm w-fit break-all">
+                      {msg.message}
+                    </div>
                   </div>
-                  <form onSubmit={handleSendMessage} className="p-3 bg-slate-700 border-t border-slate-600 flex gap-2">
-                    <input
-                      type="text"
-                      value={currentMessage}
-                      onChange={(e) => setCurrentMessage(e.target.value)}
-                      placeholder="輸入訊息..."
-                      className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!currentMessage.trim()}
-                      className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded text-sm font-medium transition-colors whitespace-nowrap"
-                    >
-                      發送
-                    </button>
-                  </form>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+              <form onSubmit={handleSendMessage} className="p-3 bg-slate-700 border-t border-slate-600 flex gap-2">
+                <input
+                  type="text"
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  placeholder="輸入訊息..."
+                  className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
+                />
+                <button
+                  type="submit"
+                  disabled={!currentMessage.trim()}
+                  className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded text-sm font-medium transition-colors whitespace-nowrap"
+                >
+                  發送
+                </button>
+              </form>
             </div>
           )}
 
