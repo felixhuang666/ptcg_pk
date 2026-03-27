@@ -498,6 +498,24 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           if (isDestroyed) return;
           const { width, height } = gameSize;
 
+          if (this.infoText) {
+            this.infoText.setPosition(width - 10, 10);
+          }
+
+          if (this.modeButton) {
+            this.modeButton.setPosition(20, height - 100);
+          }
+
+          if (this.attackButton) {
+            this.attackButton.setPosition(20, height - 60);
+          }
+
+          if (!this.isEditor && this.player) {
+            this.cameras.main.setZoom(1);
+            this.cameras.main.centerOn(this.player.x, this.player.y);
+            this.cameras.main.startFollow(this.player, true, 0.05, 0.05);
+          }
+
           if (this.isEditor) {
             // Let's reposition editor UI at bottom
             // The old UI is at y=520, but we need to update it to use height
@@ -770,7 +788,8 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             const cam = this.cameras.main;
             infoTextRef.current.innerText = `Map: World\nCam: (${Math.floor(cam.scrollX / 32)}, ${Math.floor(cam.scrollY / 32)})`;
           } else if (this.player) {
-            infoTextRef.current.innerText = `Map: World\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})`;
+            const zoom = this.cameras.main.zoom.toFixed(2);
+            this.infoText.setText(`Map: World\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})\nZoom: ${zoom}x`);
           }
         }
 
