@@ -66,6 +66,8 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
+      private initialZoomDistance: number = 0;
+      private initialZoom: number = 1;
 
       constructor() {
         super('MainScene');
@@ -184,14 +186,54 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
 
         this.input.mouse!.disableContextMenu();
 
+
         this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any, deltaX: number, deltaY: number) => {
-          if (pointer.y >= 480) return;
+          if (pointer.y >= this.scale.height - 80 && this.isEditor) return; // Editor UI
           let newZoom = this.cameras.main.zoom - deltaY * 0.001;
           newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
           this.cameras.main.setZoom(newZoom);
         });
 
-        this.infoText = this.add.text(630, 10, '', {
+        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          if (this.input.pointer1.isDown && this.input.pointer2.isDown) {
+            this.initialZoomDistance = Phaser.Math.Distance.Between(
+              this.input.pointer1.x, this.input.pointer1.y,
+              this.input.pointer2.x, this.input.pointer2.y
+            );
+            this.initialZoom = this.cameras.main.zoom;
+            // Disable joystick when pinching
+            this.joystickActive = false;
+            if (this.joystickBase) this.joystickBase.setVisible(false);
+            if (this.joystickGraphics) this.joystickGraphics.setVisible(false);
+            if (this.joystickThumb) this.joystickThumb.setVisible(false);
+            this.joystickVector.reset();
+          }
+        });
+
+        this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+          if (this.input.pointer1.isDown && this.input.pointer2.isDown) {
+            const currentDistance = Phaser.Math.Distance.Between(
+              this.input.pointer1.x, this.input.pointer1.y,
+              this.input.pointer2.x, this.input.pointer2.y
+            );
+
+            if (this.initialZoomDistance > 0) {
+              const zoomFactor = currentDistance / this.initialZoomDistance;
+              let newZoom = this.initialZoom * zoomFactor;
+              newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
+              this.cameras.main.setZoom(newZoom);
+            }
+          }
+        });
+
+        this.input.on('pointerup', () => {
+          if (!this.input.pointer1.isDown || !this.input.pointer2.isDown) {
+             this.initialZoomDistance = 0;
+          }
+        });
+
+
+        this.infoText = this.add.text(this.scale.width - 10, 10, '', {
           fontSize: '14px',
           color: '#ffffff',
           backgroundColor: '#00000088',
@@ -396,6 +438,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           this.input.on('pointerdown', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[]) => {
             if (this.isEditor) return;
             if (gameObjects.length > 0) return; // Ignore if clicked on UI elements
+            if (this.input.pointer1.isDown && this.input.pointer2.isDown) return; // Pinch to zoom in progress
 
             this.joystickActive = true;
             this.joystickBase!.setPosition(pointer.x, pointer.y).setVisible(true);
@@ -430,7 +473,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           this.input.on('pointerup', resetJoystick);
           this.input.on('gameout', resetJoystick);
 
-          this.modeButton = this.add.text(500, 20, 'Mode: Walk', {
+          this.modeButton = this.add.text(20, this.scale.height - 100, 'Mode: Walk', {
             color: '#ffffff',
             backgroundColor: '#0000aa',
             padding: { x: 10, y: 5 }
@@ -450,7 +493,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             }
           });
 
-          this.attackButton = this.add.text(520, 380, 'ATTACK', {
+          this.attackButton = this.add.text(20, this.scale.height - 60, 'ATTACK', {
             color: '#ffffff',
             backgroundColor: '#aa0000',
             padding: { x: 15, y: 15 },
@@ -469,6 +512,29 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           if (isDestroyed || !this.sys || !this.sys.game) return;
           this.mapData = newMapData;
           this.renderMap();
+        });
+
+        this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+          if (isDestroyed) return;
+          const { width, height } = gameSize;
+
+          if (this.infoText) {
+            this.infoText.setPosition(width - 10, 10);
+          }
+
+          if (this.modeButton) {
+            this.modeButton.setPosition(20, height - 100);
+          }
+
+          if (this.attackButton) {
+            this.attackButton.setPosition(20, height - 60);
+          }
+
+          if (this.isEditor) {
+             // Let's reposition editor UI at bottom
+             // The old UI is at y=520, but we need to update it to use height
+             // For now we'll just adjust the infoText. Editor UI will need more advanced repositioning if we care, but RpgMode edit isn't the main issue.
+          }
         });
       }
 
@@ -650,17 +716,17 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       }
 
       setupEditorUI() {
-        this.add.rectangle(320, 520, 640, 80, 0x333333).setScrollFactor(0).setDepth(10);
+        this.add.rectangle(this.scale.width / 2, this.scale.height - 40, this.scale.width, 80, 0x333333).setScrollFactor(0).setDepth(10);
 
-        this.tileSelector = this.add.text(20, 510, 'Selected: Water (Press 1:Grass, 2:Water, 3:Mountain)', { color: '#ffffff', fontSize: '14px' }).setScrollFactor(0).setDepth(11);
+        this.tileSelector = this.add.text(20, this.scale.height - 50, 'Selected: Water (Press 1:Grass, 2:Water, 3:Mountain)', { color: '#ffffff', fontSize: '14px' }).setScrollFactor(0).setDepth(11);
 
-        this.saveButton = this.add.text(500, 505, '[ SAVE MAP ]', {
+        this.saveButton = this.add.text(this.scale.width - 120, this.scale.height - 55, '[ SAVE MAP ]', {
           color: '#00ff00',
           backgroundColor: '#004400',
           padding: { x: 10, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
 
-        const undoBtn = this.add.text(350, 505, 'UNDO', {
+        const undoBtn = this.add.text(this.scale.width - 250, this.scale.height - 55, 'UNDO', {
           color: '#ffffff', backgroundColor: '#555555', padding: { x: 8, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
 
@@ -672,7 +738,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           }
         });
 
-        const redoBtn = this.add.text(420, 505, 'REDO', {
+        const redoBtn = this.add.text(this.scale.width - 180, this.scale.height - 55, 'REDO', {
           color: '#ffffff', backgroundColor: '#555555', padding: { x: 8, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
 
@@ -828,20 +894,20 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       }
     }
 
-    const gameWidth = 640;
-    const gameHeight = mode === 'edit' ? 560 : 480;
-
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         parent: gameRef.current,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: gameWidth,
-        height: gameHeight
+        width: '100%',
+        height: '100%'
       },
       audio: {
         noAudio: true
+      },
+      input: {
+        activePointers: 3,
       },
       physics: {
         default: 'arcade',
@@ -964,7 +1030,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans w-full absolute inset-0 z-50">
+    <div className="h-screen overflow-hidden bg-slate-900 text-slate-100 flex flex-col font-sans w-full absolute inset-0 z-50">
       <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center shadow-md">
         <div className="flex items-center gap-4">
           <button
@@ -1070,7 +1136,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           </div>
         )}
 
-        <div className="w-[90vw] h-[80vh] max-w-6xl max-h-[800px] flex flex-col md:flex-row gap-4">
+        <div className="flex-1 w-full flex flex-col md:flex-row gap-2 md:gap-4 min-h-0">
 
           {mode === 'play' && playerName !== 'Player' && !isChatMinimized && (
             <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden h-64 md:h-full md:w-80 shrink-0 transition-all duration-300">
@@ -1131,14 +1197,20 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           </div>
         </div>
 
-        <div className="mt-4 text-center text-slate-400 text-sm">
-          {mode === 'play' ? (
-            <p>使用 <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">方向鍵</kbd> 移動。點擊 <b>Mode: Walk</b> 切換為攻擊模式，長按 <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">空白鍵</kbd> 或 ATTACK 按鈕連續攻擊。</p>
-          ) : (
-            <p>點擊塗抹地塊。使用 <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">1</kbd> <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">2</kbd> <kbd className="bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono text-xs mx-1">3</kbd> 切換地形。右鍵或方向鍵拖曳視野，滾輪縮放。</p>
-          )}
+        <div className="fixed bottom-6 right-6 z-50 flex bg-slate-800 rounded-lg p-1 shadow-xl border border-slate-700">
+          <button
+            onClick={() => setMode('play')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'play' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            遊玩模式
+          </button>
+          <button
+            onClick={() => setMode('edit')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            <Edit3 className="w-4 h-4" /> 地圖編輯
+          </button>
         </div>
-
       </main>
     </div>
   );
