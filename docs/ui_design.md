@@ -47,3 +47,6 @@ The UI for "Monster Battle" is designed to be modern, dark-themed, and fully res
 - **Mobile (< 640px)**: Vertical stack layout.
 - **Tablet (640px - 1024px)**: Improved spacing, larger icons.
 - **Desktop (> 1024px)**: Full arena experience with side panels.
+
+## 6. State Persistence
+- **View Persistence**: The application remembers the last active game mode (e.g., "RPG_MODE") across sessions using browser cookies (`last_view`). This ensures players returning to the game can seamlessly continue their experience without having to navigate through the main menu again.
