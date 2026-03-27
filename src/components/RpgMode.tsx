@@ -816,18 +816,16 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Attempt to fetch user profile if useAppStore doesn't have it
-    if (!user) {
-      fetch('/api/auth/me')
-        .then(res => res.json())
-        .then(data => {
-          if (data.authenticated && data.user) {
-            setPlayerName(data.user.name);
-          }
-        })
-        .catch(err => console.error(err));
-    }
-  }, [user]);
+    // Fetch user profile for nickname
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setPlayerName(data.profile?.nickname || data.user?.name || 'Player');
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   const selectedRole = roles.find(r => r.id === selectedRoleId) || {
     role_walk_sprite: 'character.png',

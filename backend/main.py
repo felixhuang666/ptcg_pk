@@ -155,8 +155,30 @@ async def get_current_user(request: Request):
 
     return {
         "authenticated": True,
-        "user": user_data["oauth_data"]
+        "user": user_data["oauth_data"],
+        "profile": user_data.get("profile", {})
     }
+
+@app.put("/api/user/profile")
+async def update_user_profile(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    user_data = get_user_data(session_id)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    body = await request.json()
+    if "profile" not in user_data:
+        user_data["profile"] = {}
+
+    if "nickname" in body:
+        user_data["profile"]["nickname"] = body["nickname"]
+
+    save_user_data(session_id, user_data)
+
+    return {"success": True, "profile": user_data["profile"]}
 
 @app.post("/api/auth/logout")
 async def logout(response: Response):
