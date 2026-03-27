@@ -154,6 +154,49 @@ async def root():
         return FileResponse("dist/index.html")
     return {"message": "Frontend not built yet. Please run `make build`."}
 
+in_memory_map = {
+    "width": 200,
+    "height": 200,
+    "tiles": [0] * (200 * 200) # 0 = grass
+}
+
+@app.get("/api/map")
+async def get_map():
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            # Fetch from maps table
+            res = await client.table('maps').select('*').eq('id', 'main_200').limit(1).execute()
+            if res.data and len(res.data) > 0:
+                return res.data[0].get('map_data')
+    except Exception as e:
+        print(f"Supabase warning (fetching map): {e}")
+
+    return in_memory_map
+
+@app.post("/api/map")
+async def save_map(request: Request):
+    global in_memory_map
+    map_data = await request.json()
+
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            await client.table('maps').upsert({'id': 'main_200', 'map_data': map_data}).execute()
+    except Exception as e:
+        print(f"Supabase warning (saving map): {e}")
+
+    in_memory_map = map_data
+    from .socket_app import sio
+    await sio.emit("map_updated", map_data)
+    return {"success": True}
+
 # Catch-all route to serve index.html for React Router
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):

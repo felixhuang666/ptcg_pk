@@ -8,6 +8,7 @@ import Battle from './components/Battle';
 import TeamEditor from './components/TeamEditor';
 import BossSelect from './components/BossSelect';
 import Admin from './components/Admin';
+import RpgMode from './components/RpgMode';
 import { useAppStore } from './store/appStore';
 import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
 import { TeamConfig } from './shared/types';
@@ -17,7 +18,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN'>('MENU');
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE'>('MENU');
   const [roomCode, setRoomCode] = useState('');
   const [showRoomInput, setShowRoomInput] = useState(false);
   const [selectedBossTeam, setSelectedBossTeam] = useState<TeamConfig | null>(null);
@@ -158,6 +159,10 @@ export default function App() {
     return <Admin onBack={() => setView('MENU')} />;
   }
 
+  if (view === 'RPG_MODE') {
+    return <RpgMode onBack={() => setView('MENU')} />;
+  }
+
   const handleJoinPrivate = () => {
     if (roomCode.trim()) {
       handleStartBattle('BATTLE_PRIVATE');
@@ -241,6 +246,13 @@ export default function App() {
             className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-xl transition-all border border-slate-600 hover:border-slate-500"
           >
             編輯隊伍
+          </button>
+
+          <button
+            onClick={() => setView('RPG_MODE')}
+            className="w-full py-4 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 rounded-xl font-bold text-xl shadow-lg shadow-orange-900/50 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            RPG 模式
           </button>
 
           <button 
