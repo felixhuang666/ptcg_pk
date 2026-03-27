@@ -4,7 +4,7 @@
         {
             "label": "build-frontend proxy run",
             "type": "shell",
-            "command": "make build-frontend proxy run",
+            "command": "make stop build-frontend proxy run",
             "group": "build",
             "presentation": {
                 "reveal": "always",

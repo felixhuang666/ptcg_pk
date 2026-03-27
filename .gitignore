@@ -15,3 +15,4 @@ backend/game/api/__pycache__/
 __pycache__
 backend/*.pyc
 backend/*.pyo
+tmp
