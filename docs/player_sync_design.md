@@ -18,7 +18,7 @@ This document outlines the synchronization mechanism for the RPG mode in the Mon
 - **State Management:** The client stores active players in `otherPlayers`, NPCs in `npcs`, and their respective name tags in `nameTags`.
 - **Rendering:** Phaser is used to render sprites. When a player or NPC joins/updates, the sprite is loaded (or pulled from cache) and placed at the given `x`, `y` coordinates.
 - **Name Tags:** A text object is created and anchored above each sprite (`sprite.y - 40`).
-- **Chat UI:** A chat overlay is displayed alongside the game. Messages are stored in React state and displayed in a scrollable list.
+- **Chat UI:** A chat overlay is displayed alongside the game. Messages are stored in React state and displayed in a scrollable list. The chat UI is responsive (appears below the game on mobile and on the left on desktop) and includes a collapse/expand toggle.
 
 ### 3. Database (`game_npcs` table)
 Stores permanent NPC data.

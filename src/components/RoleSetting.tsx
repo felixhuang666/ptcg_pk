@@ -8,8 +8,20 @@ interface RoleSettingProps {
 export default function RoleSetting({ onBack }: RoleSettingProps) {
   const { roles, setRoles, selectedRoleId, setSelectedRoleId } = useAppStore();
   const [loading, setLoading] = useState(true);
+  const [nickname, setNickname] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    // Fetch user profile for nickname
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setNickname(data.profile?.nickname || data.user?.name || 'Player');
+        }
+      })
+      .catch(err => console.error('Failed to fetch profile:', err));
+
     fetch('/api/roles')
       .then(res => res.json())
       .then(data => {
@@ -35,6 +47,23 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
     setSelectedRoleId(id);
   };
 
+  const handleSaveNickname = async () => {
+    if (!nickname.trim()) return;
+    setIsSaving(true);
+    try {
+      await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: nickname.trim() })
+      });
+      // Allow a brief show of success or just stop saving state
+      setTimeout(() => setIsSaving(false), 500);
+    } catch (e) {
+      console.error('Failed to save nickname', e);
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8">
       <div className="max-w-2xl w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700">
@@ -48,6 +77,27 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
           >
             返回
           </button>
+        </div>
+
+        <div className="mb-8 p-6 bg-slate-900/50 rounded-2xl border border-slate-700">
+          <h2 className="text-2xl font-bold mb-4 text-white">玩家暱稱</h2>
+          <div className="flex gap-4">
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl focus:outline-none focus:border-purple-500 text-lg text-white"
+              placeholder="輸入您的暱稱..."
+            />
+            <button
+              onClick={handleSaveNickname}
+              disabled={isSaving || !nickname.trim()}
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:bg-slate-700 rounded-xl font-bold text-lg transition-colors"
+            >
+              {isSaving ? '儲存中...' : '儲存'}
+            </button>
+          </div>
+          <p className="text-slate-400 text-sm mt-2">此暱稱將在 RPG 模式及戰鬥中顯示給其他玩家看。</p>
         </div>
 
         {loading ? (

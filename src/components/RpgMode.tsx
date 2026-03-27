@@ -815,21 +815,20 @@ export default function RpgMode({ onBack }: RpgModeProps) {
 
   // Try to get user from global if possible, otherwise fallback
   const [playerName, setPlayerName] = useState(user?.name || 'Player');
+  const [isChatMinimized, setIsChatMinimized] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Attempt to fetch user profile if useAppStore doesn't have it
-    if (!user) {
-      fetch('/api/auth/me')
-        .then(res => res.json())
-        .then(data => {
-          if (data.authenticated && data.user) {
-            setPlayerName(data.user.name);
-          }
-        })
-        .catch(err => console.error(err));
-    }
-  }, [user]);
+    // Fetch user profile for nickname
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setPlayerName(data.profile?.nickname || data.user?.name || 'Player');
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   const selectedRole = roles.find(r => r.id === selectedRoleId) || {
     role_walk_sprite: 'character.png',
@@ -898,8 +897,55 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           </div>
         )}
 
-        <div className="w-[90vw] h-[80vh] max-w-6xl max-h-[800px] flex gap-4">
-          <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative">
+        <div className="w-[90vw] h-[80vh] max-w-6xl max-h-[800px] flex flex-col md:flex-row gap-4">
+
+          {mode === 'play' && playerName !== 'Player' && (
+            <div className={`bg-slate-800 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden transition-all duration-300 ${isChatMinimized ? 'h-12 md:h-full md:w-12' : 'h-64 md:h-full md:w-80 shrink-0'}`}>
+              <div className="bg-slate-700 p-3 border-b border-slate-600 flex items-center justify-between cursor-pointer" onClick={() => setIsChatMinimized(!isChatMinimized)}>
+                <h3 className={`text-white font-medium flex items-center gap-2 ${isChatMinimized ? 'hidden md:flex md:-rotate-90 md:whitespace-nowrap md:mt-10' : ''}`}>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  即時聊天
+                </h3>
+                <button className={`text-slate-400 hover:text-white ${isChatMinimized ? 'mx-auto md:mt-2 md:rotate-90' : ''}`}>
+                  {isChatMinimized ? '＋' : '－'}
+                </button>
+              </div>
+
+              {!isChatMinimized && (
+                <>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {chatMessages.map((msg, idx) => (
+                      <div key={idx} className="flex flex-col">
+                        <span className="text-xs text-slate-400 mb-1">{msg.name}</span>
+                        <div className="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm w-fit break-all">
+                          {msg.message}
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={chatEndRef} />
+                  </div>
+                  <form onSubmit={handleSendMessage} className="p-3 bg-slate-700 border-t border-slate-600 flex gap-2">
+                    <input
+                      type="text"
+                      value={currentMessage}
+                      onChange={(e) => setCurrentMessage(e.target.value)}
+                      placeholder="輸入訊息..."
+                      className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!currentMessage.trim()}
+                      className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded text-sm font-medium transition-colors whitespace-nowrap"
+                    >
+                      發送
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-0">
             {(playerName !== 'Player' || mode === 'edit') && (
               <PhaserGame
                 key={mode}
@@ -917,44 +963,6 @@ export default function RpgMode({ onBack }: RpgModeProps) {
               </div>
             )}
           </div>
-
-          {mode === 'play' && playerName !== 'Player' && (
-            <div className="w-80 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden">
-              <div className="bg-slate-700 p-3 border-b border-slate-600">
-                <h3 className="text-white font-medium flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  即時聊天
-                </h3>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {chatMessages.map((msg, idx) => (
-                  <div key={idx} className="flex flex-col">
-                    <span className="text-xs text-slate-400 mb-1">{msg.name}</span>
-                    <div className="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm w-fit break-all">
-                      {msg.message}
-                    </div>
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-              <form onSubmit={handleSendMessage} className="p-3 bg-slate-700 border-t border-slate-600 flex gap-2">
-                <input
-                  type="text"
-                  value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  placeholder="輸入訊息..."
-                  className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                />
-                <button
-                  type="submit"
-                  disabled={!currentMessage.trim()}
-                  className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded text-sm font-medium transition-colors"
-                >
-                  發送
-                </button>
-              </form>
-            </div>
-          )}
         </div>
 
         <div className="mt-4 text-center text-slate-400 text-sm">
