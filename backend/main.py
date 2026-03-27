@@ -197,6 +197,30 @@ async def save_map(request: Request):
     await sio.emit("map_updated", map_data)
     return {"success": True}
 
+@app.get("/api/roles")
+async def get_roles():
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            res = await client.table('game_roles').select('*').execute()
+            if res.data and len(res.data) > 0:
+                return res.data
+    except Exception as e:
+        print(f"Supabase warning (fetching roles): {e}")
+
+    # Default role if table doesn't exist or is empty
+    return [
+        {
+            "id": "1",
+            "name": "魔女",
+            "role_walk_sprite": "yo.png",
+            "role_atk_sprite": "yo_atk.png"
+        }
+    ]
+
 # Catch-all route to serve index.html for React Router
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):

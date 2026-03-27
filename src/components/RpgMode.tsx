@@ -7,7 +7,9 @@ interface RpgModeProps {
   onBack: () => void;
 }
 
-function PhaserGame({ mode, onMapSaved }: { key?: React.Key, mode: 'play' | 'edit', onMapSaved?: () => void }) {
+import { useAppStore } from '../store/appStore';
+
+function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite }: { key?: React.Key, mode: 'play' | 'edit', onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -61,8 +63,8 @@ function PhaserGame({ mode, onMapSaved }: { key?: React.Key, mode: 'play' | 'edi
       }
 
       preload() {
-        this.load.image('player_img', `/assets/players/character.png?t=${Date.now()}`);
-        this.load.image('player_atk_img', `/assets/players/character_atk.png?t=${Date.now()}`);
+        this.load.image('player_img', `/assets/players/${roleWalkSprite}?t=${Date.now()}`);
+        this.load.image('player_atk_img', `/assets/players/${roleAtkSprite}?t=${Date.now()}`);
       }
 
       async create() {
@@ -674,6 +676,12 @@ function PhaserGame({ mode, onMapSaved }: { key?: React.Key, mode: 'play' | 'edi
 export default function RpgMode({ onBack }: RpgModeProps) {
   const [mode, setMode] = useState<'play' | 'edit'>('play');
   const [showSettings, setShowSettings] = useState(false);
+  const { roles, selectedRoleId } = useAppStore();
+
+  const selectedRole = roles.find(r => r.id === selectedRoleId) || {
+    role_walk_sprite: 'character.png',
+    role_atk_sprite: 'character_atk.png'
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans w-full absolute inset-0 z-50">
@@ -719,7 +727,12 @@ export default function RpgMode({ onBack }: RpgModeProps) {
         )}
 
         <div className="w-[90vw] h-[80vh] max-w-6xl max-h-[800px] bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative">
-          <PhaserGame key={mode} mode={mode} />
+          <PhaserGame
+            key={mode}
+            mode={mode}
+            roleWalkSprite={selectedRole.role_walk_sprite}
+            roleAtkSprite={selectedRole.role_atk_sprite}
+          />
         </div>
 
         <div className="mt-4 text-center text-slate-400 text-sm">
