@@ -812,8 +812,34 @@ export default function RpgMode({ onBack }: RpgModeProps) {
 
   // Try to get user from global if possible, otherwise fallback
   const [playerName, setPlayerName] = useState(user?.name || 'Player');
-  const [isChatMinimized, setIsChatMinimized] = useState(false);
+  const [isChatMinimized, setIsChatMinimized] = useState(true);
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Check if fullscreen is supported and not already active
+    const checkFullscreen = () => {
+      const isFullscreen = document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement || (document as any).msFullscreenElement;
+      if (!isFullscreen) {
+        setShowFullscreenPrompt(true);
+      }
+    };
+    checkFullscreen();
+  }, []);
+
+  const requestFullscreen = () => {
+    const elem = document.documentElement as any;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+      /* Safari */
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      /* IE11 */
+      elem.msRequestFullscreen();
+    }
+    setShowFullscreenPrompt(false);
+  };
 
   useEffect(() => {
     // Fetch user profile for nickname
@@ -879,6 +905,29 @@ export default function RpgMode({ onBack }: RpgModeProps) {
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 relative w-full bg-slate-900">
+        {showFullscreenPrompt && (
+          <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+              <h2 className="text-2xl font-bold mb-4 text-white">進入全螢幕模式</h2>
+              <p className="text-slate-300 mb-8">為了獲得最佳的遊戲體驗，建議您切換至全螢幕模式遊玩。</p>
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={() => setShowFullscreenPrompt(false)}
+                  className="px-6 py-3 bg-slate-700 text-white font-medium rounded-xl hover:bg-slate-600 transition-colors"
+                >
+                  稍後再說
+                </button>
+                <button
+                  onClick={requestFullscreen}
+                  className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-green-400 transition-transform transform hover:scale-105 shadow-lg shadow-emerald-900/50"
+                >
+                  啟動全螢幕
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showSettings && (
           <div className="absolute top-4 right-4 bg-slate-800 border border-slate-700 p-6 rounded-xl shadow-2xl z-[100] max-w-md w-full">
             <h2 className="text-lg font-semibold mb-4 text-white">系統設定</h2>
