@@ -7,7 +7,7 @@ interface RpgModeProps {
   onBack: () => void;
 }
 
-function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: () => void }) {
+function PhaserGame({ mode, onMapSaved }: { key?: React.Key, mode: 'play' | 'edit', onMapSaved?: () => void }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -66,7 +66,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
       }
 
       async create() {
-        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+        const graphics = this.make.graphics({ x: 0, y: 0 });
 
         graphics.fillStyle(0x228b22);
         graphics.fillRect(0, 0, 32, 32);
@@ -125,7 +125,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
                 this.textures.remove(spriteKey);
               }
 
-              this.textures.addSpriteSheet(spriteKey, canvas, {
+              this.textures.addSpriteSheet(spriteKey, canvas as unknown as HTMLImageElement, {
                 frameWidth: frameWidth,
                 frameHeight: frameHeight
               });
@@ -366,7 +366,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
       triggerAttack() {
         if (this.actionMode !== 'attack' || this.isAttacking || !this.player) return;
         this.isAttacking = true;
-        this.player.body!.setVelocity(0);
+        (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0);
         const animKey = `atk-${this.currentDirection}`;
         this.player.anims.play(animKey, true);
 
