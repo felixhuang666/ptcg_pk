@@ -61,26 +61,26 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
       }
 
       preload() {
-        this.load.image('player_img', `/character.png?t=${Date.now()}`);
-        this.load.image('player_atk_img', `/character_atk.png?t=${Date.now()}`);
+        this.load.image('player_img', `/assets/players/character.png?t=${Date.now()}`);
+        this.load.image('player_atk_img', `/assets/players/character_atk.png?t=${Date.now()}`);
       }
 
       async create() {
         const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-        
+
         graphics.fillStyle(0x228b22);
         graphics.fillRect(0, 0, 32, 32);
         graphics.lineStyle(1, 0x000000, 0.2);
         graphics.strokeRect(0, 0, 32, 32);
-        
+
         graphics.fillStyle(0x1e90ff);
         graphics.fillRect(32, 0, 32, 32);
         graphics.strokeRect(32, 0, 32, 32);
-        
+
         graphics.fillStyle(0x808080);
         graphics.fillRect(64, 0, 32, 32);
         graphics.strokeRect(64, 0, 32, 32);
-        
+
         graphics.generateTexture('tileset', 96, 32);
 
         const processImage = (imgKey: string, spriteKey: string) => {
@@ -92,24 +92,24 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
               canvas.height = img.height;
               const ctx = canvas.getContext('2d')!;
               ctx.drawImage(img, 0, 0);
-              
+
               try {
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imageData.data;
-                
+
                 const bgR = data[0];
                 const bgG = data[1];
                 const bgB = data[2];
                 const bgA = data[3];
-                
+
                 const tolerance = 30;
-                
+
                 if (bgA > 10) {
                   for (let i = 0; i < data.length; i += 4) {
-                    if (Math.abs(data[i] - bgR) <= tolerance && 
-                        Math.abs(data[i+1] - bgG) <= tolerance && 
-                        Math.abs(data[i+2] - bgB) <= tolerance) {
-                      data[i+3] = 0;
+                    if (Math.abs(data[i] - bgR) <= tolerance &&
+                      Math.abs(data[i + 1] - bgG) <= tolerance &&
+                      Math.abs(data[i + 2] - bgB) <= tolerance) {
+                      data[i + 3] = 0;
                     }
                   }
                   ctx.putImageData(imageData, 0, 0);
@@ -120,11 +120,11 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
 
               const frameWidth = img.width / 3;
               const frameHeight = img.height / 4;
-              
+
               if (this.textures.exists(spriteKey)) {
                 this.textures.remove(spriteKey);
               }
-              
+
               this.textures.addSpriteSheet(spriteKey, canvas, {
                 frameWidth: frameWidth,
                 frameHeight: frameHeight
@@ -179,12 +179,12 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
         if (this.isEditor) {
           this.renderMap();
           this.setupEditorUI();
-          
+
           this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-            
-            if (pointer.y >= 480) return; 
-            
+
+            if (pointer.y >= 480) return;
+
             if (pointer.middleButtonDown() || pointer.rightButtonDown()) {
               this.isPanning = true;
               this.panStart.set(pointer.x, pointer.y);
@@ -194,7 +194,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
 
             this.undoStack.push([...this.mapData.tiles]);
             this.redoStack = [];
-            
+
             this.handlePointerDown(pointer);
           });
 
@@ -218,25 +218,25 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
 
         } else {
           this.player = this.physics.add.sprite(100, 100, 'player', 1);
-          
+
           if (this.textures.exists('player_img')) {
             const img = this.textures.get('player_img').getSourceImage() as HTMLImageElement | HTMLCanvasElement;
             if (img && img.height > 0) {
-               const scale = 64 / (img.height / 4);
-               this.player.setScale(scale);
-               
-               const bodyWidth = (img.width / 3) * 0.4;
-               const bodyHeight = (img.height / 4) * 0.3;
-               this.player.body!.setSize(bodyWidth, bodyHeight);
-               this.player.body!.setOffset((img.width / 3 - bodyWidth) / 2, (img.height / 4) - bodyHeight - 5);
+              const scale = 64 / (img.height / 4);
+              this.player.setScale(scale);
+
+              const bodyWidth = (img.width / 3) * 0.4;
+              const bodyHeight = (img.height / 4) * 0.3;
+              this.player.body!.setSize(bodyWidth, bodyHeight);
+              this.player.body!.setOffset((img.width / 3 - bodyWidth) / 2, (img.height / 4) - bodyHeight - 5);
             }
           }
-          
+
           this.player.setCollideWorldBounds(true);
           this.player.setDepth(10);
-          
+
           this.renderMap();
-          
+
           socket.on('current_players', (players: any) => {
             if (isDestroyed || !this.sys || !this.sys.game) return;
             Object.keys(players).forEach(id => {
@@ -251,7 +251,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
           socket.on('player_joined', (player: any) => {
             if (isDestroyed || !this.sys || !this.sys.game) return;
             if (player.isRpg) {
-                this.addOtherPlayer(player.id, player.x, player.y, player.anim, player.frame);
+              this.addOtherPlayer(player.id, player.x, player.y, player.anim, player.frame);
             }
           });
 
@@ -282,9 +282,9 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
 
           const joyX = 80;
           const joyY = 400;
-          
+
           this.joystickBase = this.add.circle(joyX, joyY, 60, 0x000000, 0.3).setScrollFactor(0).setDepth(1000).setInteractive();
-          
+
           const graphics = this.add.graphics().setScrollFactor(0).setDepth(1000);
           graphics.lineStyle(6, 0xffffff, 0.2);
           graphics.beginPath();
@@ -352,7 +352,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
           this.attackButton.on('pointerdown', () => { this.attackButtonDown = true; this.triggerAttack(); });
           this.attackButton.on('pointerup', () => { this.attackButtonDown = false; });
           this.attackButton.on('pointerout', () => { this.attackButtonDown = false; });
-          
+
           this.input.keyboard!.on('keydown-SPACE', () => this.triggerAttack());
         }
 
@@ -369,7 +369,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
         this.player.body!.setVelocity(0);
         const animKey = `atk-${this.currentDirection}`;
         this.player.anims.play(animKey, true);
-        
+
         socketRef.current?.emit('player_moved', {
           x: this.player.x,
           y: this.player.y,
@@ -383,7 +383,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
           else if (this.currentDirection === 'right') this.player!.setFrame(10);
           else if (this.currentDirection === 'up') this.player!.setFrame(7);
           else this.player!.setFrame(1);
-          
+
           socketRef.current?.emit('player_moved', {
             x: this.player!.x,
             y: this.player!.y,
@@ -409,14 +409,14 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
 
       addOtherPlayer(id: string, x: number, y: number, anim?: string, frame?: number) {
         const other = this.physics.add.sprite(x, y, 'player', frame !== undefined ? frame : 1);
-        
+
         if (this.textures.exists('player_img')) {
           const img = this.textures.get('player_img').getSourceImage() as HTMLImageElement | HTMLCanvasElement;
           if (img && img.height > 0) {
-             other.setScale(64 / (img.height / 4));
+            other.setScale(64 / (img.height / 4));
           }
         }
-        
+
         other.setTint(0xffdddd);
         other.setDepth(10);
         if (anim) other.anims.play(anim, true);
@@ -463,11 +463,11 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
 
       setupEditorUI() {
         this.add.rectangle(320, 520, 640, 80, 0x333333).setScrollFactor(0).setDepth(10);
-        
+
         this.tileSelector = this.add.text(20, 510, 'Selected: Water (Press 1:Grass, 2:Water, 3:Mountain)', { color: '#ffffff', fontSize: '14px' }).setScrollFactor(0).setDepth(11);
-        
-        this.saveButton = this.add.text(500, 505, '[ SAVE MAP ]', { 
-          color: '#00ff00', 
+
+        this.saveButton = this.add.text(500, 505, '[ SAVE MAP ]', {
+          color: '#00ff00',
           backgroundColor: '#004400',
           padding: { x: 10, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
@@ -475,7 +475,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
         const undoBtn = this.add.text(350, 505, 'UNDO', {
           color: '#ffffff', backgroundColor: '#555555', padding: { x: 8, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
-        
+
         undoBtn.on('pointerdown', () => {
           if (this.undoStack.length > 0) {
             this.redoStack.push([...this.mapData.tiles]);
@@ -487,7 +487,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
         const redoBtn = this.add.text(420, 505, 'REDO', {
           color: '#ffffff', backgroundColor: '#555555', padding: { x: 8, y: 5 }
         }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
-        
+
         redoBtn.on('pointerdown', () => {
           if (this.redoStack.length > 0) {
             this.undoStack.push([...this.mapData.tiles]);
@@ -556,7 +556,7 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
           const camSpeed = 10 / this.cameras.main.zoom;
           if (this.cursors?.left.isDown) this.cameras.main.scrollX -= camSpeed;
           else if (this.cursors?.right.isDown) this.cameras.main.scrollX += camSpeed;
-          
+
           if (this.cursors?.up.isDown) this.cameras.main.scrollY -= camSpeed;
           else if (this.cursors?.down.isDown) this.cameras.main.scrollY += camSpeed;
           return;
@@ -621,8 +621,8 @@ function PhaserGame({ mode, onMapSaved }: { mode: 'play' | 'edit', onMapSaved?: 
         }
 
         if (moved || justStopped) {
-          socket.emit('player_moved', { 
-            x: this.player.x, 
+          socket.emit('player_moved', {
+            x: this.player.x,
             y: this.player.y,
             anim: moved ? currentAnim : null,
             frame: this.player.frame.name
