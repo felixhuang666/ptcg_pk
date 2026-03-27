@@ -16,6 +16,21 @@ async def lifespan(app: FastAPI):
     from backend.game.data import load_game_data_from_supabase
     await load_game_data_from_supabase()
 
+    # Load NPCs into cache
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            res = await client.table('game_npcs').select('*').execute()
+            if res.data:
+                from backend.socket_app import rpg_npcs
+                for npc in res.data:
+                    rpg_npcs[npc['id']] = npc
+    except Exception as e:
+        print(f"Failed to load NPCs on startup: {e}")
+
     # Startup: Create game loop task
     loop_task = asyncio.create_task(game_loop())
     yield
@@ -140,8 +155,30 @@ async def get_current_user(request: Request):
 
     return {
         "authenticated": True,
-        "user": user_data["oauth_data"]
+        "user": user_data["oauth_data"],
+        "profile": user_data.get("profile", {})
     }
+
+@app.put("/api/user/profile")
+async def update_user_profile(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    user_data = get_user_data(session_id)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    body = await request.json()
+    if "profile" not in user_data:
+        user_data["profile"] = {}
+
+    if "nickname" in body:
+        user_data["profile"]["nickname"] = body["nickname"]
+
+    save_user_data(session_id, user_data)
+
+    return {"success": True, "profile": user_data["profile"]}
 
 @app.post("/api/auth/logout")
 async def logout(response: Response):
@@ -220,6 +257,88 @@ async def get_roles():
             "role_atk_sprite": "yo_atk.png"
         }
     ]
+
+@app.get("/api/npcs")
+async def get_npcs():
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            res = await client.table('game_npcs').select('*').execute()
+            if res.data is not None:
+                return res.data
+    except Exception as e:
+        print(f"Supabase warning (fetching npcs): {e}")
+
+    # Fallback to empty list or in-memory if needed
+    return []
+
+@app.post("/api/npc")
+async def create_npc(request: Request):
+    npc_data = await request.json()
+    if 'id' not in npc_data:
+        npc_data['id'] = f"npc-{uuid.uuid4().hex[:7]}"
+
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            await client.table('game_npcs').insert(npc_data).execute()
+    except Exception as e:
+        print(f"Supabase warning (creating npc): {e}")
+        return {"success": False, "error": str(e)}
+
+    from .socket_app import sio, rpg_npcs
+    rpg_npcs[npc_data['id']] = npc_data
+    # Emit to all players in RPG mode
+    await sio.emit("npc_created", npc_data)
+    return {"success": True, "npc": npc_data}
+
+@app.put("/api/npc/{npc_id}")
+async def update_npc(npc_id: str, request: Request):
+    npc_data = await request.json()
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            await client.table('game_npcs').update(npc_data).eq('id', npc_id).execute()
+    except Exception as e:
+        print(f"Supabase warning (updating npc): {e}")
+        return {"success": False, "error": str(e)}
+
+    from .socket_app import sio, rpg_npcs
+    if npc_id in rpg_npcs:
+        rpg_npcs[npc_id].update(npc_data)
+    else:
+        rpg_npcs[npc_id] = npc_data
+
+    await sio.emit("npc_updated", npc_data)
+    return {"success": True, "npc": npc_data}
+
+@app.delete("/api/npc/{npc_id}")
+async def delete_npc(npc_id: str):
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            await client.table('game_npcs').delete().eq('id', npc_id).execute()
+    except Exception as e:
+        print(f"Supabase warning (deleting npc): {e}")
+        return {"success": False, "error": str(e)}
+
+    from .socket_app import sio, rpg_npcs
+    if npc_id in rpg_npcs:
+        del rpg_npcs[npc_id]
+    await sio.emit("npc_deleted", {"id": npc_id})
+    return {"success": True}
 
 # Catch-all route to serve index.html for React Router
 @app.get("/{full_path:path}")
