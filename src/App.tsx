@@ -194,6 +194,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8 relative">
       <div className="absolute top-4 right-4 flex items-center gap-4 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
+        <input
+          type="text"
+          {...{'x-webkit-speech': 'true', speech: 'true'}}
+          className="bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-purple-500 w-32 md:w-48"
+          placeholder="語音輸入..."
+        />
         <img src={user.picture} alt="Avatar" className="w-8 h-8 rounded-full" />
         <span className="text-sm font-medium">{user.name}</span>
         <button onClick={handleLogout} className="text-sm text-red-400 hover:text-red-300 font-bold ml-2">登出</button>
