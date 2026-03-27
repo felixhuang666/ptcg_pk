@@ -189,11 +189,26 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         this.input.mouse!.disableContextMenu();
 
 
+        const performZoom = (newZoom: number, pointerX: number, pointerY: number) => {
+          if (this.cameras.main.zoom === newZoom) return;
+          const worldPoint = this.cameras.main.getWorldPoint(pointerX, pointerY);
+
+          if (!this.isEditor) {
+             this.cameras.main.stopFollow();
+          }
+
+          this.cameras.main.setZoom(newZoom);
+
+          const newWorldPoint = this.cameras.main.getWorldPoint(pointerX, pointerY);
+          this.cameras.main.scrollX -= newWorldPoint.x - worldPoint.x;
+          this.cameras.main.scrollY -= newWorldPoint.y - worldPoint.y;
+        };
+
         this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any, deltaX: number, deltaY: number) => {
           if (pointer.y >= this.scale.height - 80 && this.isEditor) return; // Editor UI
           let newZoom = this.cameras.main.zoom - deltaY * 0.001;
           newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
-          this.cameras.main.setZoom(newZoom);
+          performZoom(newZoom, pointer.x, pointer.y);
         });
 
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -223,7 +238,10 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
               const zoomFactor = currentDistance / this.initialZoomDistance;
               let newZoom = this.initialZoom * zoomFactor;
               newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
-              this.cameras.main.setZoom(newZoom);
+
+              const midX = (this.input.pointer1.x + this.input.pointer2.x) / 2;
+              const midY = (this.input.pointer1.y + this.input.pointer2.y) / 2;
+              performZoom(newZoom, midX, midY);
             }
           }
         });
@@ -813,6 +831,10 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         if (moved) {
           this.player.anims.play(currentAnim!, true);
           this.lastAnim = currentAnim;
+
+          if (!this.isEditor && this.player) {
+            this.cameras.main.startFollow(this.player, true, 0.05, 0.05);
+          }
         } else {
           if (this.player.anims.isPlaying) {
             justStopped = true;
