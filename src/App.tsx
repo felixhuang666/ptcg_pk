@@ -19,13 +19,24 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING'>('MENU');
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING'>(() => {
+    const match = document.cookie.match(/(?:^|;\s*)last_view=([^;]*)/);
+    return match && match[1] === 'RPG_MODE' ? 'RPG_MODE' : 'MENU';
+  });
   const [roomCode, setRoomCode] = useState('');
   const [showRoomInput, setShowRoomInput] = useState(false);
   const [selectedBossTeam, setSelectedBossTeam] = useState<TeamConfig | null>(null);
   const { teams, currentTeamId } = useAppStore();
   
   const [gameDataVersion, setGameDataVersion] = useState(0);
+
+  useEffect(() => {
+    if (view === 'RPG_MODE') {
+      document.cookie = "last_view=RPG_MODE; path=/; max-age=31536000";
+    } else {
+      document.cookie = "last_view=; path=/; max-age=0";
+    }
+  }, [view]);
 
   useEffect(() => {
     fetch('/api/auth/me')
