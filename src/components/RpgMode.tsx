@@ -789,7 +789,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             infoTextRef.current.innerText = `Map: World\nCam: (${Math.floor(cam.scrollX / 32)}, ${Math.floor(cam.scrollY / 32)})`;
           } else if (this.player) {
             const zoom = this.cameras.main.zoom.toFixed(2);
-            this.infoText.setText(`Map: World\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})\nZoom: ${zoom}x`);
+            infoTextRef.current.innerText = `Map: World\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})\nZoom: ${zoom}x`;
           }
         }
 
