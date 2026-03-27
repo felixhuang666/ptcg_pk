@@ -871,6 +871,14 @@ export default function RpgMode({ onBack }: RpgModeProps) {
 
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
 
+  const [speechSupported, setSpeechSupported] = useState(false);
+
+  useEffect(() => {
+    // Check if browser supports speech recognition
+    const isSupported = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+    setSpeechSupported(isSupported);
+  }, []);
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentMessage.trim() || !socketInstance) return;
@@ -898,6 +906,14 @@ export default function RpgMode({ onBack }: RpgModeProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          {speechSupported && (
+            <input
+              type="text"
+              {...{'x-webkit-speech': 'true', speech: 'true'}}
+              className="bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-purple-500 w-32 md:w-48 text-white mr-2"
+              placeholder="語音輸入..."
+            />
+          )}
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700"
