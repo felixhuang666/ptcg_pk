@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -898,6 +898,31 @@ export default function RpgMode({ onBack }: RpgModeProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          <div className="flex bg-slate-700 rounded-lg p-1 mr-2">
+            <button
+              onClick={() => setMode('play')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'play' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'}`}
+            >
+              遊玩模式
+            </button>
+            <button
+              onClick={() => setMode('edit')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'}`}
+            >
+              <Edit3 className="w-4 h-4" /> 地圖編輯
+            </button>
+          </div>
+
+          {mode === 'play' && playerName !== 'Player' && (
+            <button
+              onClick={() => setIsChatMinimized(!isChatMinimized)}
+              className={`p-2 transition-colors rounded-full ${!isChatMinimized ? 'bg-emerald-600/20 text-emerald-400' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+              title={isChatMinimized ? "展開聊天" : "收起聊天"}
+            >
+              <MessageSquare className="w-5 h-5" />
+            </button>
+          )}
+
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700"
@@ -948,21 +973,16 @@ export default function RpgMode({ onBack }: RpgModeProps) {
 
         <div className="w-[90vw] h-[80vh] max-w-6xl max-h-[800px] flex flex-col md:flex-row gap-4">
 
-          {mode === 'play' && playerName !== 'Player' && (
-            <div className={`bg-slate-800 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden transition-all duration-300 ${isChatMinimized ? 'h-12 md:h-full md:w-12' : 'h-64 md:h-full md:w-80 shrink-0'}`}>
-              <div className="bg-slate-700 p-3 border-b border-slate-600 flex items-center justify-between cursor-pointer" onClick={() => setIsChatMinimized(!isChatMinimized)}>
-                <h3 className={`text-white font-medium flex items-center gap-2 ${isChatMinimized ? 'hidden md:flex md:-rotate-90 md:whitespace-nowrap md:mt-10' : ''}`}>
+          {mode === 'play' && playerName !== 'Player' && !isChatMinimized && (
+            <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden h-64 md:h-full md:w-80 shrink-0 transition-all duration-300">
+              <div className="bg-slate-700 p-3 border-b border-slate-600 flex items-center justify-between">
+                <h3 className="text-white font-medium flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   即時聊天
                 </h3>
-                <button className={`text-slate-400 hover:text-white ${isChatMinimized ? 'mx-auto md:mt-2 md:rotate-90' : ''}`}>
-                  {isChatMinimized ? '＋' : '－'}
-                </button>
               </div>
 
-              {!isChatMinimized && (
-                <>
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {chatMessages.map((msg, idx) => (
                       <div key={idx} className="flex flex-col">
                         <span className="text-xs text-slate-400 mb-1">{msg.name}</span>
@@ -989,8 +1009,6 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                       發送
                     </button>
                   </form>
-                </>
-              )}
             </div>
           )}
 
@@ -1022,20 +1040,6 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           )}
         </div>
 
-        <div className="fixed bottom-6 right-6 z-50 flex bg-slate-800 rounded-lg p-1 shadow-xl border border-slate-700">
-          <button
-            onClick={() => setMode('play')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'play' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            遊玩模式
-          </button>
-          <button
-            onClick={() => setMode('edit')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            <Edit3 className="w-4 h-4" /> 地圖編輯
-          </button>
-        </div>
       </main>
     </div>
   );
