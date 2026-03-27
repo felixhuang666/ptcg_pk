@@ -86,7 +86,8 @@ async def login():
         "response_type=code&"
         f"client_id={GOOGLE_CLIENT_ID}&"
         f"redirect_uri={REDIRECT_URI}&"
-        "scope=openid%20email%20profile"
+        "scope=openid%20email%20profile&"
+        "prompt=select_account"
     )
     return RedirectResponse(auth_url)
 
