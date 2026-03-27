@@ -64,7 +64,6 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private tilemap: Phaser.Tilemaps.Tilemap | null = null;
       private tileset: Phaser.Tilemaps.Tileset | null = null;
       private layer: Phaser.Tilemaps.TilemapLayer | null = null;
-      private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
       private initialZoomDistance: number = 0;
@@ -498,18 +497,6 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           if (isDestroyed) return;
           const { width, height } = gameSize;
 
-          if (this.infoText) {
-            this.infoText.setPosition(width - 10, 10);
-          }
-
-          if (this.modeButton) {
-            this.modeButton.setPosition(20, height - 100);
-          }
-
-          if (this.attackButton) {
-            this.attackButton.setPosition(20, height - 60);
-          }
-
           if (!this.isEditor && this.player) {
             this.cameras.main.setZoom(1);
             this.cameras.main.centerOn(this.player.x, this.player.y);
@@ -787,7 +774,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           if (this.isEditor) {
             const cam = this.cameras.main;
             infoTextRef.current.innerText = `Map: World\nCam: (${Math.floor(cam.scrollX / 32)}, ${Math.floor(cam.scrollY / 32)})`;
-          } else if (this.player) {
+          } else if (this.player && infoTextRef.current) {
             const zoom = this.cameras.main.zoom.toFixed(2);
             infoTextRef.current.innerText = `Map: World\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})\nZoom: ${zoom}x`;
           }
