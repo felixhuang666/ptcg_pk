@@ -18,6 +18,9 @@ interface ChatMessage {
 
 function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
   const gameRef = useRef<HTMLDivElement>(null);
+  const infoTextRef = useRef<HTMLDivElement>(null);
+  const mainSceneRef = useRef<any>(null);
+  const [actionMode, setActionMode] = useState<'walk' | 'attack'>('walk');
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
@@ -50,11 +53,9 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private joystickActive: boolean = false;
       private joystickVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private isAttacking: boolean = false;
-      private actionMode: 'walk' | 'attack' = 'walk';
+      public actionMode: 'walk' | 'attack' = 'walk';
       private currentDirection: string = 'down';
-      private attackButton: Phaser.GameObjects.Text | null = null;
-      private modeButton: Phaser.GameObjects.Text | null = null;
-      private attackButtonDown: boolean = false;
+      public attackButtonDown: boolean = false;
       private undoStack: number[][] = [];
       private redoStack: number[][] = [];
       private isPanning: boolean = false;
@@ -75,6 +76,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
 
       init(data: any) {
         this.isEditor = data.mode === 'edit';
+        mainSceneRef.current = this;
       }
 
       preload() {
@@ -232,14 +234,6 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           }
         });
 
-
-        this.infoText = this.add.text(this.scale.width - 10, 10, '', {
-          fontSize: '14px',
-          color: '#ffffff',
-          backgroundColor: '#00000088',
-          padding: { x: 8, y: 4 },
-          align: 'right'
-        }).setOrigin(1, 0).setScrollFactor(0).setDepth(2000);
 
         if (this.isEditor) {
           this.renderMap();
@@ -473,38 +467,6 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           this.input.on('pointerup', resetJoystick);
           this.input.on('gameout', resetJoystick);
 
-          this.modeButton = this.add.text(20, this.scale.height - 100, 'Mode: Walk', {
-            color: '#ffffff',
-            backgroundColor: '#0000aa',
-            padding: { x: 10, y: 5 }
-          }).setScrollFactor(0).setDepth(1001).setInteractive({ useHandCursor: true });
-
-          this.modeButton.on('pointerdown', () => {
-            if (this.actionMode === 'walk') {
-              this.actionMode = 'attack';
-              this.modeButton!.setText('Mode: Attack');
-              this.modeButton!.setBackgroundColor('#aa0000');
-              this.attackButton!.setVisible(true);
-            } else {
-              this.actionMode = 'walk';
-              this.modeButton!.setText('Mode: Walk');
-              this.modeButton!.setBackgroundColor('#0000aa');
-              this.attackButton!.setVisible(false);
-            }
-          });
-
-          this.attackButton = this.add.text(20, this.scale.height - 60, 'ATTACK', {
-            color: '#ffffff',
-            backgroundColor: '#aa0000',
-            padding: { x: 15, y: 15 },
-            fontSize: '18px',
-            fontStyle: 'bold'
-          }).setScrollFactor(0).setDepth(1001).setInteractive({ useHandCursor: true }).setVisible(false);
-
-          this.attackButton.on('pointerdown', () => { this.attackButtonDown = true; this.triggerAttack(); });
-          this.attackButton.on('pointerup', () => { this.attackButtonDown = false; });
-          this.attackButton.on('pointerout', () => { this.attackButtonDown = false; });
-
           this.input.keyboard!.on('keydown-SPACE', () => this.triggerAttack());
         }
 
@@ -517,18 +479,6 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
           if (isDestroyed) return;
           const { width, height } = gameSize;
-
-          if (this.infoText) {
-            this.infoText.setPosition(width - 10, 10);
-          }
-
-          if (this.modeButton) {
-            this.modeButton.setPosition(20, height - 100);
-          }
-
-          if (this.attackButton) {
-            this.attackButton.setPosition(20, height - 60);
-          }
 
           if (this.isEditor) {
             // Let's reposition editor UI at bottom
@@ -577,7 +527,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         });
       }
 
-      triggerAttack() {
+      public triggerAttack() {
         if (this.actionMode !== 'attack' || this.isAttacking || !this.player) return;
         this.isAttacking = true;
         (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0);
@@ -797,12 +747,12 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       }
 
       update(time: number, delta: number) {
-        if (this.infoText) {
+        if (infoTextRef.current) {
           if (this.isEditor) {
             const cam = this.cameras.main;
-            this.infoText.setText(`Map: World\nCam: (${Math.floor(cam.scrollX / 32)}, ${Math.floor(cam.scrollY / 32)})`);
+            infoTextRef.current.innerText = `Map: World\nCam: (${Math.floor(cam.scrollX / 32)}, ${Math.floor(cam.scrollY / 32)})`;
           } else if (this.player) {
-            this.infoText.setText(`Map: World\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})`);
+            infoTextRef.current.innerText = `Map: World\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})`;
           }
         }
 
@@ -931,7 +881,38 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
     };
   }, [mode]);
 
-  return <div ref={gameRef} className="w-full h-full flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl" />;
+  return (
+    <div className="relative w-full h-full">
+      <div ref={gameRef} className="w-full h-full flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl" />
+      <div className="absolute inset-0 pointer-events-none rounded-lg overflow-hidden z-[1000]">
+        <div ref={infoTextRef} className="absolute top-2 left-2 bg-black/60 text-white text-sm px-2 py-1 rounded whitespace-pre text-left font-mono"></div>
+        {mode === 'play' && (
+          <div className="absolute bottom-4 left-4 flex flex-col gap-2 pointer-events-auto items-start">
+            <button
+              onClick={() => {
+                const newMode = actionMode === 'walk' ? 'attack' : 'walk';
+                setActionMode(newMode);
+                if (mainSceneRef.current) mainSceneRef.current.actionMode = newMode;
+              }}
+              className={`px-4 py-2 rounded text-white text-sm font-medium transition-colors shadow-lg ${actionMode === 'walk' ? 'bg-blue-800 hover:bg-blue-700' : 'bg-red-800 hover:bg-red-700'}`}
+            >
+              Mode: {actionMode === 'walk' ? 'Walk' : 'Attack'}
+            </button>
+            {actionMode === 'attack' && (
+              <button
+                onPointerDown={() => { if (mainSceneRef.current) { mainSceneRef.current.attackButtonDown = true; mainSceneRef.current.triggerAttack(); } }}
+                onPointerUp={() => { if (mainSceneRef.current) mainSceneRef.current.attackButtonDown = false; }}
+                onPointerOut={() => { if (mainSceneRef.current) mainSceneRef.current.attackButtonDown = false; }}
+                className="px-6 py-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded shadow-xl select-none text-lg"
+              >
+                ATTACK
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function RpgMode({ onBack }: RpgModeProps) {
