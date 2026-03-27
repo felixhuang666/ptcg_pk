@@ -64,6 +64,8 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private tileset: Phaser.Tilemaps.Tileset | null = null;
       private layer: Phaser.Tilemaps.TilemapLayer | null = null;
       private infoText: Phaser.GameObjects.Text | null = null;
+      private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
+      private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
 
       constructor() {
         super('MainScene');
@@ -325,6 +327,10 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           socket.on('chat_message', (msg: ChatMessage) => {
             msg.timestamp = Date.now();
             onChatReceived(msg);
+
+            if (isDestroyed || !this.sys || !this.sys.game) return;
+            const isSelf = msg.id === socket.id;
+            this.showChatBubble(msg.id, msg.message, isSelf);
           });
 
           socket.on('player_moved', (player: any) => {
@@ -348,6 +354,9 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
               if (this.nameTags[player.id]) {
                 this.nameTags[player.id].setPosition(player.x, player.y - 40);
               }
+              if (this.chatBubbles[player.id]) {
+                this.chatBubbles[player.id].setPosition(player.x, player.y - 65);
+              }
             }
           });
 
@@ -360,6 +369,14 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             if (this.nameTags[id]) {
               this.nameTags[id].destroy();
               delete this.nameTags[id];
+            }
+            if (this.chatBubbles[id]) {
+              this.chatBubbles[id].destroy();
+              delete this.chatBubbles[id];
+            }
+            if (this.chatTimers[id]) {
+              this.chatTimers[id].remove();
+              delete this.chatTimers[id];
             }
           });
 
@@ -452,6 +469,45 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           if (isDestroyed || !this.sys || !this.sys.game) return;
           this.mapData = newMapData;
           this.renderMap();
+        });
+      }
+
+      showChatBubble(id: string, text: string, isSelf: boolean) {
+        if (this.chatBubbles[id]) {
+          this.chatBubbles[id].destroy();
+        }
+        if (this.chatTimers[id]) {
+          this.chatTimers[id].remove();
+        }
+
+        const targetSprite = isSelf ? this.player : this.otherPlayers[id];
+        if (!targetSprite) return;
+
+        const container = this.add.container(targetSprite.x, targetSprite.y - 65).setDepth(30);
+
+        const chatText = this.add.text(0, -5, text, {
+          fontSize: '12px',
+          color: '#000000',
+          backgroundColor: '#ffffff',
+          padding: { x: 6, y: 4 },
+          wordWrap: { width: 120 }
+        }).setOrigin(0.5, 1);
+
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillTriangle(-5, -5, 5, -5, 0, 0);
+
+        container.add([chatText, graphics]);
+        this.chatBubbles[id] = container;
+
+        this.chatTimers[id] = this.time.delayedCall(4000, () => {
+          if (this.chatBubbles[id]) {
+            this.chatBubbles[id].destroy();
+            delete this.chatBubbles[id];
+          }
+          if (this.chatTimers[id]) {
+            delete this.chatTimers[id];
+          }
         });
       }
 
@@ -759,8 +815,14 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             anim: moved ? currentAnim : null,
             frame: this.player.frame.name
           });
-          if (this.nameTags[socket.id]) {
-            this.nameTags[socket.id].setPosition(this.player.x, this.player.y - 40);
+          if (socketRef.current && socketRef.current.id) {
+            const sid = socketRef.current.id;
+            if (this.nameTags[sid]) {
+              this.nameTags[sid].setPosition(this.player.x, this.player.y - 40);
+            }
+            if (this.chatBubbles[sid]) {
+              this.chatBubbles[sid].setPosition(this.player.x, this.player.y - 65);
+            }
           }
         }
       }
