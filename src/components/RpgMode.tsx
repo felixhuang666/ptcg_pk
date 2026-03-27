@@ -817,12 +817,29 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [playerName, setPlayerName] = useState(user?.name || 'Player');
   const [isChatMinimized, setIsChatMinimized] = useState(true);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check if fullscreen is supported and not already active
     const checkFullscreen = () => {
-      const isFullscreen = document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement || (document as any).msFullscreenElement;
+      // Check if already in standalone mode (added to home screen on iOS/Android)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+      if (isStandalone) {
+        return; // No need to prompt if already running as an app
+      }
+
+      const doc = document as any;
+      const isFullscreen = document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+      // Check if fullscreen API is supported at all
+      const isSupported = document.fullscreenEnabled || doc.webkitFullscreenEnabled || doc.mozFullScreenEnabled || doc.msFullscreenEnabled;
+
+      // On iOS Safari/Chrome, the fullscreen API on document.documentElement is usually not supported
+      if (!isSupported) {
+        setIsFullscreenSupported(false);
+      }
+
       if (!isFullscreen) {
         setShowFullscreenPrompt(true);
       }
@@ -830,16 +847,20 @@ export default function RpgMode({ onBack }: RpgModeProps) {
     checkFullscreen();
   }, []);
 
-  const requestFullscreen = () => {
+  const requestFullscreen = async () => {
     const elem = document.documentElement as any;
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-      /* Safari */
-      elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      /* IE11 */
-      elem.msRequestFullscreen();
+    try {
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        /* Safari */
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        /* IE11 */
+        elem.msRequestFullscreen();
+      }
+    } catch (err) {
+      console.warn('Fullscreen request failed or was denied:', err);
     }
     setShowFullscreenPrompt(false);
   };
@@ -912,21 +933,37 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
               <h2 className="text-2xl font-bold mb-4 text-white">進入全螢幕模式</h2>
-              <p className="text-slate-300 mb-8">為了獲得最佳的遊戲體驗，建議您切換至全螢幕模式遊玩。</p>
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={() => setShowFullscreenPrompt(false)}
-                  className="px-6 py-3 bg-slate-700 text-white font-medium rounded-xl hover:bg-slate-600 transition-colors"
-                >
-                  稍後再說
-                </button>
-                <button
-                  onClick={requestFullscreen}
-                  className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-green-400 transition-transform transform hover:scale-105 shadow-lg shadow-emerald-900/50"
-                >
-                  啟動全螢幕
-                </button>
-              </div>
+              {isFullscreenSupported ? (
+                <>
+                  <p className="text-slate-300 mb-8">為了獲得最佳的遊戲體驗，建議您切換至全螢幕模式遊玩。</p>
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={() => setShowFullscreenPrompt(false)}
+                      className="px-6 py-3 bg-slate-700 text-white font-medium rounded-xl hover:bg-slate-600 transition-colors"
+                    >
+                      稍後再說
+                    </button>
+                    <button
+                      onClick={requestFullscreen}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-green-400 transition-transform transform hover:scale-105 shadow-lg shadow-emerald-900/50"
+                    >
+                      啟動全螢幕
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-slate-300 mb-8">您的瀏覽器目前不支援自動全螢幕功能。<br/><br/>為了獲得最佳體驗，建議您使用瀏覽器的<br/><strong className="text-emerald-400">「加入主畫面」</strong>功能，將遊戲安裝至桌面後開啟。</p>
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={() => setShowFullscreenPrompt(false)}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-green-400 transition-transform transform hover:scale-105 shadow-lg shadow-emerald-900/50"
+                    >
+                      我知道了
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
