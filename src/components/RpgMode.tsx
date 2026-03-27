@@ -35,6 +35,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite }: { key?:
       private tileSelector: Phaser.GameObjects.Text | null = null;
       private lastAnim: string | null = null;
       private joystickBase: Phaser.GameObjects.Arc | null = null;
+      private joystickGraphics: Phaser.GameObjects.Graphics | null = null;
       private joystickThumb: Phaser.GameObjects.Arc | null = null;
       private joystickActive: boolean = false;
       private joystickVector: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
@@ -282,29 +283,31 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite }: { key?:
           // Connect as RPG player
           socket.emit('rpg_connect');
 
-          const joyX = 80;
-          const joyY = 400;
+          this.joystickBase = this.add.circle(0, 0, 60, 0x000000, 0.3).setScrollFactor(0).setDepth(1000).setVisible(false);
 
-          this.joystickBase = this.add.circle(joyX, joyY, 60, 0x000000, 0.3).setScrollFactor(0).setDepth(1000).setInteractive();
+          this.joystickGraphics = this.add.graphics().setScrollFactor(0).setDepth(1000).setVisible(false);
 
-          const graphics = this.add.graphics().setScrollFactor(0).setDepth(1000);
-          graphics.lineStyle(6, 0xffffff, 0.2);
-          graphics.beginPath();
-          graphics.moveTo(joyX - 40, joyY);
-          graphics.lineTo(joyX + 40, joyY);
-          graphics.moveTo(joyX, joyY - 40);
-          graphics.lineTo(joyX, joyY + 40);
-          graphics.strokePath();
+          this.joystickThumb = this.add.circle(0, 0, 30, 0xffffff, 0.6).setScrollFactor(0).setDepth(1001).setVisible(false);
 
-          this.joystickThumb = this.add.circle(joyX, joyY, 30, 0xffffff, 0.6).setScrollFactor(0).setDepth(1001);
-
-          this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          this.input.on('pointerdown', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[]) => {
             if (this.isEditor) return;
-            const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, this.joystickBase!.x, this.joystickBase!.y);
-            if (dist <= 120) {
-              this.joystickActive = true;
-              this.updateJoystick(pointer);
-            }
+            if (gameObjects.length > 0) return; // Ignore if clicked on UI elements
+
+            this.joystickActive = true;
+            this.joystickBase!.setPosition(pointer.x, pointer.y).setVisible(true);
+            this.joystickThumb!.setPosition(pointer.x, pointer.y).setVisible(true);
+
+            this.joystickGraphics!.clear();
+            this.joystickGraphics!.lineStyle(6, 0xffffff, 0.2);
+            this.joystickGraphics!.beginPath();
+            this.joystickGraphics!.moveTo(pointer.x - 40, pointer.y);
+            this.joystickGraphics!.lineTo(pointer.x + 40, pointer.y);
+            this.joystickGraphics!.moveTo(pointer.x, pointer.y - 40);
+            this.joystickGraphics!.lineTo(pointer.x, pointer.y + 40);
+            this.joystickGraphics!.strokePath();
+            this.joystickGraphics!.setVisible(true);
+
+            this.updateJoystick(pointer);
           });
 
           this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
@@ -315,13 +318,13 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite }: { key?:
 
           const resetJoystick = () => {
             this.joystickActive = false;
-            if (this.joystickThumb && this.joystickBase) {
-              this.joystickThumb.setPosition(this.joystickBase.x, this.joystickBase.y);
-            }
+            if (this.joystickBase) this.joystickBase.setVisible(false);
+            if (this.joystickGraphics) this.joystickGraphics.setVisible(false);
+            if (this.joystickThumb) this.joystickThumb.setVisible(false);
             this.joystickVector.reset();
           };
           this.input.on('pointerup', resetJoystick);
-          this.input.on('pointerout', resetJoystick);
+          this.input.on('gameout', resetJoystick);
 
           this.modeButton = this.add.text(500, 20, 'Mode: Walk', {
             color: '#ffffff',
