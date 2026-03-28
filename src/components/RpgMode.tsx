@@ -975,17 +975,15 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
 
   useEffect(() => {
-    if (mode === 'edit') {
-      fetch('/api/maps')
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setMapsList(data);
-          }
-        })
-        .catch(err => console.error('Failed to fetch maps', err));
-    }
-  }, [mode]);
+    fetch('/api/maps')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setMapsList(data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch maps', err));
+  }, []);
 
   const handleMapChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newId = e.target.value;
@@ -1295,7 +1293,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           )}
 
           <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-0 flex flex-col">
-            {mode === 'edit' && (
+            {true && (
               <div className="w-full bg-slate-900 border-b border-slate-700 p-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0 z-[5000] relative">
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-white text-sm whitespace-nowrap">Map:</span>
@@ -1308,10 +1306,13 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                       <option key={m.id} value={m.id}>{m.name}</option>
                     ))}
                   </select>
+                  {mode === 'edit' && (
                   <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs whitespace-nowrap transition-colors">
                     Rename
                   </button>
+                  )}
                 </div>
+                {mode === 'edit' && (
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={async () => {
                     const newId = 'map_' + Date.now();
@@ -1335,6 +1336,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                     Generate
                   </button>
                 </div>
+                )}
               </div>
             )}
 
