@@ -81,3 +81,5 @@ async def test_generate_map():
     assert map_data["width"] == 50
     assert map_data["height"] == 50
     assert len(map_data["tiles"]) == 2500
+    assert "objects" in map_data
+    assert len(map_data["objects"]) == 2500
