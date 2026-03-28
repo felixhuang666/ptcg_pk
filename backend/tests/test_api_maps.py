@@ -1,0 +1,83 @@
+import pytest
+from httpx import AsyncClient, ASGITransport
+from backend.main import app, in_memory_maps
+
+@pytest.fixture(autouse=True)
+def reset_in_memory_maps():
+    in_memory_maps.clear()
+    in_memory_maps["main_200"] = {
+        "id": "main_200",
+        "name": "World Map",
+        "map_data": {
+            "width": 200,
+            "height": 200,
+            "tiles": [2] * (200 * 200)
+        }
+    }
+
+@pytest.mark.asyncio
+async def test_get_maps_list():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.get("/api/maps")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) >= 1
+    assert data[0]["id"] == "main_200"
+    assert data[0]["name"] == "World Map"
+
+@pytest.mark.asyncio
+async def test_get_specific_map():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.get("/api/map?id=main_200")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == "main_200"
+    assert data["name"] == "World Map"
+    assert "map_data" in data
+    assert data["map_data"]["width"] == 200
+
+@pytest.mark.asyncio
+async def test_save_new_map():
+    new_map = {
+        "id": "test_map_001",
+        "name": "Test Map",
+        "map_data": {
+            "width": 10,
+            "height": 10,
+            "tiles": [48] * 100
+        }
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.post("/api/map", json=new_map)
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["success"] is True
+    assert res_data["id"] == "test_map_001"
+
+    assert "test_map_001" in in_memory_maps
+
+@pytest.mark.asyncio
+async def test_generate_map():
+    gen_req = {
+        "name": "Procedural Forest",
+        "width": 50,
+        "height": 50
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.post("/api/map/generate", json=gen_req)
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["success"] is True
+    assert res_data["name"] == "Procedural Forest"
+    assert "id" in res_data
+    assert res_data["id"].startswith("gen_")
+
+    map_data = res_data["map_data"]
+    assert map_data["width"] == 50
+    assert map_data["height"] == 50
+    assert len(map_data["tiles"]) == 2500

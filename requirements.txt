@@ -26,3 +26,6 @@ wsproto==1.3.2
 
 noise==1.2.2
 perlin-noise==1.14
+
+pytest==9.0.2
+pytest-asyncio==1.3.0
