@@ -212,9 +212,17 @@ async def list_maps():
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            res = await client.table('maps').select('id, name').execute()
-            if res.data is not None:
-                return res.data
+            try:
+                res = await client.table('maps').select('id, name').execute()
+                if res.data is not None:
+                    return res.data
+            except Exception as inner_e:
+                if 'PGRST204' in str(inner_e):
+                    res = await client.table('maps').select('id').execute()
+                    if res.data is not None:
+                        return [{"id": m["id"], "name": "Unknown"} for m in res.data]
+                else:
+                    raise inner_e
     except Exception as e:
         print(f"Supabase warning (fetching maps): {e}")
     return [{"id": k, "name": v.get("name", k)} for k, v in in_memory_maps.items()]
@@ -261,7 +269,13 @@ async def save_map(request: Request):
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            await client.table('maps').upsert({'id': map_id, 'name': map_name, 'map_data': map_data}).execute()
+            try:
+                await client.table('maps').upsert({'id': map_id, 'name': map_name, 'map_data': map_data}).execute()
+            except Exception as inner_e:
+                if 'PGRST204' in str(inner_e):
+                    await client.table('maps').upsert({'id': map_id, 'map_data': map_data}).execute()
+                else:
+                    raise inner_e
     except Exception as e:
         print(f"Supabase warning (saving map): {e}")
 
@@ -317,7 +331,13 @@ async def generate_map(request: Request):
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            await client.table('maps').upsert({'id': map_id, 'name': name, 'map_data': map_data}).execute()
+            try:
+                await client.table('maps').upsert({'id': map_id, 'name': name, 'map_data': map_data}).execute()
+            except Exception as inner_e:
+                if 'PGRST204' in str(inner_e):
+                    await client.table('maps').upsert({'id': map_id, 'map_data': map_data}).execute()
+                else:
+                    raise inner_e
     except Exception as e:
         print(f"Supabase warning (generating map): {e}")
 
