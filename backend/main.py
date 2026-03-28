@@ -199,7 +199,8 @@ in_memory_maps = {
         "map_data": {
             "width": 200,
             "height": 200,
-            "tiles": [2] * (200 * 200) # 2 = grass
+            "tiles": [2] * (200 * 200), # 2 = grass
+            "objects": [-1] * (200 * 200) # -1 = empty
         }
     }
 }
@@ -306,22 +307,40 @@ async def generate_map(request: Request):
     lacunarity = 2.0
     seed = int(uuid.uuid4().hex[:8], 16) % 100000
 
+    import random
     tiles = []
+    objects = []
     for y in range(height):
         for x in range(width):
             val = noise.pnoise2(x/scale, y/scale, octaves=octaves, persistence=persistence, lacunarity=lacunarity, repeatx=width, repeaty=height, base=seed)
+            obj_val = -1
+
+            # Ground layer
             if val < -0.1:
-                tiles.append(48)
+                tiles.append(48) # Water
             elif val > 0.15:
-                tiles.append(94)
+                tiles.append(101) # Dirt Base Dark
             else:
-                tiles.append(2)
+                tiles.append(2) # Grass
+
+            # Object layer (spawn rocks, plants, bushes based on high frequency noise and thresholds)
+            if val > 0.2:
+                # Sparse rocks on dirt/mountains
+                if random.random() < 0.1:
+                    obj_val = random.choice([92, 93, 94]) # Rocks
+            elif -0.1 <= val <= 0.15:
+                # Nature objects on grass
+                if random.random() < 0.05:
+                    obj_val = random.choice([96, 97, 98, 99]) # Grass tufts, plants, bushes
+
+            objects.append(obj_val)
 
     map_id = f"gen_{uuid.uuid4().hex[:8]}"
     map_data = {
         "width": width,
         "height": height,
-        "tiles": tiles
+        "tiles": tiles,
+        "objects": objects
     }
 
     try:

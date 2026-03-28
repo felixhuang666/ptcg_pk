@@ -42,7 +42,9 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private npcs: Record<string, Phaser.Physics.Arcade.Sprite> = {};
       private nameTags: Record<string, Phaser.GameObjects.Text> = {};
       private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-      private currentTileType: number = 1; // 0 = grass, 1 = water, 2 = mountain
+      private currentTileType: number = 2; // 2=grass, 48=water, 94=mountain
+      public currentEditLayer: 'ground' | 'object' = 'ground';
+      public isEraser: boolean = false;
       private isEditor: boolean = false;
       private saveButton: Phaser.GameObjects.Text | null = null;
       private tileSelector: Phaser.GameObjects.Text | null = null;
@@ -56,14 +58,15 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       public actionMode: 'walk' | 'attack' = 'walk';
       private currentDirection: string = 'down';
       public attackButtonDown: boolean = false;
-      private undoStack: number[][] = [];
-      private redoStack: number[][] = [];
+      private undoStack: {tiles: number[], objects?: number[]}[] = [];
+      private redoStack: {tiles: number[], objects?: number[]}[] = [];
       private isPanning: boolean = false;
       private panStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private camStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private tilemap: Phaser.Tilemaps.Tilemap | null = null;
       private tileset: Phaser.Tilemaps.Tileset | null = null;
       private layer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private objectLayer: Phaser.Tilemaps.TilemapLayer | null = null;
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
@@ -269,7 +272,10 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
               return;
             }
 
-            this.undoStack.push([...this.mapData.tiles]);
+            this.undoStack.push({
+              tiles: [...this.mapData.tiles],
+              objects: this.mapData.objects ? [...this.mapData.objects] : []
+            });
             this.redoStack = [];
 
             this.handlePointerDown(pointer);
@@ -718,10 +724,24 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
 
         if (x >= 0 && x < this.mapData.width && y >= 0 && y < this.mapData.height) {
           const index = y * this.mapData.width + x;
-          if (this.mapData.tiles[index] !== this.currentTileType) {
-            this.mapData.tiles[index] = this.currentTileType;
-            if (this.layer) {
-              this.layer.putTileAt(this.currentTileType + 1, x, y);
+          const targetVal = this.isEraser ? -1 : this.currentTileType;
+
+          if (this.currentEditLayer === 'ground') {
+            if (this.mapData.tiles[index] !== targetVal) {
+              this.mapData.tiles[index] = targetVal;
+              if (this.layer) {
+                if (targetVal === -1) this.layer.removeTileAt(x, y);
+                else this.layer.putTileAt(targetVal + 1, x, y);
+              }
+            }
+          } else {
+            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(-1);
+            if (this.mapData.objects[index] !== targetVal) {
+              this.mapData.objects[index] = targetVal;
+              if (this.objectLayer) {
+                if (targetVal === -1) this.objectLayer.removeTileAt(x, y);
+                else this.objectLayer.putTileAt(targetVal + 1, x, y);
+              }
             }
           }
         }
@@ -919,6 +939,8 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [selectedTile, setSelectedTile] = useState<number>(2);
+  const [editLayer, setEditLayer] = useState<'ground' | 'object'>('ground');
+  const [isEraser, setIsEraser] = useState<boolean>(false);
 
   useEffect(() => {
     const handleTileChange = (e: any) => setSelectedTile(e.detail);
@@ -934,6 +956,19 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const handleRedo = () => {
     const scene = (window as any).__PHASER_MAIN_SCENE__;
     if (scene && scene.performRedo) scene.performRedo();
+  };
+
+  const handleLayerToggle = (layer: 'ground' | 'object') => {
+    setEditLayer(layer);
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene) scene.currentEditLayer = layer;
+  };
+
+  const handleEraserToggle = () => {
+    const newVal = !isEraser;
+    setIsEraser(newVal);
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene) scene.isEraser = newVal;
   };
 
   const handleSaveMap = async () => {
@@ -1301,9 +1336,23 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 </div>
                 {mode === 'edit' && (
                 <div className="flex items-center gap-2 shrink-0">
-                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2">
-                    <span className="mr-2">Paint: <strong className="text-emerald-400">{getTileName(selectedTile)}</strong></span>
-                    <span className="text-slate-400 text-[10px]">(Keys: 1=Grass, 2=Water, 3=Mountain)</span>
+                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                    <select
+                      value={editLayer}
+                      onChange={(e) => handleLayerToggle(e.target.value as 'ground'|'object')}
+                      className="bg-slate-700 border border-slate-500 rounded outline-none text-xs px-1 py-0.5"
+                    >
+                      <option value="ground">Ground Layer</option>
+                      <option value="object">Object Layer</option>
+                    </select>
+                    <button
+                      onClick={handleEraserToggle}
+                      className={`px-2 py-0.5 rounded text-xs transition-colors ${isEraser ? 'bg-red-600' : 'bg-slate-600 hover:bg-slate-500'}`}
+                    >
+                      Eraser
+                    </button>
+                    <span>Paint: <strong className="text-emerald-400">{isEraser ? 'Erase (-1)' : getTileName(selectedTile)}</strong></span>
+                    <span className="text-slate-400 text-[10px]">(Keys: 1=Grass, 2=Water, 3=Rock)</span>
                   </div>
                   <button onClick={handleUndo} className="bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-xs transition-colors">Undo</button>
                   <button onClick={handleRedo} className="bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-xs transition-colors">Redo</button>
