@@ -941,11 +941,21 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [selectedTile, setSelectedTile] = useState<number>(2);
   const [editLayer, setEditLayer] = useState<'ground' | 'object'>('ground');
   const [isEraser, setIsEraser] = useState<boolean>(false);
+  const [resizeWidth, setResizeWidth] = useState<number>(200);
+  const [resizeHeight, setResizeHeight] = useState<number>(200);
 
   useEffect(() => {
     const handleTileChange = (e: any) => setSelectedTile(e.detail);
+    const handleMapLoaded = (e: any) => {
+      setResizeWidth(e.detail.width);
+      setResizeHeight(e.detail.height);
+    };
     window.addEventListener('tileTypeChanged', handleTileChange);
-    return () => window.removeEventListener('tileTypeChanged', handleTileChange);
+    window.addEventListener('mapLoaded', handleMapLoaded);
+    return () => {
+      window.removeEventListener('tileTypeChanged', handleTileChange);
+      window.removeEventListener('mapLoaded', handleMapLoaded);
+    };
   }, []);
 
   const handleUndo = () => {
@@ -956,6 +966,14 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const handleRedo = () => {
     const scene = (window as any).__PHASER_MAIN_SCENE__;
     if (scene && scene.performRedo) scene.performRedo();
+  };
+
+  const handleResizeMap = async () => {
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene && scene.resizeMapData) {
+      scene.resizeMapData(resizeWidth, resizeHeight);
+      await handleSaveMap(); // Save automatically as requested
+    }
   };
 
   const handleLayerToggle = (layer: 'ground' | 'object') => {
@@ -1014,7 +1032,12 @@ export default function RpgMode({ onBack }: RpgModeProps) {
     if (mapObj) setCurrentMapName(mapObj.name);
     const scene = (window as any).__PHASER_MAIN_SCENE__;
     if (scene && scene.loadNewMap) {
-      scene.loadNewMap(newId);
+      scene.loadNewMap(newId).then(() => {
+        if (scene.mapData) {
+          setResizeWidth(scene.mapData.width);
+          setResizeHeight(scene.mapData.height);
+        }
+      });
     }
   };
 
@@ -1336,6 +1359,27 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 </div>
                 {mode === 'edit' && (
                 <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                    <span>W:</span>
+                    <input
+                      type="number"
+                      value={resizeWidth}
+                      onChange={(e) => setResizeWidth(parseInt(e.target.value) || 10)}
+                      className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                      min="10"
+                    />
+                    <span>H:</span>
+                    <input
+                      type="number"
+                      value={resizeHeight}
+                      onChange={(e) => setResizeHeight(parseInt(e.target.value) || 10)}
+                      className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                      min="10"
+                    />
+                    <button onClick={handleResizeMap} className="bg-blue-600 hover:bg-blue-500 px-2 py-0.5 rounded text-[10px] transition-colors ml-1">
+                      Resize & Save
+                    </button>
+                  </div>
                   <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
                     <select
                       value={editLayer}
