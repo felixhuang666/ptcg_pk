@@ -341,6 +341,12 @@ async def delete_npc(npc_id: str):
     await sio.emit("npc_deleted", {"id": npc_id})
     return {"success": True}
 
+@app.get("/favicon.ico")
+async def favicon():
+    if os.path.exists("dist/favicon.ico"):
+        return FileResponse("dist/favicon.ico")
+    raise HTTPException(status_code=404, detail="Favicon not found")
+
 # Catch-all route to serve index.html for React Router
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
