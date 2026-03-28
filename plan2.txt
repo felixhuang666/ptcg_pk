@@ -1,0 +1,13 @@
+Plan refinement:
+
+1. Map Generation via Perlin Noise (backend/main.py):
+   - Add a new endpoint `POST /api/maps/generate` that takes a `name` and dimensions (e.g. 200x200).
+   - Use `noise.pnoise2` to generate noise map. Map values: <-0.05: Water (e.g., id 530 Water_Plain_Blue), -0.05 to 0.1: Grass (e.g., id 40 Grass_Regular), >0.1: Mountain/Rock (e.g., id 1030 Rock_Grey_Medium_A or similar). Wait, the frontend tile array takes tile ID, which is +1 in `putTileAt` or maybe just 0-based for the tileset array? RpgMode currently uses index 0, 1, 2 for grass, water, mountain. Let's look at `cute_tileset.json`.
+   Wait! The `cute_tileset.png` has a lot of tiles. `cute_tileset.json` maps IDs to coordinates or names. RpgMode creates a simple 3-color tileset:
+   ```typescript
+        graphics.fillStyle(0x32cd32);
+        graphics.fillRect(0, 0, 32, 32); ...
+   ```
+   So RpgMode generates a 3-tile texture on the fly.
+   We need to use `cute_tileset.png` instead! It's a real image. I need to load `public/assets/map_tileset/cute_tileset.png` in Phaser instead of generating a graphics texture.
+   And use tile IDs from `cute_tileset.json`. We need to figure out tile width/height (probably 32x32) and the mapping from json ID to tile index in the PNG. Wait, Tiled JSON format usually has a direct mapping, but `cute_tileset.json` is a custom format with objects having "id" and "name". Let's check `cute_tileset.json` for first item ID. First ID is 0? Let's check.

@@ -1,0 +1,28 @@
+Objective:
+- In MAP EDITOR (RPG Mode):
+  - Add a button to dynamically trigger map regeneration.
+  - In FastAPI, implement Perlin Noise to generate a new world map, filling it with suitable assets (reference: `public/assets/map_tileset/cute_tileset.json` & `public/assets/map_tileset/cute_tileset.png`).
+  - In the map management interface, allow selecting a map, renaming it.
+  - Add map switching functionality in the top toolbar.
+  - When the user zooms in/out, it must not affect the toolbar size. Toolbar width must always equal window width. If width is insufficient, automatically shrink components to fit window width.
+
+Steps:
+1. Update `backend/main.py`:
+   - Implement `noise` library (or similar for Perlin noise) to generate a map. We can use a simple python implementation of perlin noise if external libraries aren't available, or install `noise` package. Let's use `perlin-noise` or standard python math.
+   - We need endpoints: `GET /api/maps` (list maps), `POST /api/maps` (create/generate map), `PUT /api/maps/{id}` (rename map), `GET /api/maps/{id}` (get specific map).
+   - In map generation, use tile IDs from `cute_tileset.json` (e.g. Grass_Regular, Water_Plain_Blue, Rock_Grey_Medium_A) based on Perlin noise values (e.g. low noise = water, mid = grass, high = rock/mountain).
+2. Update `src/components/RpgMode.tsx` to handle the new `cute_tileset.png`:
+   - Preload `cute_tileset.png` as the tileset instead of the generated graphics texture.
+   - Adjust `this.make.tilemap` and tileset configuration to use the loaded texture (`tileset`).
+3. Create Map Management UI (Top Toolbar) outside of Phaser canvas using React:
+   - Since we need fixed UI overlays on top of Phaser that aren't affected by camera zoom/pan, we must use absolute-positioned React DOM elements outside the Phaser canvas.
+   - The toolbar will have: Dropdown to select map, Edit Map Name input, and a "Regenerate Map" button.
+   - Use Tailwind CSS for responsive sizing (`w-full`, auto-shrinking text/buttons if needed).
+4. Integrate React UI state with Phaser:
+   - Use a custom event or React state to trigger map load in Phaser.
+   - Expose methods from Phaser scene or pass data to React.
+5. Setup Migration script:
+   - Add a db migration script in `scripts/migrate_{date_time_str}_xxxx.py` if needed to create a `maps` table with `id`, `name`, `map_data`. (We should actually verify if we can alter the supabase schema or just use local memory/json for now if supabase isn't connected. Wait, main.py uses supabase `maps` table, so we need a migration script for it, maybe adding a `name` column).
+6. Pre-commit checks & cleanup.
+
+Let's inspect RpgMode.tsx more closely to understand how we can add React UI on top. Currently RpgMode is probably returning a div with the canvas.
