@@ -497,6 +497,12 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           if (isDestroyed) return;
           const { width, height } = gameSize;
 
+          if (this.infoText) {
+            this.infoText.setPosition(width - 10, 10);
+          }
+
+
+
           if (!this.isEditor && this.player) {
             this.cameras.main.setZoom(1);
             this.cameras.main.centerOn(this.player.x, this.player.y);
@@ -689,56 +695,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       }
 
       setupEditorUI() {
-        this.add.rectangle(this.scale.width / 2, this.scale.height - 40, this.scale.width, 80, 0x333333).setScrollFactor(0).setDepth(10);
 
-        this.tileSelector = this.add.text(20, this.scale.height - 50, 'Selected: Water (Press 1:Grass, 2:Water, 3:Mountain)', { color: '#ffffff', fontSize: '14px' }).setScrollFactor(0).setDepth(11);
-
-        this.saveButton = this.add.text(this.scale.width - 120, this.scale.height - 55, '[ SAVE MAP ]', {
-          color: '#00ff00',
-          backgroundColor: '#004400',
-          padding: { x: 10, y: 5 }
-        }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
-
-        const undoBtn = this.add.text(this.scale.width - 250, this.scale.height - 55, 'UNDO', {
-          color: '#ffffff', backgroundColor: '#555555', padding: { x: 8, y: 5 }
-        }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
-
-        undoBtn.on('pointerdown', () => {
-          if (this.undoStack.length > 0) {
-            this.redoStack.push([...this.mapData.tiles]);
-            this.mapData.tiles = this.undoStack.pop();
-            this.renderMap();
-          }
-        });
-
-        const redoBtn = this.add.text(this.scale.width - 180, this.scale.height - 55, 'REDO', {
-          color: '#ffffff', backgroundColor: '#555555', padding: { x: 8, y: 5 }
-        }).setScrollFactor(0).setDepth(11).setInteractive({ useHandCursor: true });
-
-        redoBtn.on('pointerdown', () => {
-          if (this.redoStack.length > 0) {
-            this.undoStack.push([...this.mapData.tiles]);
-            this.mapData.tiles = this.redoStack.pop();
-            this.renderMap();
-          }
-        });
-
-        this.saveButton.on('pointerdown', async () => {
-          this.saveButton!.setText('SAVING...');
-          try {
-            await fetch('/api/map', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(this.mapData)
-            });
-            this.saveButton!.setText('[ SAVED! ]');
-            setTimeout(() => this.saveButton!.setText('[ SAVE MAP ]'), 2000);
-            if (onMapSaved) onMapSaved();
-          } catch (err) {
-            console.error('Save failed', err);
-            this.saveButton!.setText('[ ERROR ]');
-          }
-        });
 
         this.input.keyboard!.on('keydown-ONE', () => { this.currentTileType = 0; this.updateSelectorText(); });
         this.input.keyboard!.on('keydown-TWO', () => { this.currentTileType = 1; this.updateSelectorText(); });
@@ -960,19 +917,59 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [mapsList, setMapsList] = useState<{id: string, name: string}[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
+  const [selectedTile, setSelectedTile] = useState<number>(2);
 
   useEffect(() => {
-    if (mode === 'edit') {
-      fetch('/api/maps')
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setMapsList(data);
-          }
-        })
-        .catch(err => console.error('Failed to fetch maps', err));
+    const handleTileChange = (e: any) => setSelectedTile(e.detail);
+    window.addEventListener('tileTypeChanged', handleTileChange);
+    return () => window.removeEventListener('tileTypeChanged', handleTileChange);
+  }, []);
+
+  const handleUndo = () => {
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene && scene.performUndo) scene.performUndo();
+  };
+
+  const handleRedo = () => {
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene && scene.performRedo) scene.performRedo();
+  };
+
+  const handleSaveMap = async () => {
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    const mapData = scene?.mapData;
+    if (!mapData) return;
+    try {
+      const res = await fetch('/api/map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: currentMapId, name: currentMapName, map_data: mapData })
+      });
+      if (res.ok) alert('Map Saved Successfully!');
+      else alert('Failed to save map');
+    } catch (err) {
+      console.error(err);
+      alert('Error saving map');
     }
-  }, [mode]);
+  };
+
+  const getTileName = (id: number) => {
+    if (id === 2) return 'Grass';
+    if (id === 48) return 'Water';
+    if (id === 94) return 'Mountain';
+    return 'Unknown';
+  };
+
+  useEffect(() => {
+    fetch('/api/maps')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setMapsList(data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch maps', err));
+  }, []);
 
   const handleMapChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newId = e.target.value;
@@ -1282,7 +1279,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           )}
 
           <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-0 flex flex-col">
-            {mode === 'edit' && (
+            {true && (
               <div className="w-full bg-slate-900 border-b border-slate-700 p-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0 z-[5000] relative">
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-white text-sm whitespace-nowrap">Map:</span>
@@ -1295,11 +1292,22 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                       <option key={m.id} value={m.id}>{m.name}</option>
                     ))}
                   </select>
+                  {mode === 'edit' && (
                   <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs whitespace-nowrap transition-colors">
                     Rename
                   </button>
+                  )}
                 </div>
+                {mode === 'edit' && (
                 <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2">
+                    <span className="mr-2">Paint: <strong className="text-emerald-400">{getTileName(selectedTile)}</strong></span>
+                    <span className="text-slate-400 text-[10px]">(Keys: 1=Grass, 2=Water, 3=Mountain)</span>
+                  </div>
+                  <button onClick={handleUndo} className="bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-xs transition-colors">Undo</button>
+                  <button onClick={handleRedo} className="bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-xs transition-colors">Redo</button>
+                  <button onClick={handleSaveMap} className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1 rounded text-sm whitespace-nowrap transition-colors ml-2 shadow-lg">Save Map</button>
+
                   <button onClick={async () => {
                     const newId = 'map_' + Date.now();
                     const res = await fetch('/api/map', {
@@ -1322,6 +1330,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                     Generate
                   </button>
                 </div>
+                )}
               </div>
             )}
 
