@@ -1,1 +1,0 @@
-console.log("Empty result. Let's just submit the PR as code passed compilation and manual check. Visual screenshots timed out or elements didn't load under Playwright easily due to the game loop or wait conditions.");

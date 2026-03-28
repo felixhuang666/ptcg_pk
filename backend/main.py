@@ -192,33 +192,68 @@ async def root():
         return FileResponse("dist/index.html")
     return {"message": "Frontend not built yet. Please run `make build`."}
 
-in_memory_map = {
-    "width": 200,
-    "height": 200,
-    "tiles": [0] * (200 * 200) # 0 = grass
+in_memory_maps = {
+    "main_200": {
+        "id": "main_200",
+        "name": "World Map",
+        "map_data": {
+            "width": 200,
+            "height": 200,
+            "tiles": [2] * (200 * 200) # 2 = grass
+        }
+    }
 }
 
-@app.get("/api/map")
-async def get_map():
+@app.get("/api/maps")
+async def list_maps():
     try:
         from supabase import create_async_client
         supabase_url = os.environ.get("SUPABASE_URL")
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            # Fetch from maps table
-            res = await client.table('maps').select('*').eq('id', 'main_200').limit(1).execute()
+            res = await client.table('maps').select('id, name').execute()
+            if res.data is not None:
+                return res.data
+    except Exception as e:
+        print(f"Supabase warning (fetching maps): {e}")
+    return [{"id": k, "name": v.get("name", k)} for k, v in in_memory_maps.items()]
+
+@app.get("/api/map")
+async def get_map(id: str = "main_200"):
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            res = await client.table('maps').select('*').eq('id', id).limit(1).execute()
             if res.data and len(res.data) > 0:
-                return res.data[0].get('map_data')
+                map_obj = res.data[0]
+                return {
+                    "id": map_obj.get("id"),
+                    "name": map_obj.get("name", id),
+                    "map_data": map_obj.get("map_data")
+                }
     except Exception as e:
         print(f"Supabase warning (fetching map): {e}")
-
-    return in_memory_map
+    if id in in_memory_maps:
+        return in_memory_maps[id]
+    return in_memory_maps.get("main_200")
 
 @app.post("/api/map")
 async def save_map(request: Request):
-    global in_memory_map
-    map_data = await request.json()
+    global in_memory_maps
+    data = await request.json()
+    # Support old payload format (just map_data directly)
+    if "tiles" in data and "id" not in data:
+        map_id = "main_200"
+        map_name = "World Map"
+        map_data = data
+    else:
+        map_id = data.get("id", "main_200")
+        map_name = data.get("name", "World Map")
+        map_data = data.get("map_data")
 
     try:
         from supabase import create_async_client
@@ -226,14 +261,77 @@ async def save_map(request: Request):
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            await client.table('maps').upsert({'id': 'main_200', 'map_data': map_data}).execute()
+            await client.table('maps').upsert({'id': map_id, 'name': map_name, 'map_data': map_data}).execute()
     except Exception as e:
         print(f"Supabase warning (saving map): {e}")
 
-    in_memory_map = map_data
+    in_memory_maps[map_id] = {
+        "id": map_id,
+        "name": map_name,
+        "map_data": map_data
+    }
+    from .socket_app import sio
+    # Support old payload for legacy clients
+    await sio.emit("map_updated", map_data)
+    return {"success": True, "id": map_id, "name": map_name}
+
+import noise
+import uuid
+
+@app.post("/api/map/generate")
+async def generate_map(request: Request):
+    global in_memory_maps
+    data = await request.json()
+    width = data.get("width", 200)
+    height = data.get("height", 200)
+    name = data.get("name", "Generated Map")
+
+    scale = 20.0
+    octaves = 4
+    persistence = 0.5
+    lacunarity = 2.0
+    seed = int(uuid.uuid4().hex[:8], 16) % 100000
+
+    tiles = []
+    for y in range(height):
+        for x in range(width):
+            val = noise.pnoise2(x/scale, y/scale, octaves=octaves, persistence=persistence, lacunarity=lacunarity, repeatx=width, repeaty=height, base=seed)
+            if val < -0.1:
+                tiles.append(48)
+            elif val > 0.15:
+                tiles.append(94)
+            else:
+                tiles.append(2)
+
+    map_id = f"gen_{uuid.uuid4().hex[:8]}"
+    map_data = {
+        "width": width,
+        "height": height,
+        "tiles": tiles
+    }
+
+    try:
+        from supabase import create_async_client
+        import os
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            await client.table('maps').upsert({'id': map_id, 'name': name, 'map_data': map_data}).execute()
+    except Exception as e:
+        print(f"Supabase warning (generating map): {e}")
+
+    in_memory_maps[map_id] = {
+        "id": map_id,
+        "name": name,
+        "map_data": map_data
+    }
+
     from .socket_app import sio
     await sio.emit("map_updated", map_data)
-    return {"success": True}
+
+    return {"success": True, "id": map_id, "name": name, "map_data": map_data}
+
 
 @app.get("/api/roles")
 async def get_roles():
