@@ -8,7 +8,6 @@ interface RpgModeProps {
 }
 
 import { useAppStore } from '../store/appStore';
-import RpgMapEditor from './RpgMapEditor';
 
 interface ChatMessage {
   id: string;
@@ -81,6 +80,75 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       init(data: any) {
         this.isEditor = data.mode === 'edit';
         mainSceneRef.current = this;
+        (window as any).__PHASER_MAIN_SCENE__ = this;
+      }
+
+      public performUndo() {
+        if (this.undoStack.length > 0) {
+          const prevState = this.undoStack.pop()!;
+          this.redoStack.push({
+            tiles: [...this.mapData.tiles],
+            objects: this.mapData.objects ? [...this.mapData.objects] : []
+          });
+          this.mapData.tiles = [...prevState.tiles];
+          if (prevState.objects) this.mapData.objects = [...prevState.objects];
+          this.renderMap();
+        }
+      }
+
+      public performRedo() {
+        if (this.redoStack.length > 0) {
+          const nextState = this.redoStack.pop()!;
+          this.undoStack.push({
+            tiles: [...this.mapData.tiles],
+            objects: this.mapData.objects ? [...this.mapData.objects] : []
+          });
+          this.mapData.tiles = [...nextState.tiles];
+          if (nextState.objects) this.mapData.objects = [...nextState.objects];
+          this.renderMap();
+        }
+      }
+
+      public resizeMapData(newW: number, newH: number) {
+        if (!this.mapData) return;
+        const oldW = this.mapData.width;
+        const oldH = this.mapData.height;
+        const newTiles = Array(newW * newH).fill(2); // default grass
+        const newObjects = Array(newW * newH).fill(-1);
+
+        for (let y = 0; y < Math.min(oldH, newH); y++) {
+          for (let x = 0; x < Math.min(oldW, newW); x++) {
+            newTiles[y * newW + x] = this.mapData.tiles[y * oldW + x];
+            if (this.mapData.objects && this.mapData.objects.length > 0) {
+              newObjects[y * newW + x] = this.mapData.objects[y * oldW + x] !== undefined ? this.mapData.objects[y * oldW + x] : -1;
+            }
+          }
+        }
+
+        this.mapData.width = newW;
+        this.mapData.height = newH;
+        this.mapData.tiles = newTiles;
+        this.mapData.objects = newObjects;
+
+        this.undoStack = [];
+        this.redoStack = [];
+        this.renderMap();
+      }
+
+      public async loadNewMap(id: string) {
+        try {
+          const res = await fetch(`/api/map?id=${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            this.mapData = data;
+            this.undoStack = [];
+            this.redoStack = [];
+            this.renderMap();
+            window.dispatchEvent(new CustomEvent('mapLoaded', { detail: { width: data.width, height: data.height } }));
+          }
+        } catch (err) {
+          console.error('Failed to load map', err);
+        }
       }
 
       preload() {
@@ -893,37 +961,13 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       <div ref={gameRef} className="w-full h-full flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl" />
       <div className="absolute inset-0 pointer-events-none rounded-lg overflow-hidden z-[1000]">
         <div ref={infoTextRef} className="absolute top-2 left-2 bg-black/60 text-white text-sm px-2 py-1 rounded whitespace-pre text-left font-mono"></div>
-        {mode === 'play' && (
-          <div className="absolute bottom-4 left-4 flex flex-col gap-2 pointer-events-auto items-start">
-            <button
-              onClick={() => {
-                const newMode = actionMode === 'walk' ? 'attack' : 'walk';
-                setActionMode(newMode);
-                if (mainSceneRef.current) mainSceneRef.current.actionMode = newMode;
-              }}
-              className={`px-4 py-2 rounded text-white text-sm font-medium transition-colors shadow-lg ${actionMode === 'walk' ? 'bg-blue-800 hover:bg-blue-700' : 'bg-red-800 hover:bg-red-700'}`}
-            >
-              Mode: {actionMode === 'walk' ? 'Walk' : 'Attack'}
-            </button>
-            {actionMode === 'attack' && (
-              <button
-                onPointerDown={() => { if (mainSceneRef.current) { mainSceneRef.current.attackButtonDown = true; mainSceneRef.current.triggerAttack(); } }}
-                onPointerUp={() => { if (mainSceneRef.current) mainSceneRef.current.attackButtonDown = false; }}
-                onPointerOut={() => { if (mainSceneRef.current) mainSceneRef.current.attackButtonDown = false; }}
-                className="px-6 py-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded shadow-xl select-none text-lg"
-              >
-                ATTACK
-              </button>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-export default function RpgMode({ onBack }: RpgModeProps) {
-  const [mode, setMode] = useState<'play' | 'edit'>('play');
+export default function RpgMapEditor({ onBack }: RpgModeProps) {
+  const mode = 'edit' as const;
   const [showSettings, setShowSettings] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
@@ -939,6 +983,81 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [mapsList, setMapsList] = useState<{id: string, name: string}[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
+  const [selectedTile, setSelectedTile] = useState<number>(2);
+  const [editLayer, setEditLayer] = useState<'ground' | 'object'>('ground');
+  const [isEraser, setIsEraser] = useState<boolean>(false);
+  const [resizeWidth, setResizeWidth] = useState<number>(200);
+  const [resizeHeight, setResizeHeight] = useState<number>(200);
+
+  useEffect(() => {
+    const handleTileChange = (e: any) => setSelectedTile(e.detail);
+    const handleMapLoaded = (e: any) => {
+      setResizeWidth(e.detail.width);
+      setResizeHeight(e.detail.height);
+    };
+    window.addEventListener('tileTypeChanged', handleTileChange);
+    window.addEventListener('mapLoaded', handleMapLoaded);
+    return () => {
+      window.removeEventListener('tileTypeChanged', handleTileChange);
+      window.removeEventListener('mapLoaded', handleMapLoaded);
+    };
+  }, []);
+
+  const handleUndo = () => {
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene && scene.performUndo) scene.performUndo();
+  };
+
+  const handleRedo = () => {
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene && scene.performRedo) scene.performRedo();
+  };
+
+  const handleResizeMap = async () => {
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene && scene.resizeMapData) {
+      scene.resizeMapData(resizeWidth, resizeHeight);
+      await handleSaveMap(); // Save automatically as requested
+    }
+  };
+
+  const handleLayerToggle = (layer: 'ground' | 'object') => {
+    setEditLayer(layer);
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene) scene.currentEditLayer = layer;
+  };
+
+  const handleEraserToggle = () => {
+    const newVal = !isEraser;
+    setIsEraser(newVal);
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene) scene.isEraser = newVal;
+  };
+
+  const handleSaveMap = async () => {
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    const mapData = scene?.mapData;
+    if (!mapData) return;
+    try {
+      const res = await fetch('/api/map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: currentMapId, name: currentMapName, map_data: mapData })
+      });
+      if (res.ok) alert('Map Saved Successfully!');
+      else alert('Failed to save map');
+    } catch (err) {
+      console.error(err);
+      alert('Error saving map');
+    }
+  };
+
+  const getTileName = (id: number) => {
+    if (id === 2) return 'Grass';
+    if (id === 48) return 'Water';
+    if (id === 94) return 'Mountain';
+    return 'Unknown';
+  };
 
   useEffect(() => {
     fetch('/api/maps')
@@ -956,6 +1075,60 @@ export default function RpgMode({ onBack }: RpgModeProps) {
     setCurrentMapId(newId);
     const mapObj = mapsList.find(m => m.id === newId);
     if (mapObj) setCurrentMapName(mapObj.name);
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene && scene.loadNewMap) {
+      scene.loadNewMap(newId).then(() => {
+        if (scene.mapData) {
+          setResizeWidth(scene.mapData.width);
+          setResizeHeight(scene.mapData.height);
+        }
+      });
+    }
+  };
+
+  const handleMapRename = async () => {
+    const newName = prompt('Enter new map name:', currentMapName);
+    if (!newName || newName.trim() === '') return;
+
+    try {
+      const scene = (window as any).__PHASER_MAIN_SCENE__;
+      const mapData = scene?.mapData;
+      if (!mapData) return;
+
+      const res = await fetch('/api/map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: currentMapId, name: newName, map_data: mapData })
+      });
+      if (res.ok) {
+        setCurrentMapName(newName);
+        setMapsList(prev => prev.map(m => m.id === currentMapId ? { ...m, name: newName } : m));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleGenerateMap = async () => {
+    try {
+      const res = await fetch('/api/map/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'New Generated Map', width: 200, height: 200 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMapsList(prev => [...prev, { id: data.id, name: data.name }]);
+        setCurrentMapId(data.id);
+        setCurrentMapName(data.name);
+        const scene = (window as any).__PHASER_MAIN_SCENE__;
+        if (scene && scene.loadNewMap) {
+          scene.loadNewMap(data.id);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
 
@@ -1048,10 +1221,6 @@ export default function RpgMode({ onBack }: RpgModeProps) {
     setCurrentMessage('');
   };
 
-  if (mode === 'edit') {
-    return <RpgMapEditor onBack={() => setMode('play')} />;
-  }
-
   return (
     <div className="h-screen overflow-hidden bg-slate-900 text-slate-100 flex flex-col font-sans w-full absolute inset-0 z-50">
       <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center shadow-md">
@@ -1076,16 +1245,6 @@ export default function RpgMode({ onBack }: RpgModeProps) {
             <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">重整</span>
           </button>
 
-          {mode === 'play' && playerName !== 'Player' && (
-            <button
-              onClick={() => setIsChatMinimized(!isChatMinimized)}
-              className={`p-2 transition-colors rounded-full group relative ${!isChatMinimized ? 'bg-emerald-600/20 text-emerald-400' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
-              title={isChatMinimized ? "展開聊天" : "收起聊天"}
-            >
-              <MessageSquare className="w-5 h-5" />
-              <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">{isChatMinimized ? "展開聊天" : "收起聊天"}</span>
-            </button>
-          )}
 
           <button
             onClick={() => setShowSettings(!showSettings)}
@@ -1138,99 +1297,95 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           </div>
         )}
 
-        {showSettings && (
-          <div className="absolute top-4 right-4 bg-slate-800 border border-slate-700 p-6 rounded-xl shadow-2xl z-[100] max-w-md w-full">
-            <h2 className="text-lg font-semibold mb-4 text-white">系統設定</h2>
-            <p className="text-sm text-slate-400 mb-4">
-              RPG 模式的資料會透過 API 進行同步。
-            </p>
-
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-slate-300 mb-2">模式切換</h3>
-              <div className="flex bg-slate-700 rounded-lg p-1">
-                <button
-                  onClick={() => setMode('play')}
-                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'play' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-600'}`}
-                >
-                  遊玩模式
-                </button>
-                <button
-                  onClick={() => setMode('edit')}
-                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-600'}`}
-                >
-                  <Edit3 className="w-4 h-4" /> 地圖編輯
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowSettings(false)}
-              className="mt-6 w-full bg-slate-700 text-white font-medium py-2 rounded hover:bg-slate-600 transition-colors"
-            >
-              關閉
-            </button>
-          </div>
-        )}
 
         <div className="flex-1 w-full flex flex-col md:flex-row gap-2 md:gap-4 min-h-0">
 
-          {mode === 'play' && playerName !== 'Player' && !isChatMinimized && (
-            <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden h-64 md:h-full md:w-80 shrink-0 transition-all duration-300">
-              <div className="bg-slate-700 p-3 border-b border-slate-600 flex items-center justify-between">
-                <h3 className="text-white font-medium flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  即時聊天
-                </h3>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {chatMessages.map((msg, idx) => (
-                  <div key={idx} className="flex flex-col">
-                    <span className="text-xs text-slate-400 mb-1">{msg.name}</span>
-                    <div className="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm w-fit break-all">
-                      {msg.message}
-                    </div>
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-              <form onSubmit={handleSendMessage} className="p-3 bg-slate-700 border-t border-slate-600 flex gap-2">
-                <input
-                  type="text"
-                  value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  placeholder="輸入訊息..."
-                  className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 w-full"
-                />
-                <button
-                  type="submit"
-                  disabled={!currentMessage.trim()}
-                  className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded text-sm font-medium transition-colors whitespace-nowrap"
-                >
-                  發送
-                </button>
-              </form>
-            </div>
-          )}
-
           <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-0 flex flex-col">
-            <div className="w-full bg-slate-900 border-b border-slate-700 p-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0 z-[5000] relative">
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-white text-sm whitespace-nowrap">Map:</span>
-                <select
-                  value={currentMapId}
-                  onChange={handleMapChange}
-                  className="bg-slate-800 border border-slate-600 text-white text-sm rounded px-2 py-1 outline-none"
-                >
-                  {mapsList.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
+              <div className="w-full bg-slate-900 border-b border-slate-700 p-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0 z-[5000] relative">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-white text-sm whitespace-nowrap">Map:</span>
+                  <select
+                    value={currentMapId}
+                    onChange={handleMapChange}
+                    className="bg-slate-800 border border-slate-600 text-white text-sm rounded px-2 py-1 outline-none"
+                  >
+                    {mapsList.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                  <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs whitespace-nowrap transition-colors">
+                    Rename
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                    <span>W:</span>
+                    <input
+                      type="number"
+                      value={resizeWidth}
+                      onChange={(e) => setResizeWidth(parseInt(e.target.value) || 10)}
+                      className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                      min="10"
+                    />
+                    <span>H:</span>
+                    <input
+                      type="number"
+                      value={resizeHeight}
+                      onChange={(e) => setResizeHeight(parseInt(e.target.value) || 10)}
+                      className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                      min="10"
+                    />
+                    <button onClick={handleResizeMap} className="bg-blue-600 hover:bg-blue-500 px-2 py-0.5 rounded text-[10px] transition-colors ml-1">
+                      Resize & Save
+                    </button>
+                  </div>
+                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                    <select
+                      value={editLayer}
+                      onChange={(e) => handleLayerToggle(e.target.value as 'ground'|'object')}
+                      className="bg-slate-700 border border-slate-500 rounded outline-none text-xs px-1 py-0.5"
+                    >
+                      <option value="ground">Ground Layer</option>
+                      <option value="object">Object Layer</option>
+                    </select>
+                    <button
+                      onClick={handleEraserToggle}
+                      className={`px-2 py-0.5 rounded text-xs transition-colors ${isEraser ? 'bg-red-600' : 'bg-slate-600 hover:bg-slate-500'}`}
+                    >
+                      Eraser
+                    </button>
+                    <span>Paint: <strong className="text-emerald-400">{isEraser ? 'Erase (-1)' : getTileName(selectedTile)}</strong></span>
+                    <span className="text-slate-400 text-[10px]">(Keys: 1=Grass, 2=Water, 3=Rock)</span>
+                  </div>
+                  <button onClick={handleUndo} className="bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-xs transition-colors">Undo</button>
+                  <button onClick={handleRedo} className="bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-xs transition-colors">Redo</button>
+                  <button onClick={handleSaveMap} className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1 rounded text-sm whitespace-nowrap transition-colors ml-2 shadow-lg">Save Map</button>
+
+                  <button onClick={async () => {
+                    const newId = 'map_' + Date.now();
+                    const res = await fetch('/api/map', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ id: newId, name: 'New Map', map_data: { width: 200, height: 200, tiles: Array(200*200).fill(2) } })
+                    });
+                    if (res.ok) {
+                      setMapsList(prev => [...prev, { id: newId, name: 'New Map' }]);
+                      setCurrentMapId(newId);
+                      setCurrentMapName('New Map');
+                      const scene = (window as any).__PHASER_MAIN_SCENE__;
+                      if (scene && scene.loadNewMap) scene.loadNewMap(newId);
+                    }
+                  }} className="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1 rounded text-sm font-medium flex items-center gap-1 whitespace-nowrap transition-colors">
+                    New Empty
+                  </button>
+                  <button onClick={handleGenerateMap} className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-sm font-medium flex items-center gap-1 whitespace-nowrap transition-colors">
+                    <RefreshCw size={14} />
+                    Generate
+                  </button>
+                </div>
               </div>
-            </div>
 
             <div className="flex-1 relative min-h-0">
-            {playerName !== 'Player' && (
               <PhaserGame
                 key={mode}
                 mode={mode}
@@ -1240,12 +1395,6 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 onChatReceived={handleChatReceived}
                 onSocketReady={setSocketInstance}
               />
-            )}
-            {playerName === 'Player' && mode === 'play' && (
-              <div className="w-full h-full flex items-center justify-center bg-black">
-                <div className="text-white text-xl animate-pulse">載入中...</div>
-              </div>
-            )}
             </div>
           </div>
         </div>
