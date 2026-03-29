@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -215,23 +215,6 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       }
 
       async create() {
-        const graphics = this.make.graphics({ x: 0, y: 0 });
-
-        graphics.fillStyle(0x228b22);
-        graphics.fillRect(0, 0, 32, 32);
-        graphics.lineStyle(1, 0x000000, 0.2);
-        graphics.strokeRect(0, 0, 32, 32);
-
-        graphics.fillStyle(0x1e90ff);
-        graphics.fillRect(32, 0, 32, 32);
-        graphics.strokeRect(32, 0, 32, 32);
-
-        graphics.fillStyle(0x808080);
-        graphics.fillRect(64, 0, 32, 32);
-        graphics.strokeRect(64, 0, 32, 32);
-
-        graphics.generateTexture('tileset', 96, 32);
-
         this.processImage('player_img', 'player');
         this.processImage('player_atk_img', 'player_atk');
 
@@ -752,14 +735,45 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         }
 
         this.tilemap = this.make.tilemap({ data: data2D, tileWidth: 32, tileHeight: 32 });
-        this.tileset = this.tilemap.addTilesetImage('tileset')!;
-        this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
-        this.layer.setDepth(0);
 
-        this.layer.setCollision([2, 3]);
+        // Dynamically load tileset if not loaded yet
+        const loadAndRenderTileset = (imgUrl: string, key: string) => {
+          if (!this.textures.exists(key)) {
+            this.load.image(key, imgUrl);
+            this.load.once(`filecomplete-image-${key}`, () => {
+              this.tileset = this.tilemap!.addTilesetImage(key, key, 32, 32, 0, 0);
+              if (this.tileset) {
+                  this.layer = this.tilemap!.createLayer(0, this.tileset, 0, 0)!;
+                  this.layer.setDepth(0);
+                  this.layer.setCollision([2, 3]);
+                  if (this.player) {
+                    this.physics.add.collider(this.player, this.layer);
+                  }
+              }
+            });
+            this.load.start();
+          } else {
+            this.tileset = this.tilemap!.addTilesetImage(key, key, 32, 32, 0, 0);
+            if (this.tileset) {
+                this.layer = this.tilemap!.createLayer(0, this.tileset, 0, 0)!;
+                this.layer.setDepth(0);
+                this.layer.setCollision([2, 3]);
+                if (this.player) {
+                  this.physics.add.collider(this.player, this.layer);
+                }
+            }
+          }
+        };
 
-        if (this.player) {
-          this.physics.add.collider(this.player, this.layer);
+        // We assume active tileset info is stored globally or default to cute
+        const activeTileset = (window as any).__ACTIVE_TILESET__;
+        if (activeTileset && activeTileset.image_source) {
+          const imgUrl = `/assets/map_tileset/${activeTileset.image_source}`;
+          const key = `tileset_${activeTileset.name}`;
+          loadAndRenderTileset(imgUrl, key);
+        } else {
+          // Fallback
+          loadAndRenderTileset('/assets/map_tileset/cute_tileset.png', 'tileset_cute_rpg');
         }
 
         this.physics.world.setBounds(0, 0, this.mapData.width * 32, this.mapData.height * 32);
@@ -771,16 +785,13 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       }
 
       setupEditorUI() {
-
-
-        this.input.keyboard!.on('keydown-ONE', () => { this.currentTileType = 0; this.updateSelectorText(); });
-        this.input.keyboard!.on('keydown-TWO', () => { this.currentTileType = 1; this.updateSelectorText(); });
-        this.input.keyboard!.on('keydown-THREE', () => { this.currentTileType = 2; this.updateSelectorText(); });
+        this.input.keyboard!.on('keydown-ONE', () => { this.currentTileType = 0; });
+        this.input.keyboard!.on('keydown-TWO', () => { this.currentTileType = 48; });
+        this.input.keyboard!.on('keydown-THREE', () => { this.currentTileType = 94; });
       }
 
       updateSelectorText() {
-        const names = ['Grass', 'Water', 'Mountain'];
-        this.tileSelector?.setText(`Selected: ${names[this.currentTileType]} (Press 1:Grass, 2:Water, 3:Mountain)`);
+         // Replaced by sidebars
       }
 
       handlePointerDown(pointer: Phaser.Input.Pointer) {
@@ -988,6 +999,37 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [isEraser, setIsEraser] = useState<boolean>(false);
   const [resizeWidth, setResizeWidth] = useState<number>(200);
   const [resizeHeight, setResizeHeight] = useState<number>(200);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+  const [showRightSidebar, setShowRightSidebar] = useState(true);
+
+  const [tilesets, setTilesets] = useState<any[]>([]);
+  const [activeTileset, setActiveTileset] = useState<any>(null);
+  const [selectedTileData, setSelectedTileData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/map/tilesets')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setTilesets(data);
+          setActiveTileset(data[0]);
+          (window as any).__ACTIVE_TILESET__ = data[0];
+          if (data[0].tiles && data[0].tiles.length > 0) {
+            setSelectedTileData(data[0].tiles[0]);
+          }
+        }
+      })
+      .catch(err => console.error('Failed to fetch tilesets', err));
+  }, []);
+
+  const handleTilesetChange = (ts: any) => {
+    setActiveTileset(ts);
+    (window as any).__ACTIVE_TILESET__ = ts;
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene) {
+      scene.renderMap();
+    }
+  };
 
   useEffect(() => {
     const handleTileChange = (e: any) => setSelectedTile(e.detail);
@@ -1233,6 +1275,21 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
             <ArrowLeft className="w-5 h-5" />
             <span className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">返回</span>
           </button>
+
+          <button
+            onClick={() => setShowLeftSidebar(!showLeftSidebar)}
+            className={`p-2 transition-colors rounded-lg group relative ${showLeftSidebar ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600'}`}
+            title="Toggle Left Sidebar"
+          >
+            <PanelLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setShowRightSidebar(!showRightSidebar)}
+            className={`p-2 transition-colors rounded-lg group relative ${showRightSidebar ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600'}`}
+            title="Toggle Right Sidebar"
+          >
+            <PanelRight className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -1298,9 +1355,65 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
         )}
 
 
-        <div className="flex-1 w-full flex flex-col md:flex-row gap-2 md:gap-4 min-h-0">
+        <div className="flex-1 w-full flex flex-row gap-2 md:gap-4 min-h-0">
 
-          <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-0 flex flex-col">
+          {showLeftSidebar && (
+            <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
+              <div className="bg-slate-900 border-b border-slate-700 p-2 text-white font-bold text-center flex items-center justify-between">
+                <span>Tilesets</span>
+                <select
+                  className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-xs font-normal max-w-[120px]"
+                  value={activeTileset?.name || ''}
+                  onChange={(e) => {
+                    const ts = tilesets.find(t => t.name === e.target.value);
+                    if (ts) handleTilesetChange(ts);
+                  }}
+                >
+                  {tilesets.map(ts => (
+                    <option key={ts.name} value={ts.name}>{ts.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2">
+                {activeTileset && (
+                  <div className="grid grid-cols-5 gap-1">
+                    {activeTileset.tiles.map((tile: any) => {
+                      const id = tile.id;
+                      const cols = activeTileset.columns;
+                      const tw = activeTileset.tilewidth;
+                      const th = activeTileset.tileheight;
+
+                      const x = (id % cols) * tw;
+                      const y = Math.floor(id / cols) * th;
+
+                      return (
+                        <button
+                          key={tile.id}
+                          onClick={() => {
+                            setSelectedTile(tile.id);
+                            setSelectedTileData(tile);
+                            const scene = (window as any).__PHASER_MAIN_SCENE__;
+                            if (scene) scene.currentTileType = tile.id;
+                          }}
+                          className={`w-10 h-10 border-2 rounded ${selectedTile === tile.id ? 'border-blue-500 z-10 scale-110 relative' : 'border-transparent hover:border-slate-500'}`}
+                          title={tile.name}
+                          style={{
+                            backgroundImage: `url(/assets/map_tileset/${activeTileset.image_source})`,
+                            backgroundPosition: `-${x}px -${y}px`,
+                            backgroundSize: `${cols * tw}px ${Math.ceil(activeTileset.total_tiles / cols) * th}px`,
+                            width: `${tw}px`,
+                            height: `${th}px`
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-0 flex flex-col min-w-0">
               <div className="w-full bg-slate-900 border-b border-slate-700 p-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0 z-[5000] relative">
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-white text-sm whitespace-nowrap">Map:</span>
@@ -1397,6 +1510,74 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
               />
             </div>
           </div>
+
+          {showRightSidebar && (
+            <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
+              <div className="bg-slate-900 border-b border-slate-700 p-2 text-white font-bold text-center">
+                Tile Details
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 text-sm text-slate-300">
+                {selectedTileData && activeTileset ? (
+                  <div className="space-y-4">
+                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                      <h3 className="font-bold text-white text-lg mb-1">{selectedTileData.name}</h3>
+                      <p className="text-xs text-slate-400 font-mono">ID: {selectedTileData.id}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between border-b border-slate-700 pb-1">
+                        <span className="text-slate-400">Category:</span>
+                        <span className="text-white capitalize">{selectedTileData.category.replace('_', ' ')}</span>
+                      </div>
+
+                      <div className="flex justify-between border-b border-slate-700 pb-1">
+                        <span className="text-slate-400">Tags:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedTileData.tags.map((tag: string) => (
+                          <span key={tag} className="px-2 py-0.5 bg-slate-700 rounded-full text-xs text-slate-200">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="mt-4 pt-2 border-t border-slate-700">
+                        <h4 className="text-slate-400 text-xs uppercase tracking-wider mb-2">Source Image</h4>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-slate-400">File:</span>
+                          <span className="text-emerald-400 font-mono text-xs">{activeTileset.image_source}</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
+                            <span className="text-slate-500 text-[10px]">X</span>
+                            <span className="font-mono text-white">{(selectedTileData.id % activeTileset.columns) * activeTileset.tilewidth}</span>
+                          </div>
+                          <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
+                            <span className="text-slate-500 text-[10px]">Y</span>
+                            <span className="font-mono text-white">{Math.floor(selectedTileData.id / activeTileset.columns) * activeTileset.tileheight}</span>
+                          </div>
+                          <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
+                            <span className="text-slate-500 text-[10px]">W</span>
+                            <span className="font-mono text-white">{activeTileset.tilewidth}</span>
+                          </div>
+                          <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
+                            <span className="text-slate-500 text-[10px]">H</span>
+                            <span className="font-mono text-white">{activeTileset.tileheight}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-500 italic">
+                    Select a tile to view details
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
     </div>

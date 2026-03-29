@@ -197,10 +197,10 @@ in_memory_maps = {
         "id": "main_200",
         "name": "World Map",
         "map_data": {
-            "width": 200,
-            "height": 200,
-            "tiles": [2] * (200 * 200), # 2 = grass
-            "objects": [-1] * (200 * 200) # -1 = empty
+            "width": 40,
+            "height": 40,
+            "tiles": [2] * (40 * 40), # 2 = grass
+            "objects": [-1] * (40 * 40) # -1 = empty
         }
     }
 }
@@ -297,8 +297,8 @@ import uuid
 async def generate_map(request: Request):
     global in_memory_maps
     data = await request.json()
-    width = data.get("width", 200)
-    height = data.get("height", 200)
+    width = data.get("width", 40)
+    height = data.get("height", 40)
     name = data.get("name", "Generated Map")
 
     scale = 20.0
@@ -477,6 +477,22 @@ async def delete_npc(npc_id: str):
         del rpg_npcs[npc_id]
     await sio.emit("npc_deleted", {"id": npc_id})
     return {"success": True}
+
+@app.get("/api/map/tilesets")
+async def get_map_tilesets():
+    tilesets = []
+    base_dir = "public/assets/map_tileset"
+    if os.path.exists(base_dir):
+        for filename in os.listdir(base_dir):
+            if filename.endswith(".json"):
+                filepath = os.path.join(base_dir, filename)
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        tilesets.append(data)
+                except Exception as e:
+                    print(f"Error reading tileset {filename}: {e}")
+    return tilesets
 
 @app.get("/favicon.ico")
 async def favicon():
