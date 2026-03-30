@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -57,6 +57,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private isAttacking: boolean = false;
       public actionMode: 'walk' | 'attack' = 'walk';
       private currentDirection: string = 'down';
+      private gridGraphics: Phaser.GameObjects.Graphics | null = null;
       public attackButtonDown: boolean = false;
       private undoStack: {tiles: number[], objects?: number[]}[] = [];
       private redoStack: {tiles: number[], objects?: number[]}[] = [];
@@ -109,6 +110,34 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         }
       }
 
+      public toggleGrid(show: boolean, blockW: number, blockH: number) {
+        if (!this.gridGraphics) {
+          this.gridGraphics = this.add.graphics();
+          this.gridGraphics.setDepth(100);
+        }
+
+        this.gridGraphics.clear();
+
+        if (show && this.mapData) {
+          this.gridGraphics.lineStyle(1, 0x888888, 0.5);
+          const mapWidth = this.mapData.width * blockW;
+          const mapHeight = this.mapData.height * blockH;
+
+          this.gridGraphics.beginPath();
+          for (let x = 0; x <= mapWidth; x += blockW) {
+            this.gridGraphics.moveTo(x, 0);
+            this.gridGraphics.lineTo(x, mapHeight);
+          }
+
+          for (let y = 0; y <= mapHeight; y += blockH) {
+            this.gridGraphics.moveTo(0, y);
+            this.gridGraphics.lineTo(mapWidth, y);
+          }
+
+          this.gridGraphics.strokePath();
+        }
+      }
+
       public resizeMapData(newW: number, newH: number) {
         if (!this.mapData) return;
         const oldW = this.mapData.width;
@@ -144,7 +173,14 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             this.undoStack = [];
             this.redoStack = [];
             this.renderMap();
-            window.dispatchEvent(new CustomEvent('mapLoaded', { detail: { width: this.mapData.width, height: this.mapData.height } }));
+            window.dispatchEvent(new CustomEvent('mapLoaded', {
+              detail: {
+                width: this.mapData.width,
+                height: this.mapData.height,
+                block_width: this.mapData.block_width || 32,
+                block_height: this.mapData.block_height || 32
+              }
+            }));
           }
         } catch (err) {
           console.error('Failed to load map', err);
@@ -233,10 +269,11 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         try {
           const res = await fetch('/api/map');
           if (!res.ok) throw new Error('Failed to fetch map');
-          this.mapData = await res.json();
+          const data = await res.json();
+          this.mapData = data.map_data ? data.map_data : data;
         } catch (err) {
           console.error('Failed to load map', err);
-          this.mapData = { width: 200, height: 200, tiles: Array(200 * 200).fill(0) };
+          this.mapData = { width: 40, height: 40, tiles: Array(40 * 40).fill(0) };
         }
 
         if (isDestroyed || !this.sys || !this.sys.game) return;
@@ -1025,10 +1062,21 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [resizeHeight, setResizeHeight] = useState<number>(40);
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [blockWidth, setBlockWidth] = useState<number>(32);
+  const [blockHeight, setBlockHeight] = useState<number>(32);
+  const [showGrid, setShowGrid] = useState<boolean>(false);
 
   const [tilesets, setTilesets] = useState<any[]>([]);
   const [activeTileset, setActiveTileset] = useState<any>(null);
   const [selectedTileData, setSelectedTileData] = useState<any>(null);
+
+  useEffect(() => {
+    // Notify Phaser scene when grid settings change
+    const scene = (window as any).__PHASER_MAIN_SCENE__;
+    if (scene && scene.toggleGrid) {
+      scene.toggleGrid(showGrid, blockWidth, blockHeight);
+    }
+  }, [showGrid, blockWidth, blockHeight]);
 
   useEffect(() => {
     fetch('/api/map/tilesets')
@@ -1060,6 +1108,8 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
     const handleMapLoaded = (e: any) => {
       setResizeWidth(e.detail.width);
       setResizeHeight(e.detail.height);
+      if (e.detail.block_width) setBlockWidth(e.detail.block_width);
+      if (e.detail.block_height) setBlockHeight(e.detail.block_height);
     };
     window.addEventListener('tileTypeChanged', handleTileChange);
     window.addEventListener('mapLoaded', handleMapLoaded);
@@ -1116,6 +1166,11 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
     const scene = (window as any).__PHASER_MAIN_SCENE__;
     const mapData = scene?.mapData;
     if (!mapData) return;
+
+    // Ensure block sizes are synced before saving
+    mapData.block_width = blockWidth;
+    mapData.block_height = blockHeight;
+
     try {
       const res = await fetch('/api/map', {
         method: 'POST',
@@ -1172,6 +1227,10 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
       const mapData = scene?.mapData;
       if (!mapData) return;
 
+      // Ensure block sizes are synced before saving
+      mapData.block_width = blockWidth;
+      mapData.block_height = blockHeight;
+
       const res = await fetch('/api/map', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1191,7 +1250,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
       const res = await fetch('/api/map/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'New Generated Map', width: 200, height: 200 })
+        body: JSON.stringify({ name: 'New Generated Map', width: resizeWidth, height: resizeHeight, block_width: blockWidth, block_height: blockHeight })
       });
       if (res.ok) {
         const data = await res.json();
@@ -1508,6 +1567,32 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                     </button>
                   </div>
                   <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                    <span className="text-[10px] text-slate-400">Block:</span>
+                    <span>W:</span>
+                    <input
+                      type="number"
+                      value={blockWidth}
+                      onChange={(e) => setBlockWidth(parseInt(e.target.value) || 32)}
+                      className="w-10 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                      min="8"
+                    />
+                    <span>H:</span>
+                    <input
+                      type="number"
+                      value={blockHeight}
+                      onChange={(e) => setBlockHeight(parseInt(e.target.value) || 32)}
+                      className="w-10 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                      min="8"
+                    />
+                    <button
+                      onClick={() => setShowGrid(!showGrid)}
+                      className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 px-1 py-0.5 rounded transition-colors ml-1`}
+                      title="Toggle Grid"
+                    >
+                      <Grid className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
                     <select
                       value={editLayer}
                       onChange={(e) => handleLayerToggle(e.target.value as 'ground'|'object')}
@@ -1534,7 +1619,18 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                     const res = await fetch('/api/map', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ id: newId, name: 'New Map', map_data: { width: 200, height: 200, tiles: Array(200*200).fill(2) } })
+                      body: JSON.stringify({
+                        id: newId,
+                        name: 'New Map',
+                        map_data: {
+                          width: resizeWidth,
+                          height: resizeHeight,
+                          block_width: blockWidth,
+                          block_height: blockHeight,
+                          tiles: Array(resizeWidth*resizeHeight).fill(2),
+                          objects: Array(resizeWidth*resizeHeight).fill(-1)
+                        }
+                      })
                     });
                     if (res.ok) {
                       setMapsList(prev => [...prev, { id: newId, name: 'New Map' }]);
