@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles, Maximize, Minimize } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -59,8 +59,8 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       private currentDirection: string = 'down';
       private gridGraphics: Phaser.GameObjects.Graphics | null = null;
       public attackButtonDown: boolean = false;
-      private undoStack: {tiles: number[], objects?: number[]}[] = [];
-      private redoStack: {tiles: number[], objects?: number[]}[] = [];
+      private undoStack: { tiles: number[], objects?: number[] }[] = [];
+      private redoStack: { tiles: number[], objects?: number[] }[] = [];
       private isPanning: boolean = false;
       public editorMode: 'draw' | 'move' = 'draw';
       private panStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
@@ -287,7 +287,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           const worldPoint = this.cameras.main.getWorldPoint(pointerX, pointerY);
 
           if (!this.isEditor) {
-             this.cameras.main.stopFollow();
+            this.cameras.main.stopFollow();
           }
 
           this.cameras.main.setZoom(newZoom);
@@ -853,7 +853,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       }
 
       updateSelectorText() {
-         // Replaced by sidebars
+        // Replaced by sidebars
       }
 
       handlePointerDown(pointer: Phaser.Input.Pointer) {
@@ -1062,9 +1062,10 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [isChatMinimized, setIsChatMinimized] = useState(true);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
+  const [isFullscreenActive, setIsFullscreenActive] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const [mapsList, setMapsList] = useState<{id: string, name: string}[]>([]);
+  const [mapsList, setMapsList] = useState<{ id: string, name: string }[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [selectedTile, setSelectedTile] = useState<number>(2);
@@ -1305,12 +1306,53 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
         setIsFullscreenSupported(false);
       }
 
-      if (!isFullscreen) {
+      const enableFullScreenNotification = import.meta.env.VITE_ENABLE_FULL_SCREEN_NOTIFICATION === 'true';
+
+      if (!isFullscreen && enableFullScreenNotification) {
         setShowFullscreenPrompt(true);
       }
     };
     checkFullscreen();
+
+    const handleFullscreenChange = () => {
+      const doc = document as any;
+      const isFullscreen = document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+      setIsFullscreenActive(!!isFullscreen);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    // Initial check
+    handleFullscreenChange();
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
   }, []);
+
+  const toggleFullscreen = () => {
+    const doc = document as any;
+    const isFullscreen = document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+    if (isFullscreen) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      } else if (doc.mozCancelFullScreen) {
+        doc.mozCancelFullScreen();
+      } else if (doc.msExitFullscreen) {
+        doc.msExitFullscreen();
+      }
+    } else {
+      requestFullscreen();
+    }
+  };
 
   const requestFullscreen = async () => {
     const elem = document.documentElement as any;
@@ -1405,6 +1447,17 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
 
         <div className="flex items-center gap-4">
           <button
+            onClick={toggleFullscreen}
+            className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700 group relative"
+            title={isFullscreenActive ? "退出全螢幕" : "進入全螢幕"}
+          >
+            {isFullscreenActive ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+            <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">
+              {isFullscreenActive ? "退出全螢幕" : "進入全螢幕"}
+            </span>
+          </button>
+
+          <button
             onClick={() => window.location.reload()}
             className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700 group relative"
             title="重整"
@@ -1498,160 +1551,160 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
           )}
 
           <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-0 flex flex-col min-w-0">
-              <div className="w-full bg-slate-900 border-b border-slate-700 p-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0 z-[5000] relative">
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-white text-sm whitespace-nowrap">Map:</span>
-                  <select
-                    value={currentMapId}
-                    onChange={handleMapChange}
-                    className="bg-slate-800 border border-slate-600 text-white text-sm rounded px-2 py-1 outline-none"
+            <div className="w-full bg-slate-900 border-b border-slate-700 p-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0 z-[5000] relative">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-white text-sm whitespace-nowrap">Map:</span>
+                <select
+                  value={currentMapId}
+                  onChange={handleMapChange}
+                  className="bg-slate-800 border border-slate-600 text-white text-sm rounded px-2 py-1 outline-none"
+                >
+                  {mapsList.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={async () => {
+                    await fetchMaps();
+                    const scene = (window as any).__PHASER_MAIN_SCENE__;
+                    if (scene && scene.loadNewMap) {
+                      await scene.loadNewMap(currentMapId);
+                    }
+                  }}
+                  className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-1 rounded transition-colors group relative"
+                  title="Reload Map Data"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Reload Map Data</span>
+                </button>
+                <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs whitespace-nowrap transition-colors">
+                  Rename
+                </button>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                  <span>W:</span>
+                  <input
+                    type="number"
+                    value={resizeWidth}
+                    onChange={(e) => setResizeWidth(parseInt(e.target.value) || 10)}
+                    className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                    min="10"
+                  />
+                  <span>H:</span>
+                  <input
+                    type="number"
+                    value={resizeHeight}
+                    onChange={(e) => setResizeHeight(parseInt(e.target.value) || 10)}
+                    className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                    min="10"
+                  />
+                  <button onClick={handleResizeMap} className="bg-blue-600 hover:bg-blue-500 px-2 py-0.5 rounded text-[10px] transition-colors ml-1">
+                    Resize & Save
+                  </button>
+                </div>
+                <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                  <span className="text-[10px] text-slate-400">Block:</span>
+                  <span>W:</span>
+                  <input
+                    type="number"
+                    value={blockWidth}
+                    onChange={(e) => setBlockWidth(parseInt(e.target.value) || 32)}
+                    className="w-10 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                    min="8"
+                  />
+                  <span>H:</span>
+                  <input
+                    type="number"
+                    value={blockHeight}
+                    onChange={(e) => setBlockHeight(parseInt(e.target.value) || 32)}
+                    className="w-10 bg-slate-700 text-white rounded outline-none px-1 text-center"
+                    min="8"
+                  />
+                  <button
+                    onClick={() => setShowGrid(!showGrid)}
+                    className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 px-1 py-0.5 rounded transition-colors ml-1`}
+                    title="Toggle Grid"
                   >
-                    {mapsList.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
+                    <Grid className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                  <button
+                    onClick={() => {
+                      const newMode = editorMode === 'draw' ? 'move' : 'draw';
+                      setEditorMode(newMode);
+                      const scene = (window as any).__PHASER_MAIN_SCENE__;
+                      if (scene) scene.editorMode = newMode;
+                    }}
+                    className={`p-1 rounded transition-colors ${editorMode === 'draw' ? 'bg-blue-600 text-white' : 'bg-slate-600 hover:bg-slate-500'}`}
+                    title={editorMode === 'draw' ? 'Switch to Move Mode' : 'Switch to Draw Mode'}
+                  >
+                    {editorMode === 'draw' ? <Pencil className="w-4 h-4" /> : <Hand className="w-4 h-4" />}
+                  </button>
+                  <select
+                    value={editLayer}
+                    onChange={(e) => handleLayerToggle(e.target.value as 'ground' | 'object')}
+                    className="bg-slate-700 border border-slate-500 rounded outline-none text-xs px-1 py-0.5"
+                  >
+                    <option value="ground">Ground</option>
+                    <option value="object">Object</option>
                   </select>
                   <button
-                    onClick={async () => {
-                      await fetchMaps();
-                      const scene = (window as any).__PHASER_MAIN_SCENE__;
-                      if (scene && scene.loadNewMap) {
-                        await scene.loadNewMap(currentMapId);
-                      }
-                    }}
-                    className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-1 rounded transition-colors group relative"
-                    title="Reload Map Data"
+                    onClick={handleEraserToggle}
+                    className={`px-2 py-0.5 rounded text-xs transition-colors ${isEraser ? 'bg-red-600' : 'bg-slate-600 hover:bg-slate-500'}`}
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Reload Map Data</span>
-                  </button>
-                  <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs whitespace-nowrap transition-colors">
-                    Rename
+                    Eraser
                   </button>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
-                    <span>W:</span>
-                    <input
-                      type="number"
-                      value={resizeWidth}
-                      onChange={(e) => setResizeWidth(parseInt(e.target.value) || 10)}
-                      className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
-                      min="10"
-                    />
-                    <span>H:</span>
-                    <input
-                      type="number"
-                      value={resizeHeight}
-                      onChange={(e) => setResizeHeight(parseInt(e.target.value) || 10)}
-                      className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
-                      min="10"
-                    />
-                    <button onClick={handleResizeMap} className="bg-blue-600 hover:bg-blue-500 px-2 py-0.5 rounded text-[10px] transition-colors ml-1">
-                      Resize & Save
-                    </button>
-                  </div>
-                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
-                    <span className="text-[10px] text-slate-400">Block:</span>
-                    <span>W:</span>
-                    <input
-                      type="number"
-                      value={blockWidth}
-                      onChange={(e) => setBlockWidth(parseInt(e.target.value) || 32)}
-                      className="w-10 bg-slate-700 text-white rounded outline-none px-1 text-center"
-                      min="8"
-                    />
-                    <span>H:</span>
-                    <input
-                      type="number"
-                      value={blockHeight}
-                      onChange={(e) => setBlockHeight(parseInt(e.target.value) || 32)}
-                      className="w-10 bg-slate-700 text-white rounded outline-none px-1 text-center"
-                      min="8"
-                    />
-                    <button
-                      onClick={() => setShowGrid(!showGrid)}
-                      className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 px-1 py-0.5 rounded transition-colors ml-1`}
-                      title="Toggle Grid"
-                    >
-                      <Grid className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
-                    <button
-                      onClick={() => {
-                        const newMode = editorMode === 'draw' ? 'move' : 'draw';
-                        setEditorMode(newMode);
-                        const scene = (window as any).__PHASER_MAIN_SCENE__;
-                        if (scene) scene.editorMode = newMode;
-                      }}
-                      className={`p-1 rounded transition-colors ${editorMode === 'draw' ? 'bg-blue-600 text-white' : 'bg-slate-600 hover:bg-slate-500'}`}
-                      title={editorMode === 'draw' ? 'Switch to Move Mode' : 'Switch to Draw Mode'}
-                    >
-                      {editorMode === 'draw' ? <Pencil className="w-4 h-4" /> : <Hand className="w-4 h-4" />}
-                    </button>
-                    <select
-                      value={editLayer}
-                      onChange={(e) => handleLayerToggle(e.target.value as 'ground'|'object')}
-                      className="bg-slate-700 border border-slate-500 rounded outline-none text-xs px-1 py-0.5"
-                    >
-                      <option value="ground">Ground</option>
-                      <option value="object">Object</option>
-                    </select>
-                    <button
-                      onClick={handleEraserToggle}
-                      className={`px-2 py-0.5 rounded text-xs transition-colors ${isEraser ? 'bg-red-600' : 'bg-slate-600 hover:bg-slate-500'}`}
-                    >
-                      Eraser
-                    </button>
-                  </div>
-                  <button onClick={handleUndo} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="Undo">
-                    <Undo2 className="w-4 h-4" />
-                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Undo</span>
-                  </button>
-                  <button onClick={handleRedo} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="Redo">
-                    <Redo2 className="w-4 h-4" />
-                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Redo</span>
-                  </button>
-                  <button onClick={handleSaveMap} className="bg-amber-600 hover:bg-amber-500 text-white p-1 rounded transition-colors ml-2 shadow-lg group relative" title="Save Map">
-                    <Save className="w-4 h-4" />
-                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Save Map</span>
-                  </button>
+                <button onClick={handleUndo} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="Undo">
+                  <Undo2 className="w-4 h-4" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Undo</span>
+                </button>
+                <button onClick={handleRedo} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="Redo">
+                  <Redo2 className="w-4 h-4" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Redo</span>
+                </button>
+                <button onClick={handleSaveMap} className="bg-amber-600 hover:bg-amber-500 text-white p-1 rounded transition-colors ml-2 shadow-lg group relative" title="Save Map">
+                  <Save className="w-4 h-4" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Save Map</span>
+                </button>
 
-                  <button onClick={async () => {
-                    const newId = 'map_' + Date.now();
-                    const res = await fetch('/api/map', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        id: newId,
-                        name: 'New Map',
-                        map_data: {
-                          width: resizeWidth,
-                          height: resizeHeight,
-                          block_width: blockWidth,
-                          block_height: blockHeight,
-                          tiles: Array(resizeWidth*resizeHeight).fill(2),
-                          objects: Array(resizeWidth*resizeHeight).fill(-1)
-                        }
-                      })
-                    });
-                    if (res.ok) {
-                      setMapsList(prev => [...prev, { id: newId, name: 'New Map' }]);
-                      setCurrentMapId(newId);
-                      setCurrentMapName('New Map');
-                      const scene = (window as any).__PHASER_MAIN_SCENE__;
-                      if (scene && scene.loadNewMap) scene.loadNewMap(newId);
-                    }
-                  }} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="New Empty Map">
-                    <FilePlus className="w-4 h-4" />
-                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">New Empty Map</span>
-                  </button>
-                  <button onClick={handleGenerateMap} className="bg-emerald-600 hover:bg-emerald-500 text-white p-1 rounded transition-colors group relative" title="Generate Random Map">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Generate Map</span>
-                  </button>
-                </div>
+                <button onClick={async () => {
+                  const newId = 'map_' + Date.now();
+                  const res = await fetch('/api/map', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      id: newId,
+                      name: 'New Map',
+                      map_data: {
+                        width: resizeWidth,
+                        height: resizeHeight,
+                        block_width: blockWidth,
+                        block_height: blockHeight,
+                        tiles: Array(resizeWidth * resizeHeight).fill(2),
+                        objects: Array(resizeWidth * resizeHeight).fill(-1)
+                      }
+                    })
+                  });
+                  if (res.ok) {
+                    setMapsList(prev => [...prev, { id: newId, name: 'New Map' }]);
+                    setCurrentMapId(newId);
+                    setCurrentMapName('New Map');
+                    const scene = (window as any).__PHASER_MAIN_SCENE__;
+                    if (scene && scene.loadNewMap) scene.loadNewMap(newId);
+                  }
+                }} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="New Empty Map">
+                  <FilePlus className="w-4 h-4" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">New Empty Map</span>
+                </button>
+                <button onClick={handleGenerateMap} className="bg-emerald-600 hover:bg-emerald-500 text-white p-1 rounded transition-colors group relative" title="Generate Random Map">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Generate Map</span>
+                </button>
               </div>
+            </div>
 
             <div className="flex-1 relative min-h-0">
               <PhaserGame
