@@ -1,0 +1,293 @@
+{
+    "name": "cute_rpg_tileset_20x10",
+    "tilewidth": 32,
+    "tileheight": 32,
+    "columns": 20,
+    "rows": 10,
+    "total_tiles": 200,
+    "image_source": "cute_rpg_tileset_20x10.png",
+    "categories": {
+        "ground_base": "Basic plain terrain types.",
+        "ground_transitions": "Edges connecting different terrain types.",
+        "nature_objects": "Foliage, flowers, trees, and environmental items.",
+        "structures": "Building walls, roofs, doors, and stairs.",
+        "props": "Interactive or non-interactive small decorative items."
+    },
+    "tiles": [
+        {
+            "id": 0,
+            "category": "ground_base",
+            "name": "Grass_Main_A",
+            "tags": [
+                "grass",
+                "bright",
+                "plain"
+            ]
+        },
+        {
+            "id": 1,
+            "category": "ground_base",
+            "name": "Grass_Main_B_Flowers",
+            "tags": [
+                "grass",
+                "flowers",
+                "sparkle"
+            ]
+        },
+        {
+            "id": 2,
+            "category": "ground_base",
+            "name": "Dirt_Main_A",
+            "tags": [
+                "dirt",
+                "soil",
+                "brown"
+            ]
+        },
+        {
+            "id": 3,
+            "category": "ground_base",
+            "name": "Sand_Main_A",
+            "tags": [
+                "sand",
+                "beach",
+                "yellow"
+            ]
+        },
+        {
+            "id": 4,
+            "category": "ground_base",
+            "name": "Water_Still_A",
+            "tags": [
+                "water",
+                "still",
+                "blue"
+            ]
+        },
+        {
+            "id": 20,
+            "category": "ground_transitions",
+            "name": "Grass_to_Dirt_Corner_NW",
+            "tags": [
+                "grass",
+                "dirt",
+                "transition",
+                "corner"
+            ]
+        },
+        {
+            "id": 21,
+            "category": "ground_transitions",
+            "name": "Grass_to_Dirt_Edge_W",
+            "tags": [
+                "grass",
+                "dirt",
+                "transition",
+                "edge"
+            ]
+        },
+        {
+            "id": 22,
+            "category": "ground_transitions",
+            "name": "Sand_to_Water_Edge_S",
+            "tags": [
+                "sand",
+                "water",
+                "transition",
+                "edge"
+            ]
+        },
+        {
+            "id": 60,
+            "category": "nature_objects",
+            "name": "Tree_Small_Round_Full",
+            "tags": [
+                "tree",
+                "foliage",
+                "round",
+                "green"
+            ]
+        },
+        {
+            "id": 62,
+            "category": "nature_objects",
+            "name": "Flower_Patch_Red",
+            "tags": [
+                "flower",
+                "red",
+                "bush"
+            ]
+        },
+        {
+            "id": 64,
+            "category": "nature_objects",
+            "name": "Rock_Small_Gray",
+            "tags": [
+                "rock",
+                "stone",
+                "gray"
+            ]
+        },
+        {
+            "id": 80,
+            "category": "structures",
+            "name": "Wall_Stone_Brick_Main",
+            "tags": [
+                "wall",
+                "stone",
+                "brick",
+                "gray"
+            ]
+        },
+        {
+            "id": 81,
+            "category": "structures",
+            "name": "Roof_Red_Tiled_Main",
+            "tags": [
+                "roof",
+                "tiled",
+                "red"
+            ]
+        },
+        {
+            "id": 84,
+            "category": "structures",
+            "name": "Door_Wood_Closed",
+            "tags": [
+                "door",
+                "wood",
+                "entrance"
+            ]
+        },
+        {
+            "id": 85,
+            "category": "structures",
+            "name": "Window_Glass_Square",
+            "tags": [
+                "window",
+                "glass",
+                "square"
+            ]
+        },
+        {
+            "id": 86,
+            "category": "structures",
+            "name": "Fireplace_Indoor",
+            "tags": [
+                "fireplace",
+                "indoor",
+                "warmth"
+            ]
+        },
+        {
+            "id": 87,
+            "category": "structures",
+            "name": "Stairs_Stone_Up_A",
+            "tags": [
+                "stairs",
+                "stone",
+                "up"
+            ]
+        },
+        {
+            "id": 120,
+            "category": "props",
+            "name": "Fence_Wood_Segment_W",
+            "tags": [
+                "fence",
+                "wood",
+                "west"
+            ]
+        },
+        {
+            "id": 121,
+            "category": "props",
+            "name": "Fence_Wood_Segment_E",
+            "tags": [
+                "fence",
+                "wood",
+                "east"
+            ]
+        },
+        {
+            "id": 140,
+            "category": "props",
+            "name": "Sign_Wood_Plain",
+            "tags": [
+                "sign",
+                "wood",
+                "message"
+            ]
+        },
+        {
+            "id": 141,
+            "category": "props",
+            "name": "Campfire_Pot_Small",
+            "tags": [
+                "campfire",
+                "fire",
+                "cooking"
+            ]
+        },
+        {
+            "id": 143,
+            "category": "props",
+            "name": "Chest_Closed_A",
+            "tags": [
+                "chest",
+                "closed",
+                "reward"
+            ]
+        },
+        {
+            "id": 144,
+            "category": "props",
+            "name": "Barrel_Wood_Plain",
+            "tags": [
+                "barrel",
+                "wood",
+                "container"
+            ]
+        },
+        {
+            "id": 145,
+            "category": "props",
+            "name": "Crate_Wood_Plain",
+            "tags": [
+                "crate",
+                "wood",
+                "container"
+            ]
+        },
+        {
+            "id": 160,
+            "category": "nature_objects",
+            "name": "Mushroom_Cluster_Red_A",
+            "tags": [
+                "mushroom",
+                "cluster",
+                "red"
+            ]
+        },
+        {
+            "id": 161,
+            "category": "nature_objects",
+            "name": "Mushroom_Single_Brown",
+            "tags": [
+                "mushroom",
+                "single",
+                "brown"
+            ]
+        },
+        {
+            "id": 180,
+            "category": "props",
+            "name": "Well_Water_Rope",
+            "tags": [
+                "well",
+                "water",
+                "outdoor"
+            ]
+        }
+    ]
+}

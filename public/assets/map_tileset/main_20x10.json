@@ -1,0 +1,2917 @@
+{
+    "name": "main_20x10",
+    "tilewidth": 32,
+    "tileheight": 32,
+    "columns": 20,
+    "rows": 10,
+    "total_tiles": 200,
+    "image_source": "main_20x10.png",
+    "categories": {
+        "ground_base": "Basic ground types like grass, dirt, sand.",
+        "ground_transitions": "Edges connecting different terrain types.",
+        "nature_objects": "Foliage, flowers, trees.",
+        "structures": "Houses, walls, roofs, doors.",
+        "props": "Barrels, fences, signs, campfires, rocks."
+    },
+    "tiles": [
+        {
+            "id": 1,
+            "x": 0,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Grass_Bright_A",
+            "tags": [
+                "grass",
+                "bright",
+                "plain"
+            ]
+        },
+        {
+            "id": 2,
+            "x": 32,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Grass_Bright_B",
+            "tags": [
+                "grass",
+                "bright",
+                "detail"
+            ]
+        },
+        {
+            "id": 3,
+            "x": 64,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Grass_Default",
+            "tags": [
+                "grass",
+                "standard",
+                "plain"
+            ]
+        },
+        {
+            "id": 4,
+            "x": 96,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Grass_Dark",
+            "tags": [
+                "grass",
+                "dark",
+                "moss"
+            ]
+        },
+        {
+            "id": 5,
+            "x": 128,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Grass_Dry",
+            "tags": [
+                "grass",
+                "dry",
+                "yellowed"
+            ]
+        },
+        {
+            "id": 6,
+            "x": 160,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Dirt_Light_A",
+            "tags": [
+                "dirt",
+                "light",
+                "plain"
+            ]
+        },
+        {
+            "id": 7,
+            "x": 192,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Dirt_Light_B",
+            "tags": [
+                "dirt",
+                "light",
+                "detail"
+            ]
+        },
+        {
+            "id": 8,
+            "x": 224,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Dirt_Default",
+            "tags": [
+                "dirt",
+                "standard",
+                "plain"
+            ]
+        },
+        {
+            "id": 9,
+            "x": 256,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Sand_Default",
+            "tags": [
+                "sand",
+                "standard",
+                "plain"
+            ]
+        },
+        {
+            "id": 10,
+            "x": 288,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Sand_Wet",
+            "tags": [
+                "sand",
+                "wet",
+                "coastal"
+            ]
+        },
+        {
+            "id": 11,
+            "x": 320,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Gravel_Fine",
+            "tags": [
+                "gravel",
+                "fine",
+                "grey"
+            ]
+        },
+        {
+            "id": 12,
+            "x": 352,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Pebbles_Large",
+            "tags": [
+                "gravel",
+                "stones",
+                "detail"
+            ]
+        },
+        {
+            "id": 13,
+            "x": 384,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Pebbles_Mixed",
+            "tags": [
+                "gravel",
+                "small",
+                "mixed"
+            ]
+        },
+        {
+            "id": 14,
+            "x": 416,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Dirt_Sandy",
+            "tags": [
+                "dirt",
+                "sand",
+                "hybrid"
+            ]
+        },
+        {
+            "id": 15,
+            "x": 448,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Mossy_Soil",
+            "tags": [
+                "dirt",
+                "moss",
+                "damp"
+            ]
+        },
+        {
+            "id": 16,
+            "x": 480,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Flower_Field_Pink",
+            "tags": [
+                "ground",
+                "flowers",
+                "pink"
+            ]
+        },
+        {
+            "id": 17,
+            "x": 512,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Flower_Field_Yellow",
+            "tags": [
+                "ground",
+                "flowers",
+                "yellow"
+            ]
+        },
+        {
+            "id": 18,
+            "x": 544,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Flower_Field_Mixed",
+            "tags": [
+                "ground",
+                "flowers",
+                "colorful"
+            ]
+        },
+        {
+            "id": 19,
+            "x": 576,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Mud_Base",
+            "tags": [
+                "dirt",
+                "mud",
+                "dark"
+            ]
+        },
+        {
+            "id": 20,
+            "x": 608,
+            "y": 0,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Mud_Edge",
+            "tags": [
+                "dirt",
+                "mud",
+                "wet"
+            ]
+        },
+        {
+            "id": 21,
+            "x": 0,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Path_Dirt_Edge_W",
+            "tags": [
+                "path",
+                "dirt",
+                "west"
+            ]
+        },
+        {
+            "id": 22,
+            "x": 32,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Path_Dirt_Edge_E",
+            "tags": [
+                "path",
+                "dirt",
+                "east"
+            ]
+        },
+        {
+            "id": 23,
+            "x": 64,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Path_Dirt_Center",
+            "tags": [
+                "path",
+                "dirt",
+                "center"
+            ]
+        },
+        {
+            "id": 24,
+            "x": 96,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Path_Dirt_Edge_N",
+            "tags": [
+                "path",
+                "dirt",
+                "north"
+            ]
+        },
+        {
+            "id": 25,
+            "x": 128,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Path_Dirt_Edge_S",
+            "tags": [
+                "path",
+                "dirt",
+                "south"
+            ]
+        },
+        {
+            "id": 26,
+            "x": 160,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Beach_Sand_Water_Edge_W",
+            "tags": [
+                "beach",
+                "sand",
+                "water",
+                "west"
+            ]
+        },
+        {
+            "id": 27,
+            "x": 192,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Beach_Sand_Water_Edge_E",
+            "tags": [
+                "beach",
+                "sand",
+                "water",
+                "east"
+            ]
+        },
+        {
+            "id": 28,
+            "x": 224,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Grass_Sand_Transition_W",
+            "tags": [
+                "grass",
+                "sand",
+                "west"
+            ]
+        },
+        {
+            "id": 29,
+            "x": 256,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Grass_Sand_Transition_E",
+            "tags": [
+                "grass",
+                "sand",
+                "east"
+            ]
+        },
+        {
+            "id": 30,
+            "x": 288,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Grass_Sand_Corner_NW",
+            "tags": [
+                "grass",
+                "sand",
+                "corner",
+                "northwest"
+            ]
+        },
+        {
+            "id": 31,
+            "x": 320,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Grass_Sand_Corner_NE",
+            "tags": [
+                "grass",
+                "sand",
+                "corner",
+                "northeast"
+            ]
+        },
+        {
+            "id": 32,
+            "x": 352,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Sand_River_Bank_W",
+            "tags": [
+                "sand",
+                "river",
+                "west"
+            ]
+        },
+        {
+            "id": 33,
+            "x": 384,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Sand_River_Bank_E",
+            "tags": [
+                "sand",
+                "river",
+                "east"
+            ]
+        },
+        {
+            "id": 34,
+            "x": 416,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Grass_Water_Edge_N",
+            "tags": [
+                "grass",
+                "water",
+                "north"
+            ]
+        },
+        {
+            "id": 35,
+            "x": 448,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Grass_Water_Edge_S",
+            "tags": [
+                "grass",
+                "water",
+                "south"
+            ]
+        },
+        {
+            "id": 36,
+            "x": 480,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Dirt_Water_Edge_N",
+            "tags": [
+                "dirt",
+                "water",
+                "north"
+            ]
+        },
+        {
+            "id": 37,
+            "x": 512,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Dirt_Water_Edge_S",
+            "tags": [
+                "dirt",
+                "water",
+                "south"
+            ]
+        },
+        {
+            "id": 38,
+            "x": 544,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Beach_Corner_SW",
+            "tags": [
+                "beach",
+                "sand",
+                "corner",
+                "southwest"
+            ]
+        },
+        {
+            "id": 39,
+            "x": 576,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Beach_Corner_SE",
+            "tags": [
+                "beach",
+                "sand",
+                "corner",
+                "southeast"
+            ]
+        },
+        {
+            "id": 40,
+            "x": 608,
+            "y": 32,
+            "w": 32,
+            "h": 32,
+            "category": "ground_transitions",
+            "name": "Cliffs_Edge_Base",
+            "tags": [
+                "cliffs",
+                "rock",
+                "bottom"
+            ]
+        },
+        {
+            "id": 41,
+            "x": 0,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Pine_Small_A",
+            "tags": [
+                "tree",
+                "pine",
+                "small"
+            ]
+        },
+        {
+            "id": 42,
+            "x": 32,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Pine_Small_B",
+            "tags": [
+                "tree",
+                "pine",
+                "small"
+            ]
+        },
+        {
+            "id": 43,
+            "x": 64,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Deciduous_Small_A",
+            "tags": [
+                "tree",
+                "leafy",
+                "small"
+            ]
+        },
+        {
+            "id": 44,
+            "x": 96,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Deciduous_Small_B",
+            "tags": [
+                "tree",
+                "leafy",
+                "small"
+            ]
+        },
+        {
+            "id": 45,
+            "x": 128,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Apple_Small",
+            "tags": [
+                "tree",
+                "fruit",
+                "small"
+            ]
+        },
+        {
+            "id": 46,
+            "x": 160,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Flowers_Tulip_Red",
+            "tags": [
+                "flowers",
+                "tulip",
+                "red"
+            ]
+        },
+        {
+            "id": 47,
+            "x": 192,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Flowers_Bluebell",
+            "tags": [
+                "flowers",
+                "bluebell",
+                "blue"
+            ]
+        },
+        {
+            "id": 48,
+            "x": 224,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Flowers_Daisy_Yellow",
+            "tags": [
+                "flowers",
+                "daisy",
+                "yellow"
+            ]
+        },
+        {
+            "id": 49,
+            "x": 256,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Flowers_Lavender",
+            "tags": [
+                "flowers",
+                "lavender",
+                "purple"
+            ]
+        },
+        {
+            "id": 50,
+            "x": 288,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Flowers_Roses_Bush",
+            "tags": [
+                "flowers",
+                "roses",
+                "bush"
+            ]
+        },
+        {
+            "id": 51,
+            "x": 320,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Bush_Dense_Green",
+            "tags": [
+                "bush",
+                "green",
+                "large"
+            ]
+        },
+        {
+            "id": 52,
+            "x": 352,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Bush_Fern",
+            "tags": [
+                "bush",
+                "fern",
+                "light_green"
+            ]
+        },
+        {
+            "id": 53,
+            "x": 384,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Bush_Cactus_Small",
+            "tags": [
+                "cactus",
+                "small",
+                "desert"
+            ]
+        },
+        {
+            "id": 54,
+            "x": 416,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tall_Grass",
+            "tags": [
+                "foliage",
+                "grass",
+                "tall"
+            ]
+        },
+        {
+            "id": 55,
+            "x": 448,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Weeds_Patches",
+            "tags": [
+                "foliage",
+                "weeds",
+                "small"
+            ]
+        },
+        {
+            "id": 56,
+            "x": 480,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Mushrooms_Red_Cap",
+            "tags": [
+                "mushrooms",
+                "red",
+                "cluster"
+            ]
+        },
+        {
+            "id": 57,
+            "x": 512,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Mushrooms_Brown_Cap",
+            "tags": [
+                "mushrooms",
+                "brown",
+                "cluster"
+            ]
+        },
+        {
+            "id": 58,
+            "x": 544,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Stump_Pine",
+            "tags": [
+                "tree",
+                "stump",
+                "dead"
+            ]
+        },
+        {
+            "id": 59,
+            "x": 576,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Stump_Oak",
+            "tags": [
+                "tree",
+                "stump",
+                "dead"
+            ]
+        },
+        {
+            "id": 60,
+            "x": 608,
+            "y": 64,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Log_Large",
+            "tags": [
+                "nature",
+                "log",
+                "wood"
+            ]
+        },
+        {
+            "id": 61,
+            "x": 0,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Pine_Medium_MidSection",
+            "tags": [
+                "tree",
+                "pine",
+                "medium"
+            ]
+        },
+        {
+            "id": 62,
+            "x": 32,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Pine_Medium_Base",
+            "tags": [
+                "tree",
+                "pine",
+                "medium"
+            ]
+        },
+        {
+            "id": 63,
+            "x": 64,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Deciduous_Medium_MidSection",
+            "tags": [
+                "tree",
+                "leafy",
+                "medium"
+            ]
+        },
+        {
+            "id": 64,
+            "x": 96,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Tree_Deciduous_Medium_Base",
+            "tags": [
+                "tree",
+                "leafy",
+                "medium"
+            ]
+        },
+        {
+            "id": 65,
+            "x": 128,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Rock_Boulder_Large_A",
+            "tags": [
+                "rock",
+                "boulder",
+                "grey"
+            ]
+        },
+        {
+            "id": 66,
+            "x": 160,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Rock_Boulder_Large_B",
+            "tags": [
+                "rock",
+                "boulder",
+                "grey"
+            ]
+        },
+        {
+            "id": 67,
+            "x": 192,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Rock_Cluster",
+            "tags": [
+                "rock",
+                "cluster",
+                "grey"
+            ]
+        },
+        {
+            "id": 68,
+            "x": 224,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Nature_Log_Mossy",
+            "tags": [
+                "log",
+                "wood",
+                "mossy"
+            ]
+        },
+        {
+            "id": 69,
+            "x": 256,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Nature_Stick_Pile",
+            "tags": [
+                "stick",
+                "pile",
+                "wood"
+            ]
+        },
+        {
+            "id": 70,
+            "x": 288,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Foliage_Hedge_Segment",
+            "tags": [
+                "foliage",
+                "hedge",
+                "green"
+            ]
+        },
+        {
+            "id": 71,
+            "x": 320,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Water_Lilies_Pad",
+            "tags": [
+                "water",
+                "plant",
+                "lilypad"
+            ]
+        },
+        {
+            "id": 72,
+            "x": 352,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Water_Reeds",
+            "tags": [
+                "water",
+                "plant",
+                "reeds"
+            ]
+        },
+        {
+            "id": 73,
+            "x": 384,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Cliff_Face_Rock_W",
+            "tags": [
+                "cliff",
+                "rock",
+                "west"
+            ]
+        },
+        {
+            "id": 74,
+            "x": 416,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Cliff_Face_Rock_E",
+            "tags": [
+                "cliff",
+                "rock",
+                "east"
+            ]
+        },
+        {
+            "id": 75,
+            "x": 448,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Cave_Entrance_Rock",
+            "tags": [
+                "cave",
+                "entrance",
+                "rock"
+            ]
+        },
+        {
+            "id": 76,
+            "x": 480,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Large_Rock_Mossy_A",
+            "tags": [
+                "rock",
+                "large",
+                "mossy"
+            ]
+        },
+        {
+            "id": 77,
+            "x": 512,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Large_Rock_Mossy_B",
+            "tags": [
+                "rock",
+                "large",
+                "mossy"
+            ]
+        },
+        {
+            "id": 78,
+            "x": 544,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Dirt_Mound",
+            "tags": [
+                "dirt",
+                "mound",
+                "small"
+            ]
+        },
+        {
+            "id": 79,
+            "x": 576,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Desert_Shrub",
+            "tags": [
+                "plant",
+                "desert",
+                "dry"
+            ]
+        },
+        {
+            "id": 80,
+            "x": 608,
+            "y": 96,
+            "w": 32,
+            "h": 32,
+            "category": "nature_objects",
+            "name": "Coral_Segment_Small",
+            "tags": [
+                "coral",
+                "small",
+                "reef"
+            ]
+        },
+        {
+            "id": 81,
+            "x": 0,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stone_Grey_Main",
+            "tags": [
+                "wall",
+                "stone",
+                "grey"
+            ]
+        },
+        {
+            "id": 82,
+            "x": 32,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stone_Grey_Main_Detail",
+            "tags": [
+                "wall",
+                "stone",
+                "grey",
+                "detail"
+            ]
+        },
+        {
+            "id": 83,
+            "x": 64,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stone_Grey_Corner_W",
+            "tags": [
+                "wall",
+                "stone",
+                "grey",
+                "corner",
+                "west"
+            ]
+        },
+        {
+            "id": 84,
+            "x": 96,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stone_Grey_Corner_E",
+            "tags": [
+                "wall",
+                "stone",
+                "grey",
+                "corner",
+                "east"
+            ]
+        },
+        {
+            "id": 85,
+            "x": 128,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Wood_Brown_Main",
+            "tags": [
+                "wall",
+                "wood",
+                "brown"
+            ]
+        },
+        {
+            "id": 86,
+            "x": 160,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Wood_Brown_Main_Detail",
+            "tags": [
+                "wall",
+                "wood",
+                "brown",
+                "detail"
+            ]
+        },
+        {
+            "id": 87,
+            "x": 192,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Wood_Brown_Corner_W",
+            "tags": [
+                "wall",
+                "wood",
+                "brown",
+                "corner",
+                "west"
+            ]
+        },
+        {
+            "id": 88,
+            "x": 224,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Wood_Brown_Corner_E",
+            "tags": [
+                "wall",
+                "wood",
+                "brown",
+                "corner",
+                "east"
+            ]
+        },
+        {
+            "id": 89,
+            "x": 256,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Brick_Red_Main",
+            "tags": [
+                "wall",
+                "brick",
+                "red"
+            ]
+        },
+        {
+            "id": 90,
+            "x": 288,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Brick_Red_Main_Detail",
+            "tags": [
+                "wall",
+                "brick",
+                "red",
+                "detail"
+            ]
+        },
+        {
+            "id": 91,
+            "x": 320,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Brick_Red_Corner_W",
+            "tags": [
+                "wall",
+                "brick",
+                "red",
+                "corner",
+                "west"
+            ]
+        },
+        {
+            "id": 92,
+            "x": 352,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Brick_Red_Corner_E",
+            "tags": [
+                "wall",
+                "brick",
+                "red",
+                "corner",
+                "east"
+            ]
+        },
+        {
+            "id": 93,
+            "x": 384,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stucco_White_Main",
+            "tags": [
+                "wall",
+                "stucco",
+                "white"
+            ]
+        },
+        {
+            "id": 94,
+            "x": 416,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stucco_White_Detail",
+            "tags": [
+                "wall",
+                "stucco",
+                "white",
+                "detail"
+            ]
+        },
+        {
+            "id": 95,
+            "x": 448,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stucco_White_Base_W",
+            "tags": [
+                "wall",
+                "stucco",
+                "white",
+                "corner",
+                "west"
+            ]
+        },
+        {
+            "id": 96,
+            "x": 480,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stucco_White_Base_E",
+            "tags": [
+                "wall",
+                "stucco",
+                "white",
+                "corner",
+                "east"
+            ]
+        },
+        {
+            "id": 97,
+            "x": 512,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Logs_Main",
+            "tags": [
+                "wall",
+                "logs",
+                "brown"
+            ]
+        },
+        {
+            "id": 98,
+            "x": 544,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Logs_Corner_W",
+            "tags": [
+                "wall",
+                "logs",
+                "corner",
+                "west"
+            ]
+        },
+        {
+            "id": 99,
+            "x": 576,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Logs_Corner_E",
+            "tags": [
+                "wall",
+                "logs",
+                "corner",
+                "east"
+            ]
+        },
+        {
+            "id": 100,
+            "x": 608,
+            "y": 128,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Tavern_Beams_W",
+            "tags": [
+                "wall",
+                "tavern",
+                "wood",
+                "west"
+            ]
+        },
+        {
+            "id": 101,
+            "x": 0,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Stone_Grey_Main",
+            "tags": [
+                "wall",
+                "stone",
+                "grey"
+            ]
+        },
+        {
+            "id": 102,
+            "x": 32,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Door_Wood_Closed",
+            "tags": [
+                "door",
+                "wood",
+                "closed"
+            ]
+        },
+        {
+            "id": 103,
+            "x": 64,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Door_Wood_Arch_Closed",
+            "tags": [
+                "door",
+                "wood",
+                "arch",
+                "closed"
+            ]
+        },
+        {
+            "id": 104,
+            "x": 96,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Door_Iron_Closed",
+            "tags": [
+                "door",
+                "iron",
+                "metal",
+                "closed"
+            ]
+        },
+        {
+            "id": 105,
+            "x": 128,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Window_Glass_Large_A",
+            "tags": [
+                "window",
+                "glass",
+                "large"
+            ]
+        },
+        {
+            "id": 106,
+            "x": 160,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Window_Glass_Large_B",
+            "tags": [
+                "window",
+                "glass",
+                "large"
+            ]
+        },
+        {
+            "id": 107,
+            "x": 192,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Window_Glass_Small_A",
+            "tags": [
+                "window",
+                "glass",
+                "small"
+            ]
+        },
+        {
+            "id": 108,
+            "x": 224,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Window_Glass_Small_B",
+            "tags": [
+                "window",
+                "glass",
+                "small"
+            ]
+        },
+        {
+            "id": 109,
+            "x": 256,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Door_Open_Interior_Light",
+            "tags": [
+                "door",
+                "open",
+                "interior",
+                "light"
+            ]
+        },
+        {
+            "id": 110,
+            "x": 288,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Door_Open_Interior_Dark",
+            "tags": [
+                "door",
+                "open",
+                "interior",
+                "dark"
+            ]
+        },
+        {
+            "id": 111,
+            "x": 320,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Window_Open_Interior_Light",
+            "tags": [
+                "window",
+                "open",
+                "interior",
+                "light"
+            ]
+        },
+        {
+            "id": 112,
+            "x": 352,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Window_Open_Interior_Dark",
+            "tags": [
+                "window",
+                "open",
+                "interior",
+                "dark"
+            ]
+        },
+        {
+            "id": 113,
+            "x": 384,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Tavern_Beams_E",
+            "tags": [
+                "wall",
+                "tavern",
+                "wood",
+                "east"
+            ]
+        },
+        {
+            "id": 114,
+            "x": 416,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Chimney_Brick_Main",
+            "tags": [
+                "chimney",
+                "brick",
+                "red"
+            ]
+        },
+        {
+            "id": 115,
+            "x": 448,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Chimney_Brick_Top",
+            "tags": [
+                "chimney",
+                "brick",
+                "top"
+            ]
+        },
+        {
+            "id": 116,
+            "x": 480,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Chimney_Stone_Main",
+            "tags": [
+                "chimney",
+                "stone",
+                "grey"
+            ]
+        },
+        {
+            "id": 117,
+            "x": 512,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Chimney_Stone_Top",
+            "tags": [
+                "chimney",
+                "stone",
+                "top"
+            ]
+        },
+        {
+            "id": 118,
+            "x": 544,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Shop_Counter_N",
+            "tags": [
+                "wall",
+                "shop",
+                "counter",
+                "north"
+            ]
+        },
+        {
+            "id": 119,
+            "x": 576,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Shop_Counter_Center",
+            "tags": [
+                "wall",
+                "shop",
+                "counter",
+                "center"
+            ]
+        },
+        {
+            "id": 120,
+            "x": 608,
+            "y": 160,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Wall_Shop_Counter_S",
+            "tags": [
+                "wall",
+                "shop",
+                "counter",
+                "south"
+            ]
+        },
+        {
+            "id": 121,
+            "x": 0,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Red_Clay_Main",
+            "tags": [
+                "roof",
+                "clay",
+                "red"
+            ]
+        },
+        {
+            "id": 122,
+            "x": 32,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Red_Clay_Main_Detail",
+            "tags": [
+                "roof",
+                "clay",
+                "red",
+                "detail"
+            ]
+        },
+        {
+            "id": 123,
+            "x": 64,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Red_Clay_Peak_W",
+            "tags": [
+                "roof",
+                "clay",
+                "red",
+                "peak",
+                "west"
+            ]
+        },
+        {
+            "id": 124,
+            "x": 96,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Red_Clay_Peak_E",
+            "tags": [
+                "roof",
+                "clay",
+                "red",
+                "peak",
+                "east"
+            ]
+        },
+        {
+            "id": 125,
+            "x": 128,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Blue_Shingle_Main",
+            "tags": [
+                "roof",
+                "shingle",
+                "blue"
+            ]
+        },
+        {
+            "id": 126,
+            "x": 160,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Blue_Shingle_Main_Detail",
+            "tags": [
+                "roof",
+                "shingle",
+                "blue",
+                "detail"
+            ]
+        },
+        {
+            "id": 127,
+            "x": 192,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Blue_Shingle_Peak_W",
+            "tags": [
+                "roof",
+                "shingle",
+                "blue",
+                "peak",
+                "west"
+            ]
+        },
+        {
+            "id": 128,
+            "x": 224,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Blue_Shingle_Peak_E",
+            "tags": [
+                "roof",
+                "shingle",
+                "blue",
+                "peak",
+                "east"
+            ]
+        },
+        {
+            "id": 129,
+            "x": 256,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Brown_Wood_Main",
+            "tags": [
+                "roof",
+                "wood",
+                "brown"
+            ]
+        },
+        {
+            "id": 130,
+            "x": 288,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Brown_Wood_Main_Detail",
+            "tags": [
+                "roof",
+                "wood",
+                "brown",
+                "detail"
+            ]
+        },
+        {
+            "id": 131,
+            "x": 320,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Brown_Wood_Peak_W",
+            "tags": [
+                "roof",
+                "wood",
+                "brown",
+                "peak",
+                "west"
+            ]
+        },
+        {
+            "id": 132,
+            "x": 352,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Brown_Wood_Peak_E",
+            "tags": [
+                "roof",
+                "wood",
+                "brown",
+                "peak",
+                "east"
+            ]
+        },
+        {
+            "id": 133,
+            "x": 384,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Peak_Main_Caps_W",
+            "tags": [
+                "roof",
+                "peak",
+                "cap",
+                "west"
+            ]
+        },
+        {
+            "id": 134,
+            "x": 416,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Peak_Main_Caps_E",
+            "tags": [
+                "roof",
+                "peak",
+                "cap",
+                "east"
+            ]
+        },
+        {
+            "id": 135,
+            "x": 448,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Clay_Slope_N",
+            "tags": [
+                "roof",
+                "clay",
+                "red",
+                "slope",
+                "north"
+            ]
+        },
+        {
+            "id": 136,
+            "x": 480,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Clay_Slope_S",
+            "tags": [
+                "roof",
+                "clay",
+                "red",
+                "slope",
+                "south"
+            ]
+        },
+        {
+            "id": 137,
+            "x": 512,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Shingle_Slope_N",
+            "tags": [
+                "roof",
+                "shingle",
+                "blue",
+                "slope",
+                "north"
+            ]
+        },
+        {
+            "id": 138,
+            "x": 544,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Shingle_Slope_S",
+            "tags": [
+                "roof",
+                "shingle",
+                "blue",
+                "slope",
+                "south"
+            ]
+        },
+        {
+            "id": 139,
+            "x": 576,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Wood_Slope_N",
+            "tags": [
+                "roof",
+                "wood",
+                "brown",
+                "slope",
+                "north"
+            ]
+        },
+        {
+            "id": 140,
+            "x": 608,
+            "y": 192,
+            "w": 32,
+            "h": 32,
+            "category": "structures",
+            "name": "Roof_Wood_Slope_S",
+            "tags": [
+                "roof",
+                "wood",
+                "brown",
+                "slope",
+                "south"
+            ]
+        },
+        {
+            "id": 141,
+            "x": 0,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Campfire_Lit_A",
+            "tags": [
+                "campfire",
+                "fire",
+                "lit"
+            ]
+        },
+        {
+            "id": 142,
+            "x": 32,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Campfire_Lit_B",
+            "tags": [
+                "campfire",
+                "fire",
+                "lit"
+            ]
+        },
+        {
+            "id": 143,
+            "x": 64,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Campfire_Unlit",
+            "tags": [
+                "campfire",
+                "unlit",
+                "dead"
+            ]
+        },
+        {
+            "id": 144,
+            "x": 96,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Firewood_Pile",
+            "tags": [
+                "wood",
+                "pile",
+                "campfire"
+            ]
+        },
+        {
+            "id": 145,
+            "x": 128,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Wood_Horizontal_Main",
+            "tags": [
+                "fence",
+                "wood",
+                "horizontal"
+            ]
+        },
+        {
+            "id": 146,
+            "x": 160,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Wood_Horizontal_Main_Detail",
+            "tags": [
+                "fence",
+                "wood",
+                "horizontal",
+                "detail"
+            ]
+        },
+        {
+            "id": 147,
+            "x": 192,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Wood_Post_W",
+            "tags": [
+                "fence",
+                "wood",
+                "post",
+                "west"
+            ]
+        },
+        {
+            "id": 148,
+            "x": 224,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Wood_Post_E",
+            "tags": [
+                "fence",
+                "wood",
+                "post",
+                "east"
+            ]
+        },
+        {
+            "id": 149,
+            "x": 256,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Wood_Broken",
+            "tags": [
+                "fence",
+                "wood",
+                "broken"
+            ]
+        },
+        {
+            "id": 150,
+            "x": 288,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Wood_Horizontal_W_Detail",
+            "tags": [
+                "fence",
+                "wood",
+                "post",
+                "detail"
+            ]
+        },
+        {
+            "id": 151,
+            "x": 320,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Wood_Horizontal_E_Detail",
+            "tags": [
+                "fence",
+                "wood",
+                "post",
+                "detail"
+            ]
+        },
+        {
+            "id": 152,
+            "x": 352,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Signpost_Main",
+            "tags": [
+                "sign",
+                "signpost",
+                "main",
+                "empty"
+            ]
+        },
+        {
+            "id": 153,
+            "x": 384,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Signpost_Directional_NW",
+            "tags": [
+                "sign",
+                "signpost",
+                "arrow",
+                "northwest"
+            ]
+        },
+        {
+            "id": 154,
+            "x": 416,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Signpost_Directional_NE",
+            "tags": [
+                "sign",
+                "signpost",
+                "arrow",
+                "northeast"
+            ]
+        },
+        {
+            "id": 155,
+            "x": 448,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Stone_Horizontal_Main",
+            "tags": [
+                "fence",
+                "stone",
+                "horizontal"
+            ]
+        },
+        {
+            "id": 156,
+            "x": 480,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Stone_Main_Detail",
+            "tags": [
+                "fence",
+                "stone",
+                "detail"
+            ]
+        },
+        {
+            "id": 157,
+            "x": 512,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Stone_Main_Post",
+            "tags": [
+                "fence",
+                "stone",
+                "post"
+            ]
+        },
+        {
+            "id": 158,
+            "x": 544,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Stone_Corner",
+            "tags": [
+                "fence",
+                "stone",
+                "corner"
+            ]
+        },
+        {
+            "id": 159,
+            "x": 576,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fence_Stone_Broken",
+            "tags": [
+                "fence",
+                "stone",
+                "broken"
+            ]
+        },
+        {
+            "id": 160,
+            "x": 608,
+            "y": 224,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Sign_Hanging_Main",
+            "tags": [
+                "sign",
+                "hanging",
+                "main"
+            ]
+        },
+        {
+            "id": 161,
+            "x": 0,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Barrel_Closed_Brown_A",
+            "tags": [
+                "barrel",
+                "wood",
+                "brown",
+                "closed"
+            ]
+        },
+        {
+            "id": 162,
+            "x": 32,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Barrel_Closed_Brown_B",
+            "tags": [
+                "barrel",
+                "wood",
+                "brown",
+                "closed"
+            ]
+        },
+        {
+            "id": 163,
+            "x": 64,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Barrel_Open_Empty",
+            "tags": [
+                "barrel",
+                "wood",
+                "open",
+                "empty"
+            ]
+        },
+        {
+            "id": 164,
+            "x": 96,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Barrel_Closed_Iron",
+            "tags": [
+                "barrel",
+                "iron",
+                "metal",
+                "closed"
+            ]
+        },
+        {
+            "id": 165,
+            "x": 128,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Barrel_Closed_Dark",
+            "tags": [
+                "barrel",
+                "wood",
+                "dark",
+                "closed"
+            ]
+        },
+        {
+            "id": 166,
+            "x": 160,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Barrel_Broken_Wood",
+            "tags": [
+                "barrel",
+                "wood",
+                "broken"
+            ]
+        },
+        {
+            "id": 167,
+            "x": 192,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Chest_Closed_A",
+            "tags": [
+                "chest",
+                "wood",
+                "brown",
+                "closed"
+            ]
+        },
+        {
+            "id": 168,
+            "x": 224,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Chest_Closed_B",
+            "tags": [
+                "chest",
+                "wood",
+                "gold",
+                "closed"
+            ]
+        },
+        {
+            "id": 169,
+            "x": 256,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Chest_Open_A",
+            "tags": [
+                "chest",
+                "wood",
+                "brown",
+                "open"
+            ]
+        },
+        {
+            "id": 170,
+            "x": 288,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Chest_Open_B",
+            "tags": [
+                "chest",
+                "wood",
+                "gold",
+                "open"
+            ]
+        },
+        {
+            "id": 171,
+            "x": 320,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Chest_Broken_A",
+            "tags": [
+                "chest",
+                "wood",
+                "broken"
+            ]
+        },
+        {
+            "id": 172,
+            "x": 352,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Chest_Broken_B",
+            "tags": [
+                "chest",
+                "wood",
+                "broken"
+            ]
+        },
+        {
+            "id": 173,
+            "x": 384,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Sack_Grain_A",
+            "tags": [
+                "sack",
+                "grain",
+                "brown"
+            ]
+        },
+        {
+            "id": 174,
+            "x": 416,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Sack_Grain_B",
+            "tags": [
+                "sack",
+                "grain",
+                "brown"
+            ]
+        },
+        {
+            "id": 175,
+            "x": 448,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Sack_Grain_Broken",
+            "tags": [
+                "sack",
+                "grain",
+                "broken"
+            ]
+        },
+        {
+            "id": 176,
+            "x": 480,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Prop_Well_Base_A",
+            "tags": [
+                "well",
+                "base",
+                "stone"
+            ]
+        },
+        {
+            "id": 177,
+            "x": 512,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Prop_Well_Base_B",
+            "tags": [
+                "well",
+                "base",
+                "wood"
+            ]
+        },
+        {
+            "id": 178,
+            "x": 544,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Prop_Well_Top_Stone",
+            "tags": [
+                "well",
+                "top",
+                "stone"
+            ]
+        },
+        {
+            "id": 179,
+            "x": 576,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Prop_Well_Top_Wood",
+            "tags": [
+                "well",
+                "top",
+                "wood"
+            ]
+        },
+        {
+            "id": 180,
+            "x": 608,
+            "y": 256,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Prop_Gallows_Segment_W",
+            "tags": [
+                "prop",
+                "gallows",
+                "wood",
+                "west"
+            ]
+        },
+        {
+            "id": 181,
+            "x": 0,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fountain_Base_Large_Stone",
+            "tags": [
+                "fountain",
+                "base",
+                "stone"
+            ]
+        },
+        {
+            "id": 182,
+            "x": 32,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Fountain_Main_Body",
+            "tags": [
+                "fountain",
+                "main",
+                "stone"
+            ]
+        },
+        {
+            "id": 183,
+            "x": 64,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Vase_Clay_Plain",
+            "tags": [
+                "vase",
+                "clay",
+                "plain",
+                "brown"
+            ]
+        },
+        {
+            "id": 184,
+            "x": 96,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Vase_Clay_Detail",
+            "tags": [
+                "vase",
+                "clay",
+                "detail",
+                "brown"
+            ]
+        },
+        {
+            "id": 185,
+            "x": 128,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Vase_Glass_Blue",
+            "tags": [
+                "vase",
+                "glass",
+                "detail",
+                "blue"
+            ]
+        },
+        {
+            "id": 186,
+            "x": 160,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Vase_Broken_Mixed",
+            "tags": [
+                "vase",
+                "clay",
+                "broken"
+            ]
+        },
+        {
+            "id": 187,
+            "x": 192,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Crate_Closed_Wood_A",
+            "tags": [
+                "crate",
+                "wood",
+                "closed"
+            ]
+        },
+        {
+            "id": 188,
+            "x": 224,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Crate_Closed_Wood_B",
+            "tags": [
+                "crate",
+                "wood",
+                "closed"
+            ]
+        },
+        {
+            "id": 189,
+            "x": 256,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Crate_Open_Empty",
+            "tags": [
+                "crate",
+                "wood",
+                "open",
+                "empty"
+            ]
+        },
+        {
+            "id": 190,
+            "x": 288,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Crate_Broken_Mixed",
+            "tags": [
+                "crate",
+                "wood",
+                "broken"
+            ]
+        },
+        {
+            "id": 191,
+            "x": 320,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Prop_Well_Bucket_Wood",
+            "tags": [
+                "well",
+                "bucket",
+                "wood"
+            ]
+        },
+        {
+            "id": 192,
+            "x": 352,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Grass_Floral_Cluster",
+            "tags": [
+                "ground",
+                "flowers",
+                "cluster",
+                "detail"
+            ]
+        },
+        {
+            "id": 193,
+            "x": 384,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Ground_Gems_Main",
+            "tags": [
+                "ground",
+                "gem",
+                "main",
+                "colorful"
+            ]
+        },
+        {
+            "id": 194,
+            "x": 416,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "ground_base",
+            "name": "Ground_Gems_Mixed_Detail",
+            "tags": [
+                "ground",
+                "gem",
+                "mixed",
+                "detail"
+            ]
+        },
+        {
+            "id": 195,
+            "x": 448,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Brazier_Iron_Lighted",
+            "tags": [
+                "prop",
+                "brazier",
+                "iron",
+                "lit"
+            ]
+        },
+        {
+            "id": 196,
+            "x": 480,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Brazier_Iron_Unlit",
+            "tags": [
+                "prop",
+                "brazier",
+                "iron",
+                "unlit"
+            ]
+        },
+        {
+            "id": 197,
+            "x": 512,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Prop_Torch_A",
+            "tags": [
+                "prop",
+                "torch",
+                "wood",
+                "lit"
+            ]
+        },
+        {
+            "id": 198,
+            "x": 544,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Prop_Torch_B",
+            "tags": [
+                "prop",
+                "torch",
+                "wood",
+                "lit"
+            ]
+        },
+        {
+            "id": 199,
+            "x": 576,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Flag_Banner_NW",
+            "tags": [
+                "prop",
+                "flag",
+                "northwest",
+                "banner"
+            ]
+        },
+        {
+            "id": 200,
+            "x": 608,
+            "y": 288,
+            "w": 32,
+            "h": 32,
+            "category": "props",
+            "name": "Flag_Banner_NE",
+            "tags": [
+                "prop",
+                "flag",
+                "northeast",
+                "banner"
+            ]
+        }
+    ]
+}
