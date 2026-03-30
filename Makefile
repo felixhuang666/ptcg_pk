@@ -4,6 +4,7 @@ SYSTEMD_DIR=/etc/systemd/system
 PWD := $(shell pwd)
 USER := $(shell whoami)
 NPM_PATH := $(shell which npm || echo /usr/bin/npm)
+SHELL := /bin/bash
 
 .SILENT:
 .PHONY: help all setup build clean install-service uninstall start stop bg-start status restart logs
@@ -45,7 +46,8 @@ build:
 
 build-frontend:
 	@echo "Building frontend..."
-	npm run build
+	source ~/.nvm/nvm.sh && npm run build
+	#npm run build
 	@echo "Build complete."
 
 clean:
