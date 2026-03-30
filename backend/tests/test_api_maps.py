@@ -9,9 +9,9 @@ def reset_in_memory_maps():
         "id": "main_200",
         "name": "World Map",
         "map_data": {
-            "width": 200,
-            "height": 200,
-            "tiles": [2] * (200 * 200)
+            "width": 40,
+            "height": 40,
+            "tiles": [2] * (40 * 40)
         }
     }
 
@@ -37,7 +37,7 @@ async def test_get_specific_map():
     assert data["id"] == "main_200"
     assert data["name"] == "World Map"
     assert "map_data" in data
-    assert data["map_data"]["width"] == 200
+    assert data["map_data"]["width"] == 40
 
 @pytest.mark.asyncio
 async def test_save_new_map():
@@ -64,8 +64,8 @@ async def test_save_new_map():
 async def test_generate_map():
     gen_req = {
         "name": "Procedural Forest",
-        "width": 50,
-        "height": 50
+        "width": 40,
+        "height": 40
     }
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -78,8 +78,8 @@ async def test_generate_map():
     assert res_data["id"].startswith("gen_")
 
     map_data = res_data["map_data"]
-    assert map_data["width"] == 50
-    assert map_data["height"] == 50
-    assert len(map_data["tiles"]) == 2500
+    assert map_data["width"] == 40
+    assert map_data["height"] == 40
+    assert len(map_data["tiles"]) == 1600
     assert "objects" in map_data
-    assert len(map_data["objects"]) == 2500
+    assert len(map_data["objects"]) == 1600
