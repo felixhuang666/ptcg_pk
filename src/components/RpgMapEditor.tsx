@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Maximize, Minimize } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -1050,6 +1050,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [isChatMinimized, setIsChatMinimized] = useState(true);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [isFullscreenSupported, setIsFullscreenSupported] = useState(true);
+  const [isFullscreenActive, setIsFullscreenActive] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [mapsList, setMapsList] = useState<{id: string, name: string}[]>([]);
@@ -1288,12 +1289,53 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
         setIsFullscreenSupported(false);
       }
 
-      if (!isFullscreen) {
+      const enableFullScreenNotification = import.meta.env.VITE_ENABLE_FULL_SCREEN_NOTIFICATION === 'true';
+
+      if (!isFullscreen && enableFullScreenNotification) {
         setShowFullscreenPrompt(true);
       }
     };
     checkFullscreen();
+
+    const handleFullscreenChange = () => {
+      const doc = document as any;
+      const isFullscreen = document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+      setIsFullscreenActive(!!isFullscreen);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    // Initial check
+    handleFullscreenChange();
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
   }, []);
+
+  const toggleFullscreen = () => {
+    const doc = document as any;
+    const isFullscreen = document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+    if (isFullscreen) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      } else if (doc.mozCancelFullScreen) {
+        doc.mozCancelFullScreen();
+      } else if (doc.msExitFullscreen) {
+        doc.msExitFullscreen();
+      }
+    } else {
+      requestFullscreen();
+    }
+  };
 
   const requestFullscreen = async () => {
     const elem = document.documentElement as any;
@@ -1387,6 +1429,17 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700 group relative"
+            title={isFullscreenActive ? "退出全螢幕" : "進入全螢幕"}
+          >
+            {isFullscreenActive ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+            <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">
+              {isFullscreenActive ? "退出全螢幕" : "進入全螢幕"}
+            </span>
+          </button>
+
           <button
             onClick={() => window.location.reload()}
             className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700 group relative"
