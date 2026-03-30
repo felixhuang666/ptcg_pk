@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -62,6 +62,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private undoStack: {tiles: number[], objects?: number[]}[] = [];
       private redoStack: {tiles: number[], objects?: number[]}[] = [];
       private isPanning: boolean = false;
+      public editorMode: 'draw' | 'move' = 'draw';
       private panStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private camStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private tilemap: Phaser.Tilemaps.Tilemap | null = null;
@@ -350,7 +351,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           this.setupEditorUI();
 
           this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            if (pointer.middleButtonDown() || pointer.rightButtonDown()) {
+            if (this.editorMode === 'move' || pointer.middleButtonDown() || pointer.rightButtonDown()) {
               this.isPanning = true;
               this.panStart.set(pointer.x, pointer.y);
               this.camStart.set(this.cameras.main.scrollX, this.cameras.main.scrollY);
@@ -367,7 +368,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           });
 
           this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-            if (this.isPanning && (pointer.middleButtonDown() || pointer.rightButtonDown())) {
+            if (this.isPanning && (this.editorMode === 'move' || pointer.middleButtonDown() || pointer.rightButtonDown())) {
               const dx = pointer.x - this.panStart.x;
               const dy = pointer.y - this.panStart.y;
               this.cameras.main.scrollX = this.camStart.x - dx / this.cameras.main.zoom;
@@ -375,7 +376,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
               return;
             }
 
-            if (pointer.isDown && !pointer.middleButtonDown() && !pointer.rightButtonDown()) {
+            if (this.editorMode === 'draw' && pointer.isDown && !pointer.middleButtonDown() && !pointer.rightButtonDown()) {
               this.handlePointerDown(pointer);
             }
           });
@@ -865,7 +866,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
 
         if (x >= 0 && x < this.mapData.width && y >= 0 && y < this.mapData.height) {
           const index = y * this.mapData.width + x;
-          const targetVal = this.isEraser ? -1 : this.currentTileType;
+          const targetVal = this.isEraser ? -1 : this.currentTileType - 1;
 
           if (this.currentEditLayer === 'ground') {
             if (this.mapData.tiles[index] !== targetVal) {
@@ -1065,6 +1066,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [blockWidth, setBlockWidth] = useState<number>(32);
   const [blockHeight, setBlockHeight] = useState<number>(32);
   const [showGrid, setShowGrid] = useState<boolean>(false);
+  const [editorMode, setEditorMode] = useState<'draw' | 'move'>('draw');
 
   const [tilesets, setTilesets] = useState<any[]>([]);
   const [activeTileset, setActiveTileset] = useState<any>(null);
@@ -1413,44 +1415,6 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 relative w-full bg-slate-900">
-        {showFullscreenPrompt && (
-          <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
-              <h2 className="text-2xl font-bold mb-4 text-white">進入全螢幕模式</h2>
-              {isFullscreenSupported ? (
-                <>
-                  <p className="text-slate-300 mb-8">為了獲得最佳的遊戲體驗，建議您切換至全螢幕模式遊玩。</p>
-                  <div className="flex gap-4 justify-center">
-                    <button
-                      onClick={() => setShowFullscreenPrompt(false)}
-                      className="px-6 py-3 bg-slate-700 text-white font-medium rounded-xl hover:bg-slate-600 transition-colors"
-                    >
-                      稍後再說
-                    </button>
-                    <button
-                      onClick={requestFullscreen}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-green-400 transition-transform transform hover:scale-105 shadow-lg shadow-emerald-900/50"
-                    >
-                      啟動全螢幕
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-slate-300 mb-8">您的瀏覽器目前不支援自動全螢幕功能。<br /><br />為了獲得最佳體驗，建議您使用瀏覽器的<br /><strong className="text-emerald-400">「加入主畫面」</strong>功能，將遊戲安裝至桌面後開啟。</p>
-                  <div className="flex gap-4 justify-center">
-                    <button
-                      onClick={() => setShowFullscreenPrompt(false)}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-500 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-green-400 transition-transform transform hover:scale-105 shadow-lg shadow-emerald-900/50"
-                    >
-                      我知道了
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
 
 
         <div className="flex-1 w-full flex flex-row gap-2 md:gap-4 min-h-0">
@@ -1502,7 +1466,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                             setSelectedTile(id);
                             setSelectedTileData(tileMeta);
                             const scene = (window as any).__PHASER_MAIN_SCENE__;
-                            if (scene) scene.currentTileType = id;
+                            if (scene) scene.currentTileType = id + 1; // 1-based internal handling
                           }}
                           className={`w-10 h-10 border-2 rounded ${selectedTile === id ? 'border-blue-500 z-10 scale-110 relative' : 'border-transparent hover:border-slate-500'}`}
                           title={tileMeta.name}
@@ -1602,13 +1566,25 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                     </button>
                   </div>
                   <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
+                    <button
+                      onClick={() => {
+                        const newMode = editorMode === 'draw' ? 'move' : 'draw';
+                        setEditorMode(newMode);
+                        const scene = (window as any).__PHASER_MAIN_SCENE__;
+                        if (scene) scene.editorMode = newMode;
+                      }}
+                      className={`p-1 rounded transition-colors ${editorMode === 'draw' ? 'bg-blue-600 text-white' : 'bg-slate-600 hover:bg-slate-500'}`}
+                      title={editorMode === 'draw' ? 'Switch to Move Mode' : 'Switch to Draw Mode'}
+                    >
+                      {editorMode === 'draw' ? <Pencil className="w-4 h-4" /> : <Hand className="w-4 h-4" />}
+                    </button>
                     <select
                       value={editLayer}
                       onChange={(e) => handleLayerToggle(e.target.value as 'ground'|'object')}
                       className="bg-slate-700 border border-slate-500 rounded outline-none text-xs px-1 py-0.5"
                     >
-                      <option value="ground">Ground Layer</option>
-                      <option value="object">Object Layer</option>
+                      <option value="ground">Ground</option>
+                      <option value="object">Object</option>
                     </select>
                     <button
                       onClick={handleEraserToggle}
@@ -1616,12 +1592,19 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                     >
                       Eraser
                     </button>
-                    <span>Paint: <strong className="text-emerald-400">{isEraser ? 'Erase (-1)' : getTileName(selectedTile)}</strong></span>
-                    <span className="text-slate-400 text-[10px]">(Keys: 1=Grass, 2=Water, 3=Rock)</span>
                   </div>
-                  <button onClick={handleUndo} className="bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-xs transition-colors">Undo</button>
-                  <button onClick={handleRedo} className="bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-xs transition-colors">Redo</button>
-                  <button onClick={handleSaveMap} className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1 rounded text-sm whitespace-nowrap transition-colors ml-2 shadow-lg">Save Map</button>
+                  <button onClick={handleUndo} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="Undo">
+                    <Undo2 className="w-4 h-4" />
+                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Undo</span>
+                  </button>
+                  <button onClick={handleRedo} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="Redo">
+                    <Redo2 className="w-4 h-4" />
+                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Redo</span>
+                  </button>
+                  <button onClick={handleSaveMap} className="bg-amber-600 hover:bg-amber-500 text-white p-1 rounded transition-colors ml-2 shadow-lg group relative" title="Save Map">
+                    <Save className="w-4 h-4" />
+                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Save Map</span>
+                  </button>
 
                   <button onClick={async () => {
                     const newId = 'map_' + Date.now();
@@ -1648,12 +1631,13 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                       const scene = (window as any).__PHASER_MAIN_SCENE__;
                       if (scene && scene.loadNewMap) scene.loadNewMap(newId);
                     }
-                  }} className="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1 rounded text-sm font-medium flex items-center gap-1 whitespace-nowrap transition-colors">
-                    New Empty
+                  }} className="bg-slate-600 hover:bg-slate-500 text-white p-1 rounded transition-colors group relative" title="New Empty Map">
+                    <FilePlus className="w-4 h-4" />
+                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">New Empty Map</span>
                   </button>
-                  <button onClick={handleGenerateMap} className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-sm font-medium flex items-center gap-1 whitespace-nowrap transition-colors">
-                    <RefreshCw size={14} />
-                    Generate
+                  <button onClick={handleGenerateMap} className="bg-emerald-600 hover:bg-emerald-500 text-white p-1 rounded transition-colors group relative" title="Generate Random Map">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Generate Map</span>
                   </button>
                 </div>
               </div>
