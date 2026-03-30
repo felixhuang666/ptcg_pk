@@ -336,9 +336,13 @@ async def generate_map(request: Request):
             objects.append(obj_val)
 
     map_id = f"gen_{uuid.uuid4().hex[:8]}"
+    block_width = data.get("block_width", 32)
+    block_height = data.get("block_height", 32)
     map_data = {
         "width": width,
         "height": height,
+        "block_width": block_width,
+        "block_height": block_height,
         "tiles": tiles,
         "objects": objects
     }
@@ -481,7 +485,8 @@ async def delete_npc(npc_id: str):
 @app.get("/api/map/tilesets")
 async def get_map_tilesets():
     tilesets = []
-    base_dir = "public/assets/map_tileset"
+    # Production files are in dist/assets, local dev uses public/assets
+    base_dir = "dist/assets/map_tileset" if os.path.exists("dist/assets/map_tileset") else "public/assets/map_tileset"
     if os.path.exists(base_dir):
         for filename in os.listdir(base_dir):
             if filename.endswith(".json"):
