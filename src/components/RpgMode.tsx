@@ -3,6 +3,19 @@ import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
 import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw } from 'lucide-react';
 
+export type LayerKey = 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer';
+export const LAYER_KEYS: LayerKey[] = ['base', 'decorations', 'obstacles', 'objectCollides', 'objectEvent', 'topLayer'];
+
+export const LAYER_MAPPING: Record<LayerKey, { dataKey: string, depth: number, collides: boolean }> = {
+  base: { dataKey: 'tiles', depth: 0, collides: false },
+  decorations: { dataKey: 'decorations', depth: 1, collides: false },
+  obstacles: { dataKey: 'obstacles', depth: 2, collides: true },
+  objectCollides: { dataKey: 'object_collides', depth: 3, collides: true },
+  objectEvent: { dataKey: 'object_event', depth: 4, collides: false },
+  topLayer: { dataKey: 'top_layer', depth: 20, collides: false },
+};
+
+
 interface RpgModeProps {
   onBack: () => void;
 }
@@ -66,8 +79,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private camStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private tilemap: Phaser.Tilemaps.Tilemap | null = null;
       private tileset: Phaser.Tilemaps.Tileset | null = null;
-      private layer: Phaser.Tilemaps.TilemapLayer | null = null;
-      private objectLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+            public layerInstances: Record<string, Phaser.Tilemaps.TilemapLayer> = {};
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
@@ -83,6 +95,12 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         mainSceneRef.current = this;
       }
 
+
+      public toggleLayerVisibility(layerKey: string, visible: boolean) {
+        if (this.layerInstances[layerKey]) {
+          this.layerInstances[layerKey].setVisible(visible);
+        }
+      }
       preload() {
         this.load.image('player_img', `/assets/players/${roleWalkSprite}?t=${Date.now()}`);
         this.load.image('player_atk_img', `/assets/players/${roleAtkSprite}?t=${Date.now()}`);
@@ -667,31 +685,30 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       renderMap() {
         if (!this.mapData) return;
 
-        const data2D: number[][] = [];
-        for (let y = 0; y < this.mapData.height; y++) {
-          const row: number[] = [];
-          for (let x = 0; x < this.mapData.width; x++) {
-            row.push(this.mapData.tiles[y * this.mapData.width + x] + 1);
-          }
-          data2D.push(row);
-        }
-
-        if (this.layer) {
-          this.layer.destroy();
-        }
-        if (this.tilemap) {
-          this.tilemap.destroy();
-        }
-
-        this.tilemap = this.make.tilemap({ data: data2D, tileWidth: 32, tileHeight: 32 });
+        this.tilemap = this.make.tilemap({ width: this.mapData.width, height: this.mapData.height, tileWidth: 32, tileHeight: 32 });
         this.tileset = this.tilemap.addTilesetImage('tileset')!;
-        this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
-        this.layer.setDepth(0);
+        for (const key of LAYER_KEYS) {
+            const config = LAYER_MAPPING[key];
+            const layer = this.tilemap.createBlankLayer(config.dataKey, this.tileset, 0, 0)!;
+            layer.setDepth(config.depth);
+            if (config.collides) {
+              layer.setCollisionByExclusion([-1]);
+              if (this.player) {
+                this.physics.add.collider(this.player, layer);
+              }
+            }
+            this.layerInstances[key] = layer;
 
-        this.layer.setCollision([2, 3]);
-
-        if (this.player) {
-          this.physics.add.collider(this.player, this.layer);
+            if (this.mapData[config.dataKey]) {
+              for (let y = 0; y < this.mapData.height; y++) {
+                for (let x = 0; x < this.mapData.width; x++) {
+                  const val = this.mapData[config.dataKey][y * this.mapData.width + x];
+                  if (val !== undefined && val !== -1) {
+                    layer.putTileAt(val + 1, x, y);
+                  }
+                }
+              }
+            }
         }
 
         this.physics.world.setBounds(0, 0, this.mapData.width * 32, this.mapData.height * 32);
@@ -727,22 +744,17 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           const index = y * this.mapData.width + x;
           const targetVal = this.isEraser ? -1 : this.currentTileType;
 
-          if (this.currentEditLayer === 'ground') {
-            if (this.mapData.tiles[index] !== targetVal) {
-              this.mapData.tiles[index] = targetVal;
-              if (this.layer) {
-                if (targetVal === -1) this.layer.removeTileAt(x, y);
-                else this.layer.putTileAt(targetVal + 1, x, y);
-              }
-            }
-          } else {
-            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(-1);
-            if (this.mapData.objects[index] !== targetVal) {
-              this.mapData.objects[index] = targetVal;
-              if (this.objectLayer) {
-                if (targetVal === -1) this.objectLayer.removeTileAt(x, y);
-                else this.objectLayer.putTileAt(targetVal + 1, x, y);
-              }
+          const dataKey = LAYER_MAPPING[this.currentEditLayer].dataKey;
+          if (!this.mapData[dataKey]) {
+            this.mapData[dataKey] = Array(this.mapData.width * this.mapData.height).fill(-1);
+          }
+
+          if (this.mapData[dataKey][index] !== targetVal) {
+            this.mapData[dataKey][index] = targetVal;
+            const targetLayer = this.layerInstances[this.currentEditLayer];
+            if (targetLayer) {
+              if (targetVal === -1) targetLayer.removeTileAt(x, y);
+              else targetLayer.putTileAt(targetVal + 1, x, y);
             }
           }
         }
@@ -848,6 +860,21 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             }
           }
         }
+
+        // TopLayer transparency logic
+        if (this.layerInstances['topLayer'] && this.mapData['top_layer']) {
+          const tileX = Math.floor(this.player.x / 32);
+          const tileY = Math.floor(this.player.y / 32);
+          if (tileX >= 0 && tileX < this.mapData.width && tileY >= 0 && tileY < this.mapData.height) {
+            const index = tileY * this.mapData.width + tileX;
+            if (this.mapData['top_layer'][index] !== undefined && this.mapData['top_layer'][index] !== -1) {
+              this.layerInstances['topLayer'].setAlpha(0.5);
+            } else {
+              this.layerInstances['topLayer'].setAlpha(1.0);
+            }
+          }
+        }
+
       }
     }
 

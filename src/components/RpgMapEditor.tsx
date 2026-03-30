@@ -1,7 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Eye, EyeOff } from 'lucide-react';
+
+export type LayerKey = 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer';
+export const LAYER_KEYS: LayerKey[] = ['base', 'decorations', 'obstacles', 'objectCollides', 'objectEvent', 'topLayer'];
+
+export const LAYER_MAPPING: Record<LayerKey, { dataKey: string, depth: number, collides: boolean }> = {
+  base: { dataKey: 'tiles', depth: 0, collides: false },
+  decorations: { dataKey: 'decorations', depth: 1, collides: false },
+  obstacles: { dataKey: 'obstacles', depth: 2, collides: true },
+  objectCollides: { dataKey: 'object_collides', depth: 3, collides: true },
+  objectEvent: { dataKey: 'object_event', depth: 4, collides: false },
+  topLayer: { dataKey: 'top_layer', depth: 20, collides: false },
+};
+
 
 interface RpgModeProps {
   onBack: () => void;
@@ -59,15 +72,14 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       private currentDirection: string = 'down';
       private gridGraphics: Phaser.GameObjects.Graphics | null = null;
       public attackButtonDown: boolean = false;
-      private undoStack: {tiles: number[], objects?: number[]}[] = [];
-      private redoStack: {tiles: number[], objects?: number[]}[] = [];
+      private undoStack: any[] = [];
+      private redoStack: any[] = [];
       private isPanning: boolean = false;
       private panStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private camStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private tilemap: Phaser.Tilemaps.Tilemap | null = null;
       private tileset: Phaser.Tilemaps.Tileset | null = null;
-      private layer: Phaser.Tilemaps.TilemapLayer | null = null;
-      private objectLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+            public layerInstances: Record<string, Phaser.Tilemaps.TilemapLayer> = {};
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
@@ -87,12 +99,19 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       public performUndo() {
         if (this.undoStack.length > 0) {
           const prevState = this.undoStack.pop()!;
-          this.redoStack.push({
-            tiles: [...this.mapData.tiles],
-            objects: this.mapData.objects ? [...this.mapData.objects] : []
-          });
-          this.mapData.tiles = [...prevState.tiles];
-          if (prevState.objects) this.mapData.objects = [...prevState.objects];
+          const currentState: any = {};
+          for (const key of LAYER_KEYS) {
+            const dataKey = LAYER_MAPPING[key].dataKey;
+            currentState[dataKey] = this.mapData[dataKey] ? [...this.mapData[dataKey]] : [];
+          }
+          this.redoStack.push(currentState);
+
+          for (const key of LAYER_KEYS) {
+            const dataKey = LAYER_MAPPING[key].dataKey;
+            if (prevState[dataKey]) {
+              this.mapData[dataKey] = [...prevState[dataKey]];
+            }
+          }
           this.renderMap();
         }
       }
@@ -100,16 +119,29 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       public performRedo() {
         if (this.redoStack.length > 0) {
           const nextState = this.redoStack.pop()!;
-          this.undoStack.push({
-            tiles: [...this.mapData.tiles],
-            objects: this.mapData.objects ? [...this.mapData.objects] : []
-          });
-          this.mapData.tiles = [...nextState.tiles];
-          if (nextState.objects) this.mapData.objects = [...nextState.objects];
+          const currentState: any = {};
+          for (const key of LAYER_KEYS) {
+            const dataKey = LAYER_MAPPING[key].dataKey;
+            currentState[dataKey] = this.mapData[dataKey] ? [...this.mapData[dataKey]] : [];
+          }
+          this.undoStack.push(currentState);
+
+          for (const key of LAYER_KEYS) {
+            const dataKey = LAYER_MAPPING[key].dataKey;
+            if (nextState[dataKey]) {
+              this.mapData[dataKey] = [...nextState[dataKey]];
+            }
+          }
           this.renderMap();
         }
       }
 
+
+      public toggleLayerVisibility(layerKey: string, visible: boolean) {
+        if (this.layerInstances[layerKey]) {
+          this.layerInstances[layerKey].setVisible(visible);
+        }
+      }
       public toggleGrid(show: boolean, blockW: number, blockH: number) {
         if (!this.gridGraphics) {
           this.gridGraphics = this.add.graphics();
@@ -357,10 +389,12 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
               return;
             }
 
-            this.undoStack.push({
-              tiles: [...this.mapData.tiles],
-              objects: this.mapData.objects ? [...this.mapData.objects] : []
-            });
+            const stateToPush: any = {};
+            for (const key of LAYER_KEYS) {
+              const dataKey = LAYER_MAPPING[key].dataKey;
+              stateToPush[dataKey] = this.mapData[dataKey] ? [...this.mapData[dataKey]] : [];
+            }
+            this.undoStack.push(stateToPush);
             this.redoStack = [];
 
             this.handlePointerDown(pointer);
@@ -751,45 +785,30 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       renderMap() {
         if (!this.mapData) return;
 
-        const data2D: number[][] = [];
-        for (let y = 0; y < this.mapData.height; y++) {
-          const row: number[] = [];
-          for (let x = 0; x < this.mapData.width; x++) {
-            row.push(this.mapData.tiles[y * this.mapData.width + x] + 1);
-          }
-          data2D.push(row);
-        }
-
-        if (this.layer) {
-          this.layer.destroy();
-        }
-        if (this.objectLayer) {
-          this.objectLayer.destroy();
-        }
-        if (this.tilemap) {
-          this.tilemap.destroy();
-        }
-
-        this.tilemap = this.make.tilemap({ data: data2D, tileWidth: 32, tileHeight: 32 });
+        this.tilemap = this.make.tilemap({ width: this.mapData.width, height: this.mapData.height, tileWidth: 32, tileHeight: 32 });
 
         const setupLayers = () => {
           if (!this.tileset || !this.tilemap) return;
-          this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
-          this.layer.setDepth(0);
-          this.layer.setCollision([2, 3]);
-          if (this.player) {
-            this.physics.add.collider(this.player, this.layer);
-          }
+          for (const key of LAYER_KEYS) {
+            const config = LAYER_MAPPING[key];
+            const layer = this.tilemap.createBlankLayer(config.dataKey, this.tileset, 0, 0)!;
+            layer.setDepth(config.depth);
+            if (config.collides) {
+              layer.setCollisionByExclusion([-1]);
+              if (this.player) {
+                this.physics.add.collider(this.player, layer);
+              }
+            }
+            this.layerInstances[key] = layer;
 
-          // Create object layer
-          this.objectLayer = this.tilemap.createBlankLayer('object_layer', this.tileset, 0, 0)!;
-          this.objectLayer.setDepth(1);
-          if (this.mapData.objects) {
-            for (let y = 0; y < this.mapData.height; y++) {
-              for (let x = 0; x < this.mapData.width; x++) {
-                const objVal = this.mapData.objects[y * this.mapData.width + x];
-                if (objVal !== undefined && objVal !== -1) {
-                  this.objectLayer.putTileAt(objVal + 1, x, y);
+            // Render tiles
+            if (this.mapData[config.dataKey]) {
+              for (let y = 0; y < this.mapData.height; y++) {
+                for (let x = 0; x < this.mapData.width; x++) {
+                  const val = this.mapData[config.dataKey][y * this.mapData.width + x];
+                  if (val !== undefined && val !== -1) {
+                    layer.putTileAt(val + 1, x, y);
+                  }
                 }
               }
             }
@@ -867,22 +886,17 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           const index = y * this.mapData.width + x;
           const targetVal = this.isEraser ? -1 : this.currentTileType;
 
-          if (this.currentEditLayer === 'ground') {
-            if (this.mapData.tiles[index] !== targetVal) {
-              this.mapData.tiles[index] = targetVal;
-              if (this.layer) {
-                if (targetVal === -1) this.layer.removeTileAt(x, y);
-                else this.layer.putTileAt(targetVal + 1, x, y);
-              }
-            }
-          } else {
-            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(-1);
-            if (this.mapData.objects[index] !== targetVal) {
-              this.mapData.objects[index] = targetVal;
-              if (this.objectLayer) {
-                if (targetVal === -1) this.objectLayer.removeTileAt(x, y);
-                else this.objectLayer.putTileAt(targetVal + 1, x, y);
-              }
+          const dataKey = LAYER_MAPPING[this.currentEditLayer].dataKey;
+          if (!this.mapData[dataKey]) {
+            this.mapData[dataKey] = Array(this.mapData.width * this.mapData.height).fill(-1);
+          }
+
+          if (this.mapData[dataKey][index] !== targetVal) {
+            this.mapData[dataKey][index] = targetVal;
+            const targetLayer = this.layerInstances[this.currentEditLayer];
+            if (targetLayer) {
+              if (targetVal === -1) targetLayer.removeTileAt(x, y);
+              else targetLayer.putTileAt(targetVal + 1, x, y);
             }
           }
         }
@@ -988,6 +1002,21 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             }
           }
         }
+
+        // TopLayer transparency logic
+        if (this.layerInstances['topLayer'] && this.mapData['top_layer']) {
+          const tileX = Math.floor(this.player.x / 32);
+          const tileY = Math.floor(this.player.y / 32);
+          if (tileX >= 0 && tileX < this.mapData.width && tileY >= 0 && tileY < this.mapData.height) {
+            const index = tileY * this.mapData.width + tileX;
+            if (this.mapData['top_layer'][index] !== undefined && this.mapData['top_layer'][index] !== -1) {
+              this.layerInstances['topLayer'].setAlpha(0.5);
+            } else {
+              this.layerInstances['topLayer'].setAlpha(1.0);
+            }
+          }
+        }
+
       }
     }
 
@@ -1056,7 +1085,10 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [selectedTile, setSelectedTile] = useState<number>(2);
-  const [editLayer, setEditLayer] = useState<'ground' | 'object'>('ground');
+  const [editLayer, setEditLayer] = useState<LayerKey>('base');
+  const [visibleLayers, setVisibleLayers] = useState<Record<string, boolean>>({
+    base: true, decorations: true, obstacles: true, objectCollides: true, objectEvent: true, topLayer: true
+  });
   const [isEraser, setIsEraser] = useState<boolean>(false);
   const [resizeWidth, setResizeWidth] = useState<number>(40);
   const [resizeHeight, setResizeHeight] = useState<number>(40);
@@ -1137,10 +1169,21 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
     }
   };
 
-  const handleLayerToggle = (layer: 'ground' | 'object') => {
+  const handleLayerToggle = (layer: LayerKey) => {
     setEditLayer(layer);
     const scene = (window as any).__PHASER_MAIN_SCENE__;
     if (scene) scene.currentEditLayer = layer;
+  };
+
+  const handleVisibilityToggle = (layer: LayerKey) => {
+    setVisibleLayers(prev => {
+      const next = { ...prev, [layer]: !prev[layer] };
+      const scene = (window as any).__PHASER_MAIN_SCENE__;
+      if (scene && scene.toggleLayerVisibility) {
+        scene.toggleLayerVisibility(layer, next[layer]);
+      }
+      return next;
+    });
   };
 
   const handleEraserToggle = () => {
@@ -1453,6 +1496,34 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
 
           {showLeftSidebar && (
             <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
+              <div className="bg-slate-900 border-b border-slate-700 p-2 text-white flex flex-col gap-2 shrink-0">
+                <div className="font-bold text-center">Layers</div>
+                <select
+                  value={editLayer}
+                  onChange={(e) => handleLayerToggle(e.target.value as LayerKey)}
+                  className="bg-slate-800 border border-slate-600 rounded px-1 py-1 text-xs w-full outline-none"
+                >
+                  <option value="base">Base (Tiles)</option>
+                  <option value="decorations">Decorations</option>
+                  <option value="obstacles">Obstacles</option>
+                  <option value="objectCollides">Object Collides</option>
+                  <option value="objectEvent">Object Event</option>
+                  <option value="topLayer">Top Layer</option>
+                </select>
+                <div className="grid grid-cols-2 gap-1">
+                  {LAYER_KEYS.map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => handleVisibilityToggle(key)}
+                      className={`p-1 rounded flex items-center justify-center gap-1 text-[10px] ${visibleLayers[key] ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                      title={`Toggle ${key} visibility`}
+                    >
+                      {visibleLayers[key] ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                      <span className="truncate max-w-[50px]">{key.replace('object', 'obj').replace('Layer', '')}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="bg-slate-900 border-b border-slate-700 p-2 text-white font-bold text-center flex items-center justify-between">
                 <span>Tilesets</span>
                 <select
@@ -1593,14 +1664,6 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                     </button>
                   </div>
                   <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
-                    <select
-                      value={editLayer}
-                      onChange={(e) => handleLayerToggle(e.target.value as 'ground'|'object')}
-                      className="bg-slate-700 border border-slate-500 rounded outline-none text-xs px-1 py-0.5"
-                    >
-                      <option value="ground">Ground Layer</option>
-                      <option value="object">Object Layer</option>
-                    </select>
                     <button
                       onClick={handleEraserToggle}
                       className={`px-2 py-0.5 rounded text-xs transition-colors ${isEraser ? 'bg-red-600' : 'bg-slate-600 hover:bg-slate-500'}`}
