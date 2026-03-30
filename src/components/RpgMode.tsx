@@ -679,19 +679,69 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         if (this.layer) {
           this.layer.destroy();
         }
+        if (this.objectLayer) {
+          this.objectLayer.destroy();
+        }
         if (this.tilemap) {
           this.tilemap.destroy();
         }
 
         this.tilemap = this.make.tilemap({ data: data2D, tileWidth: 32, tileHeight: 32 });
-        this.tileset = this.tilemap.addTilesetImage('tileset')!;
-        this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
-        this.layer.setDepth(0);
 
-        this.layer.setCollision([2, 3]);
+        const setupLayers = () => {
+          if (!this.tileset || !this.tilemap) return;
+          this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
+          this.layer.setDepth(0);
+          this.layer.setCollision([2, 3]);
+          if (this.player) {
+            this.physics.add.collider(this.player, this.layer);
+          }
 
-        if (this.player) {
-          this.physics.add.collider(this.player, this.layer);
+          // Create object layer
+          this.objectLayer = this.tilemap.createBlankLayer('object_layer', this.tileset, 0, 0)!;
+          this.objectLayer.setDepth(1);
+          if (this.mapData.objects) {
+            for (let y = 0; y < this.mapData.height; y++) {
+              for (let x = 0; x < this.mapData.width; x++) {
+                const objVal = this.mapData.objects[y * this.mapData.width + x];
+                if (objVal !== undefined && objVal !== -1) {
+                  this.objectLayer.putTileAt(objVal + 1, x, y);
+                }
+              }
+            }
+          }
+        };
+
+        // Dynamically load tileset if not loaded yet
+        const loadAndRenderTileset = (imgUrl: string, key: string) => {
+          if (!this.textures.exists(key)) {
+            this.load.image(key, imgUrl);
+            this.load.once(`filecomplete-image-${key}`, () => {
+              this.tileset = this.tilemap!.addTilesetImage(key, key, 32, 32, 0, 0);
+              setupLayers();
+            });
+            this.load.start();
+          } else {
+            this.tileset = this.tilemap!.addTilesetImage(key, key, 32, 32, 0, 0);
+            setupLayers();
+          }
+        };
+
+        // We assume active tileset info is stored globally or default to cute
+        const activeTileset = (window as any).__ACTIVE_TILESET__;
+        if (activeTileset && activeTileset.image_source) {
+          let src = activeTileset.image_source;
+          if (!src.endsWith('.png')) {
+            src += '.png';
+          }
+          const imgUrl = `/assets/map_tileset/${activeTileset.name}.png`.replace('_512x256', '');
+          const finalUrl = activeTileset.name.includes('cute') ? '/assets/map_tileset/cute_tileset.png' : `/assets/map_tileset/${src}`;
+
+          const key = `tileset_${activeTileset.name}`;
+          loadAndRenderTileset(finalUrl, key);
+        } else {
+          // Fallback
+          loadAndRenderTileset('/assets/map_tileset/cute_tileset.png', 'tileset_cute_rpg');
         }
 
         this.physics.world.setBounds(0, 0, this.mapData.width * 32, this.mapData.height * 32);
@@ -940,8 +990,23 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [mapsList, setMapsList] = useState<{id: string, name: string}[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
+  const [tilesetsLoaded, setTilesetsLoaded] = useState(false);
 
   useEffect(() => {
+    // Load tilesets first to ensure proper rendering
+    fetch('/api/map/tilesets')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          (window as any).__ACTIVE_TILESET__ = data[0];
+        }
+        setTilesetsLoaded(true);
+      })
+      .catch(err => {
+        console.error('Failed to fetch tilesets', err);
+        setTilesetsLoaded(true);
+      });
+
     fetch('/api/maps')
       .then(res => res.json())
       .then(data => {
@@ -1283,7 +1348,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
             </div>
 
             <div className="flex-1 relative min-h-0">
-            {playerName !== 'Player' && (
+            {playerName !== 'Player' && tilesetsLoaded && (
               <PhaserGame
                 key={mode}
                 mode={mode}
@@ -1294,7 +1359,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 onSocketReady={setSocketInstance}
               />
             )}
-            {playerName === 'Player' && mode === 'play' && (
+            {(!tilesetsLoaded || (playerName === 'Player' && mode === 'play')) && (
               <div className="w-full h-full flex items-center justify-center bg-black">
                 <div className="text-white text-xl animate-pulse">載入中...</div>
               </div>
