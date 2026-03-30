@@ -1078,7 +1078,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
     }
   }, [showGrid, blockWidth, blockHeight]);
 
-  useEffect(() => {
+  const loadTilesets = () => {
     fetch('/api/map/tilesets')
       .then(res => res.json())
       .then(data => {
@@ -1092,6 +1092,10 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
         }
       })
       .catch(err => console.error('Failed to fetch tilesets', err));
+  };
+
+  useEffect(() => {
+    loadTilesets();
   }, []);
 
   const handleTilesetChange = (ts: any) => {
@@ -1454,7 +1458,12 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
           {showLeftSidebar && (
             <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
               <div className="bg-slate-900 border-b border-slate-700 p-2 text-white font-bold text-center flex items-center justify-between">
-                <span>Tilesets</span>
+                <div className="flex items-center gap-2">
+                  <span>Tilesets</span>
+                  <button onClick={loadTilesets} className="p-1 text-slate-400 hover:text-white transition-colors rounded hover:bg-slate-700" title="Reload Tilesets">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <select
                   className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-xs font-normal max-w-[120px]"
                   value={activeTileset?.name || ''}
@@ -1479,9 +1488,9 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                       const x = (id % cols) * tw;
                       const y = Math.floor(id / cols) * th;
 
-                      const tileMeta = activeTileset.tiles?.find((t: any) => t.id === id) || {
-                        id,
-                        name: `Tile ${id}`,
+                      const tileMeta = activeTileset.tiles?.find((t: any) => t.id === id + 1) || {
+                        id: id + 1,
+                        name: `Tile ${id + 1}`,
                         category: 'unknown',
                         tags: []
                       };
@@ -1675,7 +1684,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                         className="mb-3 border border-slate-600 rounded bg-slate-800"
                         style={{
                           backgroundImage: `url(/assets/map_tileset/${activeTileset.name.includes('cute') ? 'cute_tileset.png' : activeTileset.image_source})`,
-                          backgroundPosition: `-${(selectedTileData.id % activeTileset.columns) * activeTileset.tilewidth}px -${Math.floor(selectedTileData.id / activeTileset.columns) * activeTileset.tileheight}px`,
+                          backgroundPosition: `-${((selectedTileData.id - 1) % activeTileset.columns) * activeTileset.tilewidth}px -${Math.floor((selectedTileData.id - 1) / activeTileset.columns) * activeTileset.tileheight}px`,
                           backgroundSize: `${activeTileset.columns * activeTileset.tilewidth}px ${Math.ceil(activeTileset.total_tiles / activeTileset.columns) * activeTileset.tileheight}px`,
                           width: `${activeTileset.tilewidth}px`,
                           height: `${activeTileset.tileheight}px`,
@@ -1714,11 +1723,11 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                         <div className="grid grid-cols-2 gap-2 mt-2">
                           <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
                             <span className="text-slate-500 text-[10px]">X</span>
-                            <span className="font-mono text-white">{(selectedTileData.id % activeTileset.columns) * activeTileset.tilewidth}</span>
+                            <span className="font-mono text-white">{((selectedTileData.id - 1) % activeTileset.columns) * activeTileset.tilewidth}</span>
                           </div>
                           <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
                             <span className="text-slate-500 text-[10px]">Y</span>
-                            <span className="font-mono text-white">{Math.floor(selectedTileData.id / activeTileset.columns) * activeTileset.tileheight}</span>
+                            <span className="font-mono text-white">{Math.floor((selectedTileData.id - 1) / activeTileset.columns) * activeTileset.tileheight}</span>
                           </div>
                           <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
                             <span className="text-slate-500 text-[10px]">W</span>
