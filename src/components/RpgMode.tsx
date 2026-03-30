@@ -17,7 +17,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
+function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', currentMapId: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const infoTextRef = useRef<HTMLDivElement>(null);
   const mainSceneRef = useRef<any>(null);
@@ -180,9 +180,10 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         this.cursors = this.input.keyboard!.createCursorKeys();
 
         try {
-          const res = await fetch('/api/map');
+          const res = await fetch(`/api/map?id=${currentMapId}`);
           if (!res.ok) throw new Error('Failed to fetch map');
-          this.mapData = await res.json();
+          const data = await res.json();
+          this.mapData = data.map_data ? data.map_data : data;
         } catch (err) {
           console.error('Failed to load map', err);
           this.mapData = { width: 200, height: 200, tiles: Array(200 * 200).fill(0) };
@@ -644,6 +645,19 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         });
       }
 
+      public async loadNewMap(id: string) {
+        try {
+          const res = await fetch(`/api/map?id=${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            this.mapData = data.map_data ? data.map_data : data;
+            this.renderMap();
+          }
+        } catch (err) {
+          console.error('Failed to load map', err);
+        }
+      }
+
       addNpc(id: string, npc: any) {
         const spriteKey = `npc_${npc.role_walk_sprite}`;
         this.getOrLoadTexture(spriteKey, `/assets/players/${npc.role_walk_sprite}`, () => {
@@ -937,6 +951,12 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       }
     };
   }, [mode]);
+
+  useEffect(() => {
+    if (mainSceneRef.current && mainSceneRef.current.loadNewMap) {
+      mainSceneRef.current.loadNewMap(currentMapId);
+    }
+  }, [currentMapId]);
 
   return (
     <div className="relative w-full h-full">
@@ -1352,6 +1372,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
               <PhaserGame
                 key={mode}
                 mode={mode}
+                currentMapId={currentMapId}
                 roleWalkSprite={selectedRole.role_walk_sprite}
                 roleAtkSprite={selectedRole.role_atk_sprite}
                 playerName={playerName}
