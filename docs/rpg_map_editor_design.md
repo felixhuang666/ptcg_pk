@@ -8,6 +8,7 @@ The RPG Map Editor is a dedicated tool within "Monster Battle" for creating, edi
 - **Tools Panel**: Configurable input fields for Width/Height resizing, Layer Selection (Ground/Object), and Brush Selection (Eraser or Tile Type).
 - **Editor Canvas**: A Phaser-powered interactive grid allowing users to paint tiles and place objects.
 - **Controls**: Includes 'Undo', 'Redo', and 'Save Map' buttons for quick map iterations.
+- **Info Overlay**: A text overlay in the top-left of the canvas dynamically displaying the current map's name, camera position, pointer grid position (1-based row/column), and placeholders for ID and debug metadata.
 
 ## 3. Implementation Details (Frontend & Backend)
 ### 3.1 Frontend (React + Phaser)
