@@ -16,7 +16,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
+function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', mapName: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const infoTextRef = useRef<HTMLDivElement>(null);
   const mainSceneRef = useRef<any>(null);
@@ -893,10 +893,21 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         if (infoTextRef.current) {
           if (this.isEditor) {
             const cam = this.cameras.main;
-            infoTextRef.current.innerText = `Map: World\nCam: (${Math.floor(cam.scrollX / 32)}, ${Math.floor(cam.scrollY / 32)})`;
+            const pointer = this.input.activePointer;
+            const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+            const tileSize = this.mapData?.block_width || 32;
+            const col = Math.floor(worldPoint.x / tileSize) + 1;
+            const row = Math.floor(worldPoint.y / tileSize) + 1;
+            const pointerPos = `Pos: Col ${col}, Row ${row}`;
+
+            // Placeholder for future ID and Debug metadata based on grid position
+            const idText = "ID: ";
+            const debugText = "Debug: ";
+
+            infoTextRef.current.innerText = `Map: ${mapName}\nCam: (${Math.floor(cam.scrollX / tileSize)}, ${Math.floor(cam.scrollY / tileSize)})\n${pointerPos}\n${idText}\n${debugText}`;
           } else if (this.player && infoTextRef.current) {
             const zoom = this.cameras.main.zoom.toFixed(2);
-            infoTextRef.current.innerText = `Map: World\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})\nZoom: ${zoom}x`;
+            infoTextRef.current.innerText = `Map: ${mapName}\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})\nZoom: ${zoom}x`;
           }
         }
 
@@ -1646,6 +1657,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
               <PhaserGame
                 key={mode}
                 mode={mode}
+                mapName={currentMapName}
                 roleWalkSprite={selectedRole.role_walk_sprite}
                 roleAtkSprite={selectedRole.role_atk_sprite}
                 playerName={playerName}
