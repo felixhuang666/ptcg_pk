@@ -140,11 +140,11 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           const res = await fetch(`/api/map?id=${id}`);
           if (res.ok) {
             const data = await res.json();
-            this.mapData = data;
+            this.mapData = data.map_data ? data.map_data : data;
             this.undoStack = [];
             this.redoStack = [];
             this.renderMap();
-            window.dispatchEvent(new CustomEvent('mapLoaded', { detail: { width: data.width, height: data.height } }));
+            window.dispatchEvent(new CustomEvent('mapLoaded', { detail: { width: this.mapData.width, height: this.mapData.height } }));
           }
         } catch (err) {
           console.error('Failed to load map', err);
@@ -313,10 +313,6 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
           this.setupEditorUI();
 
           this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-
-            if (pointer.y >= 480) return;
-
             if (pointer.middleButtonDown() || pointer.rightButtonDown()) {
               this.isPanning = true;
               this.panStart.set(pointer.x, pointer.y);
@@ -730,11 +726,38 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
         if (this.layer) {
           this.layer.destroy();
         }
+        if (this.objectLayer) {
+          this.objectLayer.destroy();
+        }
         if (this.tilemap) {
           this.tilemap.destroy();
         }
 
         this.tilemap = this.make.tilemap({ data: data2D, tileWidth: 32, tileHeight: 32 });
+
+        const setupLayers = () => {
+          if (!this.tileset || !this.tilemap) return;
+          this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
+          this.layer.setDepth(0);
+          this.layer.setCollision([2, 3]);
+          if (this.player) {
+            this.physics.add.collider(this.player, this.layer);
+          }
+
+          // Create object layer
+          this.objectLayer = this.tilemap.createBlankLayer('object_layer', this.tileset, 0, 0)!;
+          this.objectLayer.setDepth(1);
+          if (this.mapData.objects) {
+            for (let y = 0; y < this.mapData.height; y++) {
+              for (let x = 0; x < this.mapData.width; x++) {
+                const objVal = this.mapData.objects[y * this.mapData.width + x];
+                if (objVal !== undefined && objVal !== -1) {
+                  this.objectLayer.putTileAt(objVal + 1, x, y);
+                }
+              }
+            }
+          }
+        };
 
         // Dynamically load tileset if not loaded yet
         const loadAndRenderTileset = (imgUrl: string, key: string) => {
@@ -742,35 +765,36 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
             this.load.image(key, imgUrl);
             this.load.once(`filecomplete-image-${key}`, () => {
               this.tileset = this.tilemap!.addTilesetImage(key, key, 32, 32, 0, 0);
-              if (this.tileset) {
-                  this.layer = this.tilemap!.createLayer(0, this.tileset, 0, 0)!;
-                  this.layer.setDepth(0);
-                  this.layer.setCollision([2, 3]);
-                  if (this.player) {
-                    this.physics.add.collider(this.player, this.layer);
-                  }
-              }
+              setupLayers();
             });
             this.load.start();
           } else {
             this.tileset = this.tilemap!.addTilesetImage(key, key, 32, 32, 0, 0);
-            if (this.tileset) {
-                this.layer = this.tilemap!.createLayer(0, this.tileset, 0, 0)!;
-                this.layer.setDepth(0);
-                this.layer.setCollision([2, 3]);
-                if (this.player) {
-                  this.physics.add.collider(this.player, this.layer);
-                }
-            }
+            setupLayers();
           }
         };
 
         // We assume active tileset info is stored globally or default to cute
         const activeTileset = (window as any).__ACTIVE_TILESET__;
         if (activeTileset && activeTileset.image_source) {
-          const imgUrl = `/assets/map_tileset/${activeTileset.image_source}`;
+          // Fix: Ensure the path handles raw PNG names from JSON properly
+          let src = activeTileset.image_source;
+          // Some maps specify the filename, some might just say "cute_tileset"
+          if (!src.endsWith('.png')) {
+            src += '.png';
+          }
+          // The JSON says "image_0.png" but we know the actual image might be cute_tileset.png
+          // Let's assume the server has cute_tileset.png and we want to load it
+          // A robust way: The name of the file comes from the name of the active tileset or we hardcode for now
+          // In the real world, the tileset JSON filename usually matches the PNG filename
+          // Let's fallback gracefully to the known working image if activeTileset isn't populated properly
+          const imgUrl = `/assets/map_tileset/${activeTileset.name}.png`.replace('_512x256', '');
+          // Note: our file is cute_tileset.png
+          // For simplicity, hardcode to cute_tileset.png if name contains cute, else try generic
+          const finalUrl = activeTileset.name.includes('cute') ? '/assets/map_tileset/cute_tileset.png' : `/assets/map_tileset/${src}`;
+
           const key = `tileset_${activeTileset.name}`;
-          loadAndRenderTileset(imgUrl, key);
+          loadAndRenderTileset(finalUrl, key);
         } else {
           // Fallback
           loadAndRenderTileset('/assets/map_tileset/cute_tileset.png', 'tileset_cute_rpg');
@@ -795,7 +819,7 @@ function PhaserGame({ mode, onMapSaved, roleWalkSprite, roleAtkSprite, playerNam
       }
 
       handlePointerDown(pointer: Phaser.Input.Pointer) {
-        if (!this.mapData || pointer.y >= 480) return;
+        if (!this.mapData) return;
 
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
         const tileSize = 32;
@@ -997,8 +1021,8 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [selectedTile, setSelectedTile] = useState<number>(2);
   const [editLayer, setEditLayer] = useState<'ground' | 'object'>('ground');
   const [isEraser, setIsEraser] = useState<boolean>(false);
-  const [resizeWidth, setResizeWidth] = useState<number>(200);
-  const [resizeHeight, setResizeHeight] = useState<number>(200);
+  const [resizeWidth, setResizeWidth] = useState<number>(40);
+  const [resizeHeight, setResizeHeight] = useState<number>(40);
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
 
@@ -1076,6 +1100,18 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
     if (scene) scene.isEraser = newVal;
   };
 
+  const fetchMaps = async () => {
+    try {
+      const res = await fetch('/api/maps');
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setMapsList(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch maps', err);
+    }
+  };
+
   const handleSaveMap = async () => {
     const scene = (window as any).__PHASER_MAIN_SCENE__;
     const mapData = scene?.mapData;
@@ -1086,7 +1122,13 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: currentMapId, name: currentMapName, map_data: mapData })
       });
-      if (res.ok) alert('Map Saved Successfully!');
+      if (res.ok) {
+        alert('Map Saved Successfully!');
+        await fetchMaps();
+        if (scene && scene.loadNewMap) {
+          await scene.loadNewMap(currentMapId);
+        }
+      }
       else alert('Failed to save map');
     } catch (err) {
       console.error(err);
@@ -1102,14 +1144,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   };
 
   useEffect(() => {
-    fetch('/api/maps')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setMapsList(data);
-        }
-      })
-      .catch(err => console.error('Failed to fetch maps', err));
+    fetchMaps();
   }, []);
 
   const handleMapChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -1377,8 +1412,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
               <div className="flex-1 overflow-y-auto p-2">
                 {activeTileset && (
                   <div className="grid grid-cols-5 gap-1">
-                    {activeTileset.tiles.map((tile: any) => {
-                      const id = tile.id;
+                    {Array.from({ length: activeTileset.total_tiles }).map((_, id) => {
                       const cols = activeTileset.columns;
                       const tw = activeTileset.tilewidth;
                       const th = activeTileset.tileheight;
@@ -1386,19 +1420,26 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                       const x = (id % cols) * tw;
                       const y = Math.floor(id / cols) * th;
 
+                      const tileMeta = activeTileset.tiles?.find((t: any) => t.id === id) || {
+                        id,
+                        name: `Tile ${id}`,
+                        category: 'unknown',
+                        tags: []
+                      };
+
                       return (
                         <button
-                          key={tile.id}
+                          key={id}
                           onClick={() => {
-                            setSelectedTile(tile.id);
-                            setSelectedTileData(tile);
+                            setSelectedTile(id);
+                            setSelectedTileData(tileMeta);
                             const scene = (window as any).__PHASER_MAIN_SCENE__;
-                            if (scene) scene.currentTileType = tile.id;
+                            if (scene) scene.currentTileType = id;
                           }}
-                          className={`w-10 h-10 border-2 rounded ${selectedTile === tile.id ? 'border-blue-500 z-10 scale-110 relative' : 'border-transparent hover:border-slate-500'}`}
-                          title={tile.name}
+                          className={`w-10 h-10 border-2 rounded ${selectedTile === id ? 'border-blue-500 z-10 scale-110 relative' : 'border-transparent hover:border-slate-500'}`}
+                          title={tileMeta.name}
                           style={{
-                            backgroundImage: `url(/assets/map_tileset/${activeTileset.image_source})`,
+                            backgroundImage: `url(/assets/map_tileset/${activeTileset.name.includes('cute') ? 'cute_tileset.png' : activeTileset.image_source})`,
                             backgroundPosition: `-${x}px -${y}px`,
                             backgroundSize: `${cols * tw}px ${Math.ceil(activeTileset.total_tiles / cols) * th}px`,
                             width: `${tw}px`,
@@ -1426,6 +1467,20 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                       <option key={m.id} value={m.id}>{m.name}</option>
                     ))}
                   </select>
+                  <button
+                    onClick={async () => {
+                      await fetchMaps();
+                      const scene = (window as any).__PHASER_MAIN_SCENE__;
+                      if (scene && scene.loadNewMap) {
+                        await scene.loadNewMap(currentMapId);
+                      }
+                    }}
+                    className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-1 rounded transition-colors group relative"
+                    title="Reload Map Data"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Reload Map Data</span>
+                  </button>
                   <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs whitespace-nowrap transition-colors">
                     Rename
                   </button>
@@ -1519,9 +1574,21 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
               <div className="flex-1 overflow-y-auto p-4 text-sm text-slate-300">
                 {selectedTileData && activeTileset ? (
                   <div className="space-y-4">
-                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
-                      <h3 className="font-bold text-white text-lg mb-1">{selectedTileData.name}</h3>
-                      <p className="text-xs text-slate-400 font-mono">ID: {selectedTileData.id}</p>
+                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-700 flex flex-col items-center">
+                      <div
+                        className="mb-3 border border-slate-600 rounded bg-slate-800"
+                        style={{
+                          backgroundImage: `url(/assets/map_tileset/${activeTileset.name.includes('cute') ? 'cute_tileset.png' : activeTileset.image_source})`,
+                          backgroundPosition: `-${(selectedTileData.id % activeTileset.columns) * activeTileset.tilewidth}px -${Math.floor(selectedTileData.id / activeTileset.columns) * activeTileset.tileheight}px`,
+                          backgroundSize: `${activeTileset.columns * activeTileset.tilewidth}px ${Math.ceil(activeTileset.total_tiles / activeTileset.columns) * activeTileset.tileheight}px`,
+                          width: `${activeTileset.tilewidth}px`,
+                          height: `${activeTileset.tileheight}px`,
+                          transform: 'scale(1.5)',
+                          transformOrigin: 'center'
+                        }}
+                      />
+                      <h3 className="font-bold text-white text-lg mb-1 text-center">{selectedTileData.name}</h3>
+                      <p className="text-xs text-slate-400 font-mono text-center">ID: {selectedTileData.id}</p>
                     </div>
 
                     <div className="space-y-2">
