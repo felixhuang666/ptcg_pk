@@ -868,6 +868,19 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           const index = y * this.mapData.width + x;
           const targetVal = this.isEraser ? 0 : this.currentTileType;
 
+          let sourceX = 0;
+          let sourceY = 0;
+          const activeTileset = (window as any).__ACTIVE_TILESET__;
+          if (activeTileset && !this.isEraser) {
+             const tileIdZeroBased = targetVal - 1;
+             if (tileIdZeroBased >= 0) {
+                 sourceX = (tileIdZeroBased % activeTileset.columns) * activeTileset.tilewidth;
+                 sourceY = Math.floor(tileIdZeroBased / activeTileset.columns) * activeTileset.tileheight;
+             }
+          }
+
+          console.log(`Map Editor Draw Debug - ID: ${targetVal}, Pos X: ${x}, Pos Y: ${y}, Index: ${index}, Layer: ${this.currentEditLayer}, Source Image X: ${sourceX}, Source Image Y: ${sourceY}`);
+
           if (this.currentEditLayer === 'ground') {
             if (this.mapData.tiles[index] !== targetVal) {
               this.mapData.tiles[index] = targetVal;
