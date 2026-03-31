@@ -36,5 +36,6 @@ describe('App', () => {
             expect(screen.getByText(/怪獸對戰/i)).toBeInTheDocument();
         });
         expect(screen.getByRole('link', { name: /Google 登入/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Login as tester/i })).toBeInTheDocument();
     });
 });

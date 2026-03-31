@@ -122,6 +122,15 @@ export default function App() {
           >
             Google 登入
           </a>
+
+        {import.meta.env.MODE !== 'production' && (
+          <a
+            href="/auth/dev_login"
+            className="block w-full py-4 mt-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Login as tester
+          </a>
+        )}
         </div>
       </div>
     );
