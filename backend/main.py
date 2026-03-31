@@ -505,12 +505,6 @@ async def favicon():
         return FileResponse("dist/favicon.ico")
     raise HTTPException(status_code=404, detail="Favicon not found")
 
-# Catch-all route to serve index.html for React Router
-@app.get("/{full_path:path}")
-async def serve_spa(full_path: str):
-    if os.path.exists("dist/index.html"):
-        return FileResponse("dist/index.html")
-    return {"message": "Frontend not built yet. Please run `make build`."}
 @app.get("/auth/dev_login")
 async def dev_login(response: Response):
     if os.getenv("ENABLE_DEV_LOGIN") != "true":
@@ -539,3 +533,10 @@ async def dev_login(response: Response):
     redirect_res = RedirectResponse(url="/")
     redirect_res.set_cookie(key="session_id", value=user_id, httponly=True, samesite="lax")
     return redirect_res
+
+# Catch-all route to serve index.html for React Router
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    if os.path.exists("dist/index.html"):
+        return FileResponse("dist/index.html")
+    return {"message": "Frontend not built yet. Please run `make build`."}
