@@ -866,23 +866,23 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
 
         if (x >= 0 && x < this.mapData.width && y >= 0 && y < this.mapData.height) {
           const index = y * this.mapData.width + x;
-          const targetVal = this.isEraser ? -1 : this.currentTileType - 1;
+          const targetVal = this.isEraser ? 0 : this.currentTileType;
 
           if (this.currentEditLayer === 'ground') {
             if (this.mapData.tiles[index] !== targetVal) {
               this.mapData.tiles[index] = targetVal;
               if (this.layer) {
-                if (targetVal === -1) this.layer.removeTileAt(x, y);
-                else this.layer.putTileAt(targetVal + 1, x, y);
+                if (targetVal === 0 || targetVal === -1) this.layer.removeTileAt(x, y);
+                else this.layer.putTileAt(targetVal, x, y);
               }
             }
           } else {
-            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(-1);
+            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(0);
             if (this.mapData.objects[index] !== targetVal) {
               this.mapData.objects[index] = targetVal;
               if (this.objectLayer) {
-                if (targetVal === -1) this.objectLayer.removeTileAt(x, y);
-                else this.objectLayer.putTileAt(targetVal + 1, x, y);
+                if (targetVal === 0 || targetVal === -1) this.objectLayer.removeTileAt(x, y);
+                else this.objectLayer.putTileAt(targetVal, x, y);
               }
             }
           }

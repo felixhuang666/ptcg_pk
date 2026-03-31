@@ -43,7 +43,7 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
       private npcs: Record<string, Phaser.Physics.Arcade.Sprite> = {};
       private nameTags: Record<string, Phaser.GameObjects.Text> = {};
       private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-      private currentTileType: number = 2; // 2=grass, 48=water, 94=mountain
+      private currentTileType: number = 1; // 1=grass, 49=water, 95=mountain
       public currentEditLayer: 'ground' | 'object' = 'ground';
       public isEraser: boolean = false;
       private isEditor: boolean = false;
@@ -685,7 +685,7 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
         for (let y = 0; y < this.mapData.height; y++) {
           const row: number[] = [];
           for (let x = 0; x < this.mapData.width; x++) {
-            row.push(this.mapData.tiles[y * this.mapData.width + x] + 1);
+            row.push(this.mapData.tiles[y * this.mapData.width + x]);
           }
           data2D.push(row);
         }
@@ -769,9 +769,9 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
       setupEditorUI() {
 
 
-        this.input.keyboard!.on('keydown-ONE', () => { this.currentTileType = 0; this.updateSelectorText(); });
-        this.input.keyboard!.on('keydown-TWO', () => { this.currentTileType = 1; this.updateSelectorText(); });
-        this.input.keyboard!.on('keydown-THREE', () => { this.currentTileType = 2; this.updateSelectorText(); });
+        this.input.keyboard!.on('keydown-ONE', () => { this.currentTileType = 1; });
+        this.input.keyboard!.on('keydown-TWO', () => { this.currentTileType = 49; });
+        this.input.keyboard!.on('keydown-THREE', () => { this.currentTileType = 95; });
       }
 
       updateSelectorText() {
@@ -789,23 +789,23 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
 
         if (x >= 0 && x < this.mapData.width && y >= 0 && y < this.mapData.height) {
           const index = y * this.mapData.width + x;
-          const targetVal = this.isEraser ? -1 : this.currentTileType;
+          const targetVal = this.isEraser ? 0 : this.currentTileType;
 
           if (this.currentEditLayer === 'ground') {
             if (this.mapData.tiles[index] !== targetVal) {
               this.mapData.tiles[index] = targetVal;
               if (this.layer) {
-                if (targetVal === -1) this.layer.removeTileAt(x, y);
-                else this.layer.putTileAt(targetVal + 1, x, y);
+                if (targetVal === 0 || targetVal === -1) this.layer.removeTileAt(x, y);
+                else this.layer.putTileAt(targetVal, x, y);
               }
             }
           } else {
-            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(-1);
+            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(0);
             if (this.mapData.objects[index] !== targetVal) {
               this.mapData.objects[index] = targetVal;
               if (this.objectLayer) {
-                if (targetVal === -1) this.objectLayer.removeTileAt(x, y);
-                else this.objectLayer.putTileAt(targetVal + 1, x, y);
+                if (targetVal === 0 || targetVal === -1) this.objectLayer.removeTileAt(x, y);
+                else this.objectLayer.putTileAt(targetVal, x, y);
               }
             }
           }
