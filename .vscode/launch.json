@@ -23,6 +23,13 @@
             },
             "console": "integratedTerminal",
             "justMyCode": false
+        },
+        {
+            "name": "Launch www",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://felix9977.mooo.com",
+            "webRoot": "${workspaceFolder}/dist"
         }
     ]
 }

@@ -16,4 +16,4 @@ __pycache__
 backend/*.pyc
 backend/*.pyo
 tmp
-users
+users/[0-9]*.json
