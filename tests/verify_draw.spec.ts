@@ -27,18 +27,29 @@ test('verify drawing map block without offset', async ({ page }) => {
     (window as any).matchMedia = () => ({ matches: true });
     (document as any).fullscreenEnabled = true;
     (document.documentElement as any).requestFullscreen = async () => {};
+    // Inject mock data into localStorage to bypass getting stuck without teams
+    const store = window.localStorage;
+    const state = JSON.parse(store.getItem('monster-battle-storage') || '{}');
+    state.state = state.state || {};
+    state.state.teams = [{ id: 'team1', name: 'Test Team', dices: [{ faces: [1,1,1,1,1,1] }] }];
+    state.state.currentTeamId = 'team1';
+    store.setItem('monster-battle-storage', JSON.stringify(state));
   });
 
+  // Reload to apply localStorage
+  await page.goto('http://localhost:5000');
+  await page.waitForTimeout(1000);
+
   // Click RPG Mode in App menu
-  await page.waitForSelector('text=RPG', { timeout: 10000 });
-  await page.click('text=RPG');
+  await page.waitForSelector('text=RPG 模式', { timeout: 10000 });
+  await page.click('text=RPG 模式');
 
   // We are in RPG Mode. Wait for map rendering
   await page.waitForTimeout(1000);
 
   // Try to bypass fullscreen modal if it appears
   try {
-    const fsBtn = await page.$('button:has-text("進入全螢幕")');
+    const fsBtn = await page.$('button:has-text("我知道了")');
     if (fsBtn) await fsBtn.click();
   } catch(e) {}
 
@@ -71,11 +82,20 @@ test('verify drawing map block without offset', async ({ page }) => {
     scene.input.emit('pointerdown', {
       x: 150, y: 150,
       middleButtonDown: () => false,
-      rightButtonDown: () => false
+      rightButtonDown: () => false,
+      isDown: true
+    });
+
+    // Simulate pointer move to trigger draw
+    scene.input.emit('pointermove', {
+      x: 150, y: 150,
+      middleButtonDown: () => false,
+      rightButtonDown: () => false,
+      isDown: true
     });
 
     const tileVal = scene.mapData.tiles[index];
-    const layerTile = scene.layer.getTileAtWorldXY(150, 150, true);
+    const layerTile = scene.layer ? scene.layer.getTileAtWorldXY(150, 150, true) : null;
 
     return {
       currentTileType: scene.currentTileType,
