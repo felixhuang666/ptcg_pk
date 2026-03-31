@@ -26,6 +26,9 @@ describe('App', () => {
             }
             return Promise.reject(new Error(`Unhandled fetch request: ${url}`));
         }) as any;
+
+        // Mock import.meta.env
+        vi.stubEnv('VITE_ENABLE_DEV_LOGIN', 'true');
     });
 
     it('renders login container when unauthenticated', async () => {
