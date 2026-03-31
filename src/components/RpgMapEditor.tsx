@@ -868,6 +868,8 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           const index = y * this.mapData.width + x;
           const targetVal = this.isEraser ? 0 : this.currentTileType;
 
+          console.log(`Map Editor Draw Debug - ID: ${targetVal}, Pos X: ${x}, Pos Y: ${y}, Index: ${index}, Layer: ${this.currentEditLayer}`);
+
           if (this.currentEditLayer === 'ground') {
             if (this.mapData.tiles[index] !== targetVal) {
               this.mapData.tiles[index] = targetVal;
