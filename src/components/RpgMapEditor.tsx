@@ -43,7 +43,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       private nameTags: Record<string, Phaser.GameObjects.Text> = {};
       private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
       private currentTileType: number = 2; // 2=grass, 48=water, 94=mountain
-      public currentEditLayer: 'ground' | 'object' = 'ground';
+      public currentEditLayer: 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer' = 'base';
       public isEraser: boolean = false;
       private isEditor: boolean = false;
       private saveButton: Phaser.GameObjects.Text | null = null;
@@ -59,16 +59,20 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       private currentDirection: string = 'down';
       private gridGraphics: Phaser.GameObjects.Graphics | null = null;
       public attackButtonDown: boolean = false;
-      private undoStack: { tiles: number[], objects?: number[] }[] = [];
-      private redoStack: { tiles: number[], objects?: number[] }[] = [];
+      private undoStack: { layers?: Record<string, number[]>, tiles?: number[], objects?: number[] }[] = [];
+      private redoStack: { layers?: Record<string, number[]>, tiles?: number[], objects?: number[] }[] = [];
       private isPanning: boolean = false;
       public editorMode: 'draw' | 'move' = 'draw';
       private panStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private camStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private tilemap: Phaser.Tilemaps.Tilemap | null = null;
       private tileset: Phaser.Tilemaps.Tileset | null = null;
-      private layer: Phaser.Tilemaps.TilemapLayer | null = null;
-      private objectLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private baseLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private decorationsLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private obstaclesLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private objectCollidesLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private objectEventLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private topLayer: Phaser.Tilemaps.TilemapLayer | null = null;
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
@@ -85,15 +89,17 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
         (window as any).__PHASER_MAIN_SCENE__ = this;
       }
 
+      private copyLayers(layers: Record<string, number[]>) {
+        const copy: Record<string, number[]> = {};
+        for (const k in layers) copy[k] = [...layers[k]];
+        return copy;
+      }
+
       public performUndo() {
         if (this.undoStack.length > 0) {
           const prevState = this.undoStack.pop()!;
-          this.redoStack.push({
-            tiles: [...this.mapData.tiles],
-            objects: this.mapData.objects ? [...this.mapData.objects] : []
-          });
-          this.mapData.tiles = [...prevState.tiles];
-          if (prevState.objects) this.mapData.objects = [...prevState.objects];
+          this.redoStack.push({ layers: this.copyLayers(this.mapData.layers) });
+          this.mapData.layers = this.copyLayers(prevState.layers!);
           this.renderMap();
         }
       }
@@ -101,12 +107,8 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       public performRedo() {
         if (this.redoStack.length > 0) {
           const nextState = this.redoStack.pop()!;
-          this.undoStack.push({
-            tiles: [...this.mapData.tiles],
-            objects: this.mapData.objects ? [...this.mapData.objects] : []
-          });
-          this.mapData.tiles = [...nextState.tiles];
-          if (nextState.objects) this.mapData.objects = [...nextState.objects];
+          this.undoStack.push({ layers: this.copyLayers(this.mapData.layers) });
+          this.mapData.layers = this.copyLayers(nextState.layers!);
           this.renderMap();
         }
       }
@@ -143,26 +145,38 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
         if (!this.mapData) return;
         const oldW = this.mapData.width;
         const oldH = this.mapData.height;
-        const newTiles = Array(newW * newH).fill(2); // default grass
-        const newObjects = Array(newW * newH).fill(-1);
+        const layerNames = ['base', 'decorations', 'obstacles', 'objectCollides', 'objectEvent', 'topLayer'];
+        const newLayers: Record<string, number[]> = {};
 
-        for (let y = 0; y < Math.min(oldH, newH); y++) {
-          for (let x = 0; x < Math.min(oldW, newW); x++) {
-            newTiles[y * newW + x] = this.mapData.tiles[y * oldW + x];
-            if (this.mapData.objects && this.mapData.objects.length > 0) {
-              newObjects[y * newW + x] = this.mapData.objects[y * oldW + x] !== undefined ? this.mapData.objects[y * oldW + x] : -1;
+        for (const name of layerNames) {
+          newLayers[name] = Array(newW * newH).fill(name === 'base' ? 2 : 0);
+          for (let y = 0; y < Math.min(oldH, newH); y++) {
+            for (let x = 0; x < Math.min(oldW, newW); x++) {
+              newLayers[name][y * newW + x] = this.mapData.layers[name][y * oldW + x];
             }
           }
         }
 
         this.mapData.width = newW;
         this.mapData.height = newH;
-        this.mapData.tiles = newTiles;
-        this.mapData.objects = newObjects;
+        this.mapData.layers = newLayers;
 
         this.undoStack = [];
         this.redoStack = [];
         this.renderMap();
+      }
+
+      private upgradeMapData(data: any) {
+        if (!data.layers) {
+          data.layers = {
+            base: data.tiles || Array(data.width * data.height).fill(2),
+            decorations: Array(data.width * data.height).fill(0),
+            obstacles: Array(data.width * data.height).fill(0),
+            objectCollides: data.objects ? data.objects.map((v: number) => Math.max(0, v)) : Array(data.width * data.height).fill(0),
+            objectEvent: Array(data.width * data.height).fill(0),
+            topLayer: Array(data.width * data.height).fill(0),
+          };
+        }
       }
 
       public async loadNewMap(id: string) {
@@ -171,6 +185,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           if (res.ok) {
             const data = await res.json();
             this.mapData = data.map_data ? data.map_data : data;
+            this.upgradeMapData(this.mapData);
             this.undoStack = [];
             this.redoStack = [];
             this.renderMap();
@@ -272,9 +287,11 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           if (!res.ok) throw new Error('Failed to fetch map');
           const data = await res.json();
           this.mapData = data.map_data ? data.map_data : data;
+          this.upgradeMapData(this.mapData);
         } catch (err) {
           console.error('Failed to load map', err);
           this.mapData = { width: 40, height: 40, tiles: Array(40 * 40).fill(0) };
+          this.upgradeMapData(this.mapData);
         }
 
         if (isDestroyed || !this.sys || !this.sys.game) return;
@@ -358,10 +375,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
               return;
             }
 
-            this.undoStack.push({
-              tiles: [...this.mapData.tiles],
-              objects: this.mapData.objects ? [...this.mapData.objects] : []
-            });
+            this.undoStack.push({ layers: this.copyLayers(this.mapData.layers) });
             this.redoStack = [];
 
             this.handlePointerDown(pointer);
@@ -750,51 +764,51 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       }
 
       renderMap() {
-        if (!this.mapData) return;
+        if (!this.mapData || !this.mapData.layers) return;
 
-        const data2D: number[][] = [];
-        for (let y = 0; y < this.mapData.height; y++) {
-          const row: number[] = [];
-          for (let x = 0; x < this.mapData.width; x++) {
-            row.push(this.mapData.tiles[y * this.mapData.width + x] + 1);
-          }
-          data2D.push(row);
-        }
+        if (this.baseLayer) this.baseLayer.destroy();
+        if (this.decorationsLayer) this.decorationsLayer.destroy();
+        if (this.obstaclesLayer) this.obstaclesLayer.destroy();
+        if (this.objectCollidesLayer) this.objectCollidesLayer.destroy();
+        if (this.objectEventLayer) this.objectEventLayer.destroy();
+        if (this.topLayer) this.topLayer.destroy();
+        if (this.tilemap) this.tilemap.destroy();
 
-        if (this.layer) {
-          this.layer.destroy();
-        }
-        if (this.objectLayer) {
-          this.objectLayer.destroy();
-        }
-        if (this.tilemap) {
-          this.tilemap.destroy();
-        }
-
-        this.tilemap = this.make.tilemap({ data: data2D, tileWidth: 32, tileHeight: 32 });
+        // Create an empty tilemap with the right dimensions
+        this.tilemap = this.make.tilemap({ width: this.mapData.width, height: this.mapData.height, tileWidth: 32, tileHeight: 32 });
 
         const setupLayers = () => {
           if (!this.tileset || !this.tilemap) return;
-          this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
-          this.layer.setDepth(0);
-          this.layer.setCollision([2, 3]);
-          if (this.player) {
-            this.physics.add.collider(this.player, this.layer);
-          }
 
-          // Create object layer
-          this.objectLayer = this.tilemap.createBlankLayer('object_layer', this.tileset, 0, 0)!;
-          this.objectLayer.setDepth(1);
-          if (this.mapData.objects) {
-            for (let y = 0; y < this.mapData.height; y++) {
-              for (let x = 0; x < this.mapData.width; x++) {
-                const objVal = this.mapData.objects[y * this.mapData.width + x];
-                if (objVal !== undefined && objVal !== -1) {
-                  this.objectLayer.putTileAt(objVal + 1, x, y);
+          const createLayer = (name: string, depth: number, collides: boolean) => {
+            const l = this.tilemap!.createBlankLayer(name, this.tileset!, 0, 0)!;
+            l.setDepth(depth);
+            const data = this.mapData.layers[name];
+            if (data) {
+              for (let y = 0; y < this.mapData.height; y++) {
+                for (let x = 0; x < this.mapData.width; x++) {
+                  const val = data[y * this.mapData.width + x];
+                  if (val !== undefined && val !== 0 && val !== -1) {
+                    l.putTileAt(name === 'base' || name === 'decorations' || name === 'topLayer' ? val + 1 : val, x, y);
+                  }
                 }
               }
             }
-          }
+            if (collides) {
+              l.setCollisionByExclusion([-1, 0]);
+              if (this.player) {
+                this.physics.add.collider(this.player, l);
+              }
+            }
+            return l;
+          };
+
+          this.baseLayer = createLayer('base', 0, false);
+          this.decorationsLayer = createLayer('decorations', 1, false);
+          this.obstaclesLayer = createLayer('obstacles', 2, true);
+          this.objectCollidesLayer = createLayer('objectCollides', 3, true);
+          this.objectEventLayer = createLayer('objectEvent', 4, false);
+          this.topLayer = createLayer('topLayer', 10, false);
         };
 
         // Dynamically load tileset if not loaded yet
@@ -857,7 +871,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       }
 
       handlePointerDown(pointer: Phaser.Input.Pointer) {
-        if (!this.mapData) return;
+        if (!this.mapData || !this.mapData.layers) return;
 
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
         const tileSize = 32;
@@ -866,24 +880,26 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
 
         if (x >= 0 && x < this.mapData.width && y >= 0 && y < this.mapData.height) {
           const index = y * this.mapData.width + x;
-          const targetVal = this.isEraser ? 0 : this.currentTileType;
+          let targetVal = this.isEraser ? 0 : this.currentTileType;
 
-          if (this.currentEditLayer === 'ground') {
-            if (this.mapData.tiles[index] !== targetVal) {
-              this.mapData.tiles[index] = targetVal;
-              if (this.layer) {
-                if (targetVal === 0 || targetVal === -1) this.layer.removeTileAt(x, y);
-                else this.layer.putTileAt(targetVal, x, y);
-              }
-            }
-          } else {
-            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(0);
-            if (this.mapData.objects[index] !== targetVal) {
-              this.mapData.objects[index] = targetVal;
-              if (this.objectLayer) {
-                if (targetVal === 0 || targetVal === -1) this.objectLayer.removeTileAt(x, y);
-                else this.objectLayer.putTileAt(targetVal, x, y);
-              }
+          if (this.currentEditLayer === 'base' || this.currentEditLayer === 'decorations' || this.currentEditLayer === 'topLayer') {
+             // 0-based in array, displayed as targetVal
+          }
+
+          if (this.mapData.layers[this.currentEditLayer][index] !== targetVal) {
+            this.mapData.layers[this.currentEditLayer][index] = targetVal;
+            const lMap: Record<string, Phaser.Tilemaps.TilemapLayer | null> = {
+              'base': this.baseLayer,
+              'decorations': this.decorationsLayer,
+              'obstacles': this.obstaclesLayer,
+              'objectCollides': this.objectCollidesLayer,
+              'objectEvent': this.objectEventLayer,
+              'topLayer': this.topLayer
+            };
+            const l = lMap[this.currentEditLayer];
+            if (l) {
+              if (targetVal === 0 || targetVal === -1) l.removeTileAt(x, y);
+              else l.putTileAt(this.currentEditLayer === 'base' || this.currentEditLayer === 'decorations' || this.currentEditLayer === 'topLayer' ? targetVal + 1 : targetVal, x, y);
             }
           }
         }
@@ -922,6 +938,21 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
         }
 
         if (!this.player || !this.cursors) return;
+
+        if (this.topLayer && this.mapData) {
+          const tileSize = 32;
+          const x = Math.floor(this.player.x / tileSize);
+          const y = Math.floor(this.player.y / tileSize);
+
+          if (x >= 0 && x < this.mapData.width && y >= 0 && y < this.mapData.height) {
+            const tile = this.topLayer.getTileAt(x, y);
+            if (tile && tile.index > 0) {
+              this.topLayer.setAlpha(0.5);
+            } else {
+              this.topLayer.setAlpha(1.0);
+            }
+          }
+        }
 
         if (!this.isAttacking && this.actionMode === 'attack') {
           if (this.cursors.space.isDown || this.attackButtonDown) {
@@ -1069,7 +1100,8 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [selectedTile, setSelectedTile] = useState<number>(2);
-  const [editLayer, setEditLayer] = useState<'ground' | 'object'>('ground');
+  type MapLayer = 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer';
+  const [editLayer, setEditLayer] = useState<MapLayer>('base');
   const [isEraser, setIsEraser] = useState<boolean>(false);
   const [resizeWidth, setResizeWidth] = useState<number>(40);
   const [resizeHeight, setResizeHeight] = useState<number>(40);
@@ -1155,7 +1187,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
     }
   };
 
-  const handleLayerToggle = (layer: 'ground' | 'object') => {
+  const handleLayerToggle = (layer: MapLayer) => {
     setEditLayer(layer);
     const scene = (window as any).__PHASER_MAIN_SCENE__;
     if (scene) scene.currentEditLayer = layer;
@@ -1506,7 +1538,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                 </select>
               </div>
               <div className="flex-1 overflow-y-auto p-2">
-                {activeTileset && (
+                {(editLayer === 'base' || editLayer === 'decorations' || editLayer === 'topLayer') && activeTileset && (
                   <div className="grid grid-cols-5 gap-1">
                     {Array.from({ length: activeTileset.total_tiles }).map((_, id) => {
                       const cols = activeTileset.columns;
@@ -1544,6 +1576,31 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                         />
                       );
                     })}
+                  </div>
+                )}
+
+                {editLayer === 'obstacles' && (
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => { setSelectedTile(0); const scene = (window as any).__PHASER_MAIN_SCENE__; if (scene) scene.currentTileType = 0; }} className={`p-2 text-left border rounded ${selectedTile === 0 ? 'bg-blue-600 border-blue-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}>0: Empty</button>
+                    <button onClick={() => { setSelectedTile(1); const scene = (window as any).__PHASER_MAIN_SCENE__; if (scene) scene.currentTileType = 1; }} className={`p-2 text-left border rounded ${selectedTile === 1 ? 'bg-blue-600 border-blue-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}>1: Wall (Collides)</button>
+                  </div>
+                )}
+
+                {editLayer === 'objectCollides' && (
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => { setSelectedTile(0); const scene = (window as any).__PHASER_MAIN_SCENE__; if (scene) scene.currentTileType = 0; }} className={`p-2 text-left border rounded ${selectedTile === 0 ? 'bg-blue-600 border-blue-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}>0: Empty</button>
+                    {Array.from({length: 10}).map((_, i) => (
+                      <button key={i} onClick={() => { setSelectedTile(10001 + i); const scene = (window as any).__PHASER_MAIN_SCENE__; if (scene) scene.currentTileType = 10001 + i; }} className={`p-2 text-left border rounded ${selectedTile === 10001 + i ? 'bg-blue-600 border-blue-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}>{10001 + i}: obj_{i + 1}</button>
+                    ))}
+                  </div>
+                )}
+
+                {editLayer === 'objectEvent' && (
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => { setSelectedTile(0); const scene = (window as any).__PHASER_MAIN_SCENE__; if (scene) scene.currentTileType = 0; }} className={`p-2 text-left border rounded ${selectedTile === 0 ? 'bg-blue-600 border-blue-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}>0: Empty</button>
+                    {Array.from({length: 10}).map((_, i) => (
+                      <button key={i} onClick={() => { setSelectedTile(20001 + i); const scene = (window as any).__PHASER_MAIN_SCENE__; if (scene) scene.currentTileType = 20001 + i; }} className={`p-2 text-left border rounded ${selectedTile === 20001 + i ? 'bg-blue-600 border-blue-400' : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}>{20001 + i}: evt_{i + 1}</button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1642,14 +1699,14 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                   >
                     {editorMode === 'draw' ? <Pencil className="w-4 h-4" /> : <Hand className="w-4 h-4" />}
                   </button>
-                  <select
-                    value={editLayer}
-                    onChange={(e) => handleLayerToggle(e.target.value as 'ground' | 'object')}
-                    className="bg-slate-700 border border-slate-500 rounded outline-none text-xs px-1 py-0.5"
-                  >
-                    <option value="ground">Ground</option>
-                    <option value="object">Object</option>
-                  </select>
+                  <div className="flex bg-slate-700 rounded overflow-hidden text-[10px]">
+                    <button onClick={() => handleLayerToggle('base')} className={`px-2 py-1 transition-colors ${editLayer === 'base' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-600'}`}>Base</button>
+                    <button onClick={() => handleLayerToggle('decorations')} className={`px-2 py-1 transition-colors border-l border-slate-600 ${editLayer === 'decorations' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-600'}`}>Decor</button>
+                    <button onClick={() => handleLayerToggle('obstacles')} className={`px-2 py-1 transition-colors border-l border-slate-600 ${editLayer === 'obstacles' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-600'}`}>Obs</button>
+                    <button onClick={() => handleLayerToggle('objectCollides')} className={`px-2 py-1 transition-colors border-l border-slate-600 ${editLayer === 'objectCollides' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-600'}`}>ObjCol</button>
+                    <button onClick={() => handleLayerToggle('objectEvent')} className={`px-2 py-1 transition-colors border-l border-slate-600 ${editLayer === 'objectEvent' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-600'}`}>ObjEvt</button>
+                    <button onClick={() => handleLayerToggle('topLayer')} className={`px-2 py-1 transition-colors border-l border-slate-600 ${editLayer === 'topLayer' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-600'}`}>Top</button>
+                  </div>
                   <button
                     onClick={handleEraserToggle}
                     className={`px-2 py-0.5 rounded text-xs transition-colors ${isEraser ? 'bg-red-600' : 'bg-slate-600 hover:bg-slate-500'}`}
@@ -1683,8 +1740,14 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                         height: resizeHeight,
                         block_width: blockWidth,
                         block_height: blockHeight,
-                        tiles: Array(resizeWidth * resizeHeight).fill(2),
-                        objects: Array(resizeWidth * resizeHeight).fill(-1)
+                        layers: {
+                          base: Array(resizeWidth * resizeHeight).fill(2),
+                          decorations: Array(resizeWidth * resizeHeight).fill(0),
+                          obstacles: Array(resizeWidth * resizeHeight).fill(0),
+                          objectCollides: Array(resizeWidth * resizeHeight).fill(0),
+                          objectEvent: Array(resizeWidth * resizeHeight).fill(0),
+                          topLayer: Array(resizeWidth * resizeHeight).fill(0)
+                        }
                       }
                     })
                   });
