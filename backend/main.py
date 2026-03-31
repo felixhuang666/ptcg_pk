@@ -516,26 +516,25 @@ async def dev_login(response: Response):
     if os.getenv("ENABLE_DEV_LOGIN") != "true":
         raise HTTPException(status_code=403, detail="Forbidden")
 
+    # Always completely overwrite tester data to ensure it matches expectations
     user_id = "tester"
-    existing_data = get_user_data(user_id)
-    if not existing_data:
-        existing_data = {
-            "oauth_data": {
-                "id": "009977009977009977",
-                "email": "tester@gmail.com",
-                "verified_email": True,
-                "name": "Tester",
-                "given_name": "Tester",
-                "family_name": "Tester",
-                "picture": "https://lh3.googleusercontent.com/a/ACg8ocKXimISE8o1BEk19Mg5GXd0wBmzKINQdrT1HVdCEauVYKF8C6Vs=s96-c"
-            },
-            "team_data": {},
-            "game_data": {},
-            "profile": {
-                "nickname": "大粒粉圓"
-            }
+    existing_data = {
+        "oauth_data": {
+            "id": "009977009977009977",
+            "email": "tester@gmail.com",
+            "verified_email": True,
+            "name": "Tester",
+            "given_name": "Tester",
+            "family_name": "Tester",
+            "picture": "https://lh3.googleusercontent.com/a/ACg8ocKXimISE8o1BEk19Mg5GXd0wBmzKINQdrT1HVdCEauVYKF8C6Vs=s96-c"
+        },
+        "team_data": {},
+        "game_data": {},
+        "profile": {
+            "nickname": "大粒粉圓"
         }
-        save_user_data(user_id, existing_data)
+    }
+    save_user_data(user_id, existing_data)
 
     redirect_res = RedirectResponse(url="/")
     redirect_res.set_cookie(key="session_id", value=user_id, httponly=True, samesite="lax")
