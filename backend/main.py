@@ -513,7 +513,7 @@ async def serve_spa(full_path: str):
     return {"message": "Frontend not built yet. Please run `make build`."}
 @app.get("/auth/dev_login")
 async def dev_login(response: Response):
-    if os.getenv("NODE_ENV") == "production":
+    if os.getenv("ENABLE_DEV_LOGIN") != "true":
         raise HTTPException(status_code=403, detail="Forbidden")
 
     user_id = "tester"
