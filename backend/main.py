@@ -511,3 +511,30 @@ async def serve_spa(full_path: str):
     if os.path.exists("dist/index.html"):
         return FileResponse("dist/index.html")
     return {"message": "Frontend not built yet. Please run `make build`."}
+@app.get("/auth/dev_login")
+async def dev_login(response: Response):
+    if os.getenv("NODE_ENV") == "production":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    user_id = "tester"
+    user_info = {
+        "id": "tester",
+        "email": "tester@example.com",
+        "name": "Tester",
+        "picture": "",
+    }
+    existing_data = get_user_data(user_id)
+    if not existing_data:
+        existing_data = {
+            "oauth_data": user_info,
+            "team_data": {},
+            "game_data": {}
+        }
+    else:
+        existing_data["oauth_data"] = user_info
+
+    save_user_data(user_id, existing_data)
+
+    redirect_res = RedirectResponse(url="/")
+    redirect_res.set_cookie(key="session_id", value=user_id, httponly=True, samesite="lax")
+    return redirect_res
