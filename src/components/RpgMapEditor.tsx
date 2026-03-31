@@ -72,8 +72,6 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
-      private initialZoomDistance: number = 0;
-      private initialZoom: number = 1;
 
       constructor() {
         super('MainScene');
@@ -282,68 +280,6 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
         this.input.mouse!.disableContextMenu();
 
 
-        const performZoom = (newZoom: number, pointerX: number, pointerY: number) => {
-          if (this.cameras.main.zoom === newZoom) return;
-          const worldPoint = this.cameras.main.getWorldPoint(pointerX, pointerY);
-
-          if (!this.isEditor) {
-            this.cameras.main.stopFollow();
-          }
-
-          this.cameras.main.setZoom(newZoom);
-
-          const newWorldPoint = this.cameras.main.getWorldPoint(pointerX, pointerY);
-          this.cameras.main.scrollX -= newWorldPoint.x - worldPoint.x;
-          this.cameras.main.scrollY -= newWorldPoint.y - worldPoint.y;
-        };
-
-        this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any, deltaX: number, deltaY: number) => {
-          if (pointer.y >= this.scale.height - 80 && this.isEditor) return; // Editor UI
-          let newZoom = this.cameras.main.zoom - deltaY * 0.001;
-          newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
-          performZoom(newZoom, pointer.x, pointer.y);
-        });
-
-        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-          if (this.input.pointer1.isDown && this.input.pointer2.isDown) {
-            this.initialZoomDistance = Phaser.Math.Distance.Between(
-              this.input.pointer1.x, this.input.pointer1.y,
-              this.input.pointer2.x, this.input.pointer2.y
-            );
-            this.initialZoom = this.cameras.main.zoom;
-            // Disable joystick when pinching
-            this.joystickActive = false;
-            if (this.joystickBase) this.joystickBase.setVisible(false);
-            if (this.joystickGraphics) this.joystickGraphics.setVisible(false);
-            if (this.joystickThumb) this.joystickThumb.setVisible(false);
-            this.joystickVector.reset();
-          }
-        });
-
-        this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-          if (this.input.pointer1.isDown && this.input.pointer2.isDown) {
-            const currentDistance = Phaser.Math.Distance.Between(
-              this.input.pointer1.x, this.input.pointer1.y,
-              this.input.pointer2.x, this.input.pointer2.y
-            );
-
-            if (this.initialZoomDistance > 0) {
-              const zoomFactor = currentDistance / this.initialZoomDistance;
-              let newZoom = this.initialZoom * zoomFactor;
-              newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
-
-              const midX = (this.input.pointer1.x + this.input.pointer2.x) / 2;
-              const midY = (this.input.pointer1.y + this.input.pointer2.y) / 2;
-              performZoom(newZoom, midX, midY);
-            }
-          }
-        });
-
-        this.input.on('pointerup', () => {
-          if (!this.input.pointer1.isDown || !this.input.pointer2.isDown) {
-            this.initialZoomDistance = 0;
-          }
-        });
 
 
         if (this.isEditor) {
@@ -371,8 +307,8 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
             if (this.isPanning && (this.editorMode === 'move' || pointer.middleButtonDown() || pointer.rightButtonDown())) {
               const dx = pointer.x - this.panStart.x;
               const dy = pointer.y - this.panStart.y;
-              this.cameras.main.scrollX = this.camStart.x - dx / this.cameras.main.zoom;
-              this.cameras.main.scrollY = this.camStart.y - dy / this.cameras.main.zoom;
+              this.cameras.main.scrollX = this.camStart.x - dx;
+              this.cameras.main.scrollY = this.camStart.y - dy;
               return;
             }
 
@@ -597,7 +533,6 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
 
 
           if (!this.isEditor && this.player) {
-            this.cameras.main.setZoom(1);
             this.cameras.main.centerOn(this.player.x, this.player.y);
             this.cameras.main.startFollow(this.player, true, 0.05, 0.05);
           }
@@ -906,13 +841,12 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
 
             infoTextRef.current.innerText = `Map: ${mapName}\nCam: (${Math.floor(cam.scrollX / tileSize)}, ${Math.floor(cam.scrollY / tileSize)})\n${pointerPos}\n${idText}\n${debugText}`;
           } else if (this.player && infoTextRef.current) {
-            const zoom = this.cameras.main.zoom.toFixed(2);
-            infoTextRef.current.innerText = `Map: ${mapName}\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})\nZoom: ${zoom}x`;
+            infoTextRef.current.innerText = `Map: ${mapName}\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})`;
           }
         }
 
         if (this.isEditor) {
-          const camSpeed = 10 / this.cameras.main.zoom;
+          const camSpeed = 10;
           if (this.cursors?.left.isDown) this.cameras.main.scrollX -= camSpeed;
           else if (this.cursors?.right.isDown) this.cameras.main.scrollX += camSpeed;
 
