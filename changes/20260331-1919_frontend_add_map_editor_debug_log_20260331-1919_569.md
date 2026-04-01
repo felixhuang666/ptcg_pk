@@ -12,6 +12,8 @@ Objective:add debug log for map editor
 when user select a tile element in left side bar, and draw to the map canvas, MUST use console.log to print debug message for id and position of map to draw.
 I would like to debug why the ID mapping is incorrect when draw the selected element.
 
+also add element's x,y information in the tileset png file
+
 **Task information:
 - TID: 569
 - CHANGE_PREFIX: 20260331-1919
@@ -32,3 +34,5 @@ The user is experiencing incorrect ID mapping when drawing map tiles using the l
 ## Solution
 
 Added a `console.log` statement to `handlePointerDown` inside `src/components/RpgMapEditor.tsx` when a tile is being drawn (within the map bounds). This prints the target ID (`targetVal`), the X and Y grid coordinates, the calculated 1D array index, and the target layer (`this.currentEditLayer`) to help identify any mapping calculation issues.
+
+Additionally, updated the logic to fetch the `(window as any).__ACTIVE_TILESET__` metadata during the pointer down event to calculate the tile's source X and Y coordinates within the original tileset image file, and appended this to the console debug output.
