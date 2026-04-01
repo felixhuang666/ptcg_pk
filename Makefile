@@ -149,6 +149,7 @@ proxy-status:
 	- ps -eo pid,cmd | grep ":5000" | grep -v grep
 test-frontend:
 	npm run test
+	npx playwright test
 
 test-backend:
 	. venv/bin/activate && PYTHONPATH=. pytest backend/tests/
