@@ -107,6 +107,7 @@ run: stop
 	$(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5000 --reload
 
 stop:
+	-ps -eo pid,cmd | grep 'port 5000' | grep -v grep && echo "  Killing old process ..."
 	-lsof -t -i :5000 | xargs -i kill {} 2>/dev/null || true
 	-if [ -f "$(SYSTEMD_DIR)/$(SERVICE_FILE)" ]; then \
 		sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true; \
@@ -121,7 +122,7 @@ status:
 		sudo systemctl status $(SERVICE_NAME); \
 	else \
 		echo ">> Checking for running process..."; \
-		ps -eo pid,cmd | grep ":5000" | grep -v grep || echo "  No process found"; \
+		ps -eo pid,cmd | grep 'port 5000' | grep -v grep || echo "  No process found"; \
 	fi
 
 restart:
