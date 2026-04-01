@@ -868,7 +868,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
             const idText = "ID: ";
             const debugText = "Debug: ";
 
-            infoTextRef.current.innerText = `Map: ${mapName}\nCam: (${Math.floor(cam.scrollX / tileSize)}, ${Math.floor(cam.scrollY / tileSize)})\n${pointerPos}\n${idText}\n${debugText}`;
+            infoTextRef.current.innerText = `Map: ${mapName}\n${pointerPos}\n${idText}\n${debugText}`;
           } else if (this.player && infoTextRef.current) {
             infoTextRef.current.innerText = `Map: ${mapName}\nPos: (${Math.floor(this.player.x / 32)}, ${Math.floor(this.player.y / 32)})`;
           }
@@ -1044,6 +1044,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [mapsList, setMapsList] = useState<{ id: string, name: string }[]>([]);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [selectedTile, setSelectedTile] = useState<number>(2);
@@ -1581,58 +1582,93 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Reload Map Data</span>
                 </button>
-                <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs whitespace-nowrap transition-colors">
-                  Rename
+                <button
+                  onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                  className={`p-1 rounded transition-colors group relative ${showAdvancedSettings ? 'bg-blue-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'}`}
+                  title="Advanced Settings"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Advanced Settings</span>
                 </button>
+
+                {showAdvancedSettings && (
+                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 z-[6000] flex flex-col gap-4 min-w-[250px]">
+                    <div className="flex justify-between items-center border-b border-slate-700 pb-2">
+                      <h3 className="text-white font-bold text-sm">Advanced Settings</h3>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs text-slate-400 font-bold uppercase">Rename Map</label>
+                      <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1.5 rounded text-sm transition-colors text-center w-full">
+                        Rename Map
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs text-slate-400 font-bold uppercase">Map Resize</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
+                          <span className="text-slate-400 mr-1">W:</span>
+                          <input
+                            type="number"
+                            value={resizeWidth}
+                            onChange={(e) => setResizeWidth(parseInt(e.target.value) || 10)}
+                            className="w-full bg-transparent text-white outline-none text-right"
+                            min="10"
+                          />
+                        </div>
+                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
+                          <span className="text-slate-400 mr-1">H:</span>
+                          <input
+                            type="number"
+                            value={resizeHeight}
+                            onChange={(e) => setResizeHeight(parseInt(e.target.value) || 10)}
+                            className="w-full bg-transparent text-white outline-none text-right"
+                            min="10"
+                          />
+                        </div>
+                      </div>
+                      <button onClick={handleResizeMap} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1.5 rounded text-sm transition-colors w-full">
+                        Resize & Save
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs text-slate-400 font-bold uppercase">Block Size Information</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
+                          <span className="text-slate-400 mr-1">W:</span>
+                          <input
+                            type="number"
+                            value={blockWidth}
+                            onChange={(e) => setBlockWidth(parseInt(e.target.value) || 32)}
+                            className="w-full bg-transparent text-white outline-none text-right"
+                            min="8"
+                          />
+                        </div>
+                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
+                          <span className="text-slate-400 mr-1">H:</span>
+                          <input
+                            type="number"
+                            value={blockHeight}
+                            onChange={(e) => setBlockHeight(parseInt(e.target.value) || 32)}
+                            className="w-full bg-transparent text-white outline-none text-right"
+                            min="8"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
-                  <span>W:</span>
-                  <input
-                    type="number"
-                    value={resizeWidth}
-                    onChange={(e) => setResizeWidth(parseInt(e.target.value) || 10)}
-                    className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
-                    min="10"
-                  />
-                  <span>H:</span>
-                  <input
-                    type="number"
-                    value={resizeHeight}
-                    onChange={(e) => setResizeHeight(parseInt(e.target.value) || 10)}
-                    className="w-12 bg-slate-700 text-white rounded outline-none px-1 text-center"
-                    min="10"
-                  />
-                  <button onClick={handleResizeMap} className="bg-blue-600 hover:bg-blue-500 px-2 py-0.5 rounded text-[10px] transition-colors ml-1">
-                    Resize & Save
-                  </button>
-                </div>
-                <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
-                  <span className="text-[10px] text-slate-400">Block:</span>
-                  <span>W:</span>
-                  <input
-                    type="number"
-                    value={blockWidth}
-                    onChange={(e) => setBlockWidth(parseInt(e.target.value) || 32)}
-                    className="w-10 bg-slate-700 text-white rounded outline-none px-1 text-center"
-                    min="8"
-                  />
-                  <span>H:</span>
-                  <input
-                    type="number"
-                    value={blockHeight}
-                    onChange={(e) => setBlockHeight(parseInt(e.target.value) || 32)}
-                    className="w-10 bg-slate-700 text-white rounded outline-none px-1 text-center"
-                    min="8"
-                  />
-                  <button
-                    onClick={() => setShowGrid(!showGrid)}
-                    className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 px-1 py-0.5 rounded transition-colors ml-1`}
-                    title="Toggle Grid"
-                  >
-                    <Grid className="w-3 h-3" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setShowGrid(!showGrid)}
+                  className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 p-1 rounded transition-colors`}
+                  title="Toggle Grid"
+                >
+                  <Grid className="w-4 h-4 text-white" />
+                </button>
                 <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
                   <button
                     onClick={() => {
