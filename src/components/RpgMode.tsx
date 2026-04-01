@@ -73,6 +73,7 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
       private initialZoomDistance: number = 0;
       private initialZoom: number = 1;
+      private fogGraphics: Phaser.GameObjects.Graphics | null = null;
 
       constructor() {
         super('MainScene');
@@ -392,11 +393,24 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
 
             if (isDestroyed || !this.sys || !this.sys.game) return;
             const isSelf = msg.id === socket.id;
+
+            if (!this.isEditor && !isSelf && this.player && this.otherPlayers[msg.id]) {
+              const FOG_RADIUS = parseInt(import.meta.env.VITE_RPG_CAMERA_SIZE || '10', 10);
+              const fogDist = FOG_RADIUS * 32;
+              const other = this.otherPlayers[msg.id];
+              const dx = Math.abs(other.x - this.player.x);
+              const dy = Math.abs(other.y - this.player.y);
+              if (dx > fogDist || dy > fogDist) {
+                return;
+              }
+            }
+
             this.showChatBubble(msg.id, msg.message, isSelf);
           });
 
           socket.on('player_moved', (player: any) => {
             if (isDestroyed || !this.sys || !this.sys.game) return;
+
             const other = this.otherPlayers[player.id];
             if (other) {
               other.setPosition(player.x, player.y);
@@ -741,6 +755,11 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
           }
         };
 
+        if (this.fogGraphics) {
+          this.fogGraphics.destroy();
+        }
+        this.fogGraphics = this.add.graphics().setDepth(20);
+
         // We assume active tileset info is stored globally or default to cute
         const activeTileset = (window as any).__ACTIVE_TILESET__;
         if (activeTileset && activeTileset.image_source) {
@@ -813,6 +832,48 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
       }
 
       update(time: number, delta: number) {
+        if (!this.isEditor && this.player && this.fogGraphics) {
+          this.fogGraphics.clear();
+          this.fogGraphics.fillStyle(0x000000, 1);
+
+          const px = this.player.x;
+          const py = this.player.y;
+          const FOG_RADIUS = parseInt(import.meta.env.VITE_RPG_CAMERA_SIZE || '10', 10);
+          const TILE_SIZE = 32;
+          const fogPixels = FOG_RADIUS * TILE_SIZE;
+
+          const left = px - fogPixels;
+          const right = px + fogPixels;
+          const top = py - fogPixels;
+          const bottom = py + fogPixels;
+
+          // Draw huge rectangles covering the outside of the viewport
+          const huge = 100000;
+          this.fogGraphics.fillRect(-huge, -huge, 2 * huge, huge + top); // Top
+          this.fogGraphics.fillRect(-huge, bottom, 2 * huge, huge); // Bottom
+          this.fogGraphics.fillRect(-huge, top, huge + left, bottom - top); // Left
+          this.fogGraphics.fillRect(right, top, huge, bottom - top); // Right
+
+          Object.keys(this.otherPlayers).forEach(id => {
+            const other = this.otherPlayers[id];
+            const dx = Math.abs(other.x - px);
+            const dy = Math.abs(other.y - py);
+            const isVisible = dx <= fogPixels && dy <= fogPixels;
+            other.setVisible(isVisible);
+            if (this.nameTags[id]) this.nameTags[id].setVisible(isVisible);
+            if (this.chatBubbles[id]) this.chatBubbles[id].setVisible(isVisible);
+          });
+
+          Object.keys(this.npcs).forEach(id => {
+            const npc = this.npcs[id];
+            const dx = Math.abs(npc.x - px);
+            const dy = Math.abs(npc.y - py);
+            const isVisible = dx <= fogPixels && dy <= fogPixels;
+            npc.setVisible(isVisible);
+            if (this.nameTags[id]) this.nameTags[id].setVisible(isVisible);
+          });
+        }
+
         if (infoTextRef.current) {
           if (this.isEditor) {
             const cam = this.cameras.main;
