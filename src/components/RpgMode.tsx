@@ -1009,6 +1009,9 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
     return () => {
       isDestroyed = true;
       socket.disconnect();
+      if ((window as any).__PHASER_MAIN_SCENE__ === mainSceneRef.current) {
+        (window as any).__PHASER_MAIN_SCENE__ = null;
+      }
       if (phaserGameRef.current) {
         phaserGameRef.current.destroy(true);
       }
