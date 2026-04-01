@@ -112,6 +112,8 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       }
 
       public toggleGrid(show: boolean, blockW: number, blockH: number) {
+        if (!this.sys || !this.sys.game || !this.add) return;
+
         if (!this.gridGraphics) {
           this.gridGraphics = this.add.graphics();
           this.gridGraphics.setDepth(100);
@@ -1012,6 +1014,9 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
     return () => {
       isDestroyed = true;
       socket.disconnect();
+      if ((window as any).__PHASER_MAIN_SCENE__ === mainSceneRef.current) {
+        (window as any).__PHASER_MAIN_SCENE__ = null;
+      }
       if (phaserGameRef.current) {
         phaserGameRef.current.destroy(true);
       }
