@@ -1,4 +1,4 @@
-SERVICE_NAME=monster_battle
+SERVICE_NAME=ptcg_pk
 SERVICE_FILE=$(SERVICE_NAME).service
 SYSTEMD_DIR=/etc/systemd/system
 PWD := $(shell pwd)
@@ -89,7 +89,12 @@ uninstall:
 	@echo "Service $(SERVICE_NAME) uninstalled."
 
 start: stop
-	sudo systemctl start $(SERVICE_NAME)
+	if [ -f "$(SYSTEMD_DIR)/$(SERVICE_FILE)" ]; then \
+		echo "[Systemd Mode] $(SERVICE_NAME): $(SYSTEMD_DIR)/$(SERVICE_FILE)"; \
+		sudo systemctl start $(SERVICE_NAME); \
+	else \
+		make run; \
+	fi
 
 bg-start: stop
 	@echo "Starting Uvicorn in background..."
@@ -108,8 +113,16 @@ stop:
 	fi
 	sleep 1
 
+.ONESHELL:
+
 status:
-	sudo systemctl status $(SERVICE_NAME)
+	if [ -f "$(SYSTEMD_DIR)/$(SERVICE_FILE)" ]; then \
+		echo "Checking status of $(SERVICE_NAME): $(SYSTEMD_DIR)/$(SERVICE_FILE)"; \
+		sudo systemctl status $(SERVICE_NAME); \
+	else \
+		echo ">> Checking for running process..."; \
+		ps -eo pid,cmd | grep ":5000" | grep -v grep || echo "  No process found"; \
+	fi
 
 restart:
 	sudo systemctl restart $(SERVICE_NAME)
