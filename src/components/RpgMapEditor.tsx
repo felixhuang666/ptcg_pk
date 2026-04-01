@@ -42,7 +42,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       private npcs: Record<string, Phaser.Physics.Arcade.Sprite> = {};
       private nameTags: Record<string, Phaser.GameObjects.Text> = {};
       private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-      private currentTileType: number = 2; // 2=grass, 48=water, 94=mountain
+      private currentTileType: number = 1; // 2=grass, 48=water, 94=mountain
       public currentEditLayer: 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer' = 'base';
       public isEraser: boolean = false;
       private isEditor: boolean = false;
@@ -724,7 +724,9 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
                 for (let x = 0; x < this.mapData.width; x++) {
                   const val = data[y * this.mapData.width + x];
                   if (val !== undefined && val !== 0 && val !== -1) {
-                    l.putTileAt(name === 'base' || name === 'decorations' || name === 'topLayer' ? val + 1 : val, x, y);
+                    //l.putTileAt(name === 'base' || name === 'decorations' || name === 'topLayer' ? val + 1 : val, x, y);
+                    l.putTileAt(name === 'base' || name === 'decorations' || name === 'topLayer' ? val : val, x, y);
+                    console.log(">>>>renderMap()", name, val)
                   }
                 }
               }
@@ -821,11 +823,11 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           let sourceY = 0;
           const activeTileset = (window as any).__ACTIVE_TILESET__;
           if (activeTileset && !this.isEraser) {
-             const tileIdZeroBased = targetVal - 1;
-             if (tileIdZeroBased >= 0) {
-                 sourceX = (tileIdZeroBased % activeTileset.columns) * activeTileset.tilewidth;
-                 sourceY = Math.floor(tileIdZeroBased / activeTileset.columns) * activeTileset.tileheight;
-             }
+            const tileIdZeroBased = targetVal - 1;
+            if (tileIdZeroBased >= 0) {
+              sourceX = (tileIdZeroBased % activeTileset.columns) * activeTileset.tilewidth;
+              sourceY = Math.floor(tileIdZeroBased / activeTileset.columns) * activeTileset.tileheight;
+            }
           }
 
           console.log(`Map Editor Draw Debug - ID: ${targetVal}, Pos X: ${x}, Pos Y: ${y}, Index: ${index}, Layer: ${this.currentEditLayer}, Source Image X: ${sourceX}, Source Image Y: ${sourceY}`);
@@ -847,7 +849,9 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
             const l = lMap[this.currentEditLayer];
             if (l) {
               if (targetVal === 0 || targetVal === -1) l.removeTileAt(x, y);
-              else l.putTileAt(this.currentEditLayer === 'base' || this.currentEditLayer === 'decorations' || this.currentEditLayer === 'topLayer' ? targetVal + 1 : targetVal, x, y);
+              else l.putTileAt(targetVal, x, y);
+
+              console.log(">> ", this.currentEditLayer, targetVal)
             }
           }
         }
@@ -1510,7 +1514,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                             setSelectedTile(id);
                             setSelectedTileData(tileMeta);
                             const scene = (window as any).__PHASER_MAIN_SCENE__;
-                            if (scene) scene.currentTileType = id + 1; // 1-based internal handling
+                            if (scene) scene.currentTileType = id;
                           }}
                           className={`w-10 h-10 border-2 rounded ${selectedTile === id ? 'border-blue-500 z-10 scale-110 relative' : 'border-transparent hover:border-slate-500'}`}
                           title={tileMeta.name}

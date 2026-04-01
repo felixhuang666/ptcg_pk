@@ -47,8 +47,11 @@ build:
 
 build-frontend:
 	@echo "Building frontend..."
-	source ~/.nvm/nvm.sh && npm run build
-	#npm run build
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		source ~/.nvm/nvm.sh && npm run build; \
+	else \
+		npm run build; \
+	fi
 	@echo "Build complete."
 
 clean:
