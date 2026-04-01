@@ -1053,7 +1053,6 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [mapsList, setMapsList] = useState<{ id: string, name: string }[]>([]);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [selectedTile, setSelectedTile] = useState<number>(2);
@@ -1064,6 +1063,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [resizeHeight, setResizeHeight] = useState<number>(40);
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [rightSidebarTab, setRightSidebarTab] = useState<'tileDetails' | 'advancedSettings'>('tileDetails');
   const [blockWidth, setBlockWidth] = useState<number>(32);
   const [blockHeight, setBlockHeight] = useState<number>(32);
   const [showGrid, setShowGrid] = useState<boolean>(false);
@@ -1591,84 +1591,6 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Reload Map Data</span>
                 </button>
-                <button
-                  onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-                  className={`p-1 rounded transition-colors group relative ${showAdvancedSettings ? 'bg-blue-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white'}`}
-                  title="Advanced Settings"
-                >
-                  <Settings className="w-4 h-4" />
-                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Advanced Settings</span>
-                </button>
-
-                {showAdvancedSettings && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 z-[6000] flex flex-col gap-4 min-w-[250px]">
-                    <div className="flex justify-between items-center border-b border-slate-700 pb-2">
-                      <h3 className="text-white font-bold text-sm">Advanced Settings</h3>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label className="text-xs text-slate-400 font-bold uppercase">Rename Map</label>
-                      <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1.5 rounded text-sm transition-colors text-center w-full">
-                        Rename Map
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label className="text-xs text-slate-400 font-bold uppercase">Map Resize</label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
-                          <span className="text-slate-400 mr-1">W:</span>
-                          <input
-                            type="number"
-                            value={resizeWidth}
-                            onChange={(e) => setResizeWidth(parseInt(e.target.value) || 10)}
-                            className="w-full bg-transparent text-white outline-none text-right"
-                            min="10"
-                          />
-                        </div>
-                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
-                          <span className="text-slate-400 mr-1">H:</span>
-                          <input
-                            type="number"
-                            value={resizeHeight}
-                            onChange={(e) => setResizeHeight(parseInt(e.target.value) || 10)}
-                            className="w-full bg-transparent text-white outline-none text-right"
-                            min="10"
-                          />
-                        </div>
-                      </div>
-                      <button onClick={handleResizeMap} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1.5 rounded text-sm transition-colors w-full">
-                        Resize & Save
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label className="text-xs text-slate-400 font-bold uppercase">Block Size Information</label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
-                          <span className="text-slate-400 mr-1">W:</span>
-                          <input
-                            type="number"
-                            value={blockWidth}
-                            onChange={(e) => setBlockWidth(parseInt(e.target.value) || 32)}
-                            className="w-full bg-transparent text-white outline-none text-right"
-                            min="8"
-                          />
-                        </div>
-                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
-                          <span className="text-slate-400 mr-1">H:</span>
-                          <input
-                            type="number"
-                            value={blockHeight}
-                            onChange={(e) => setBlockHeight(parseInt(e.target.value) || 32)}
-                            className="w-full bg-transparent text-white outline-none text-right"
-                            min="8"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
@@ -1777,77 +1699,156 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
 
           {showRightSidebar && (
             <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
-              <div className="bg-slate-900 border-b border-slate-700 p-2 text-white font-bold text-center">
-                Tile Details
+              <div className="flex bg-slate-900 border-b border-slate-700">
+                <button
+                  className={`flex-1 p-2 text-sm font-bold text-center transition-colors ${rightSidebarTab === 'tileDetails' ? 'text-white bg-slate-800 border-b-2 border-blue-500' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                  onClick={() => setRightSidebarTab('tileDetails')}
+                >
+                  Tile Details
+                </button>
+                <button
+                  className={`flex-1 p-2 text-sm font-bold text-center transition-colors ${rightSidebarTab === 'advancedSettings' ? 'text-white bg-slate-800 border-b-2 border-blue-500' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                  onClick={() => setRightSidebarTab('advancedSettings')}
+                >
+                  Advanced Settings
+                </button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 text-sm text-slate-300">
-                {selectedTileData && activeTileset ? (
-                  <div className="space-y-4">
-                    <div className="bg-slate-900 p-3 rounded-lg border border-slate-700 flex flex-col items-center">
-                      <div
-                        className="mb-3 border border-slate-600 rounded bg-slate-800"
-                        style={{
-                          backgroundImage: `url(/assets/map_tileset/${activeTileset.name.includes('cute') ? 'cute_tileset.png' : activeTileset.image_source})`,
-                          backgroundPosition: `-${((selectedTileData.id - 1) % activeTileset.columns) * activeTileset.tilewidth}px -${Math.floor((selectedTileData.id - 1) / activeTileset.columns) * activeTileset.tileheight}px`,
-                          backgroundSize: `${activeTileset.columns * activeTileset.tilewidth}px ${Math.ceil(activeTileset.total_tiles / activeTileset.columns) * activeTileset.tileheight}px`,
-                          width: `${activeTileset.tilewidth}px`,
-                          height: `${activeTileset.tileheight}px`,
-                          transform: 'scale(1.5)',
-                          transformOrigin: 'center'
-                        }}
-                      />
-                      <h3 className="font-bold text-white text-lg mb-1 text-center">{selectedTileData.name}</h3>
-                      <p className="text-xs text-slate-400 font-mono text-center">ID: {selectedTileData.id}</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex justify-between border-b border-slate-700 pb-1">
-                        <span className="text-slate-400">Category:</span>
-                        <span className="text-white capitalize">{selectedTileData.category.replace('_', ' ')}</span>
+                {rightSidebarTab === 'tileDetails' && (
+                  selectedTileData && activeTileset ? (
+                    <div className="space-y-4">
+                      <div className="bg-slate-900 p-3 rounded-lg border border-slate-700 flex flex-col items-center">
+                        <div
+                          className="mb-3 border border-slate-600 rounded bg-slate-800"
+                          style={{
+                            backgroundImage: `url(/assets/map_tileset/${activeTileset.name.includes('cute') ? 'cute_tileset.png' : activeTileset.image_source})`,
+                            backgroundPosition: `-${((selectedTileData.id - 1) % activeTileset.columns) * activeTileset.tilewidth}px -${Math.floor((selectedTileData.id - 1) / activeTileset.columns) * activeTileset.tileheight}px`,
+                            backgroundSize: `${activeTileset.columns * activeTileset.tilewidth}px ${Math.ceil(activeTileset.total_tiles / activeTileset.columns) * activeTileset.tileheight}px`,
+                            width: `${activeTileset.tilewidth}px`,
+                            height: `${activeTileset.tileheight}px`,
+                            transform: 'scale(1.5)',
+                            transformOrigin: 'center'
+                          }}
+                        />
+                        <h3 className="font-bold text-white text-lg mb-1 text-center">{selectedTileData.name}</h3>
+                        <p className="text-xs text-slate-400 font-mono text-center">ID: {selectedTileData.id}</p>
                       </div>
 
-                      <div className="flex justify-between border-b border-slate-700 pb-1">
-                        <span className="text-slate-400">Tags:</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedTileData.tags.map((tag: string) => (
-                          <span key={tag} className="px-2 py-0.5 bg-slate-700 rounded-full text-xs text-slate-200">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="mt-4 pt-2 border-t border-slate-700">
-                        <h4 className="text-slate-400 text-xs uppercase tracking-wider mb-2">Source Image</h4>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-slate-400">File:</span>
-                          <span className="text-emerald-400 font-mono text-xs">{activeTileset.image_source}</span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between border-b border-slate-700 pb-1">
+                          <span className="text-slate-400">Category:</span>
+                          <span className="text-white capitalize">{selectedTileData.category.replace('_', ' ')}</span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
-                            <span className="text-slate-500 text-[10px]">X</span>
-                            <span className="font-mono text-white">{((selectedTileData.id - 1) % activeTileset.columns) * activeTileset.tilewidth}</span>
+                        <div className="flex justify-between border-b border-slate-700 pb-1">
+                          <span className="text-slate-400">Tags:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedTileData.tags.map((tag: string) => (
+                            <span key={tag} className="px-2 py-0.5 bg-slate-700 rounded-full text-xs text-slate-200">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="mt-4 pt-2 border-t border-slate-700">
+                          <h4 className="text-slate-400 text-xs uppercase tracking-wider mb-2">Source Image</h4>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-slate-400">File:</span>
+                            <span className="text-emerald-400 font-mono text-xs">{activeTileset.image_source}</span>
                           </div>
-                          <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
-                            <span className="text-slate-500 text-[10px]">Y</span>
-                            <span className="font-mono text-white">{Math.floor((selectedTileData.id - 1) / activeTileset.columns) * activeTileset.tileheight}</span>
-                          </div>
-                          <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
-                            <span className="text-slate-500 text-[10px]">W</span>
-                            <span className="font-mono text-white">{activeTileset.tilewidth}</span>
-                          </div>
-                          <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
-                            <span className="text-slate-500 text-[10px]">H</span>
-                            <span className="font-mono text-white">{activeTileset.tileheight}</span>
+
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
+                              <span className="text-slate-500 text-[10px]">X</span>
+                              <span className="font-mono text-white">{((selectedTileData.id - 1) % activeTileset.columns) * activeTileset.tilewidth}</span>
+                            </div>
+                            <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
+                              <span className="text-slate-500 text-[10px]">Y</span>
+                              <span className="font-mono text-white">{Math.floor((selectedTileData.id - 1) / activeTileset.columns) * activeTileset.tileheight}</span>
+                            </div>
+                            <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
+                              <span className="text-slate-500 text-[10px]">W</span>
+                              <span className="font-mono text-white">{activeTileset.tilewidth}</span>
+                            </div>
+                            <div className="bg-slate-900 p-2 rounded flex flex-col items-center">
+                              <span className="text-slate-500 text-[10px]">H</span>
+                              <span className="font-mono text-white">{activeTileset.tileheight}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-slate-500 italic">
-                    Select a tile to view details
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-slate-500 italic">
+                      Select a tile to view details
+                    </div>
+                  )
+                )}
+
+                {rightSidebarTab === 'advancedSettings' && (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs text-slate-400 font-bold uppercase">Rename Map</label>
+                      <button onClick={handleMapRename} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1.5 rounded text-sm transition-colors text-center w-full">
+                        Rename Map
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs text-slate-400 font-bold uppercase">Map Resize</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
+                          <span className="text-slate-400 mr-1">W:</span>
+                          <input
+                            type="number"
+                            value={resizeWidth}
+                            onChange={(e) => setResizeWidth(parseInt(e.target.value) || 10)}
+                            className="w-full bg-transparent text-white outline-none text-right"
+                            min="10"
+                          />
+                        </div>
+                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
+                          <span className="text-slate-400 mr-1">H:</span>
+                          <input
+                            type="number"
+                            value={resizeHeight}
+                            onChange={(e) => setResizeHeight(parseInt(e.target.value) || 10)}
+                            className="w-full bg-transparent text-white outline-none text-right"
+                            min="10"
+                          />
+                        </div>
+                      </div>
+                      <button onClick={handleResizeMap} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1.5 rounded text-sm transition-colors w-full">
+                        Resize & Save
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs text-slate-400 font-bold uppercase">Block Size Information</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
+                          <span className="text-slate-400 mr-1">W:</span>
+                          <input
+                            type="number"
+                            value={blockWidth}
+                            onChange={(e) => setBlockWidth(parseInt(e.target.value) || 32)}
+                            className="w-full bg-transparent text-white outline-none text-right"
+                            min="8"
+                          />
+                        </div>
+                        <div className="flex-1 flex items-center bg-slate-900 rounded px-2 py-1 text-sm text-white border border-slate-700">
+                          <span className="text-slate-400 mr-1">H:</span>
+                          <input
+                            type="number"
+                            value={blockHeight}
+                            onChange={(e) => setBlockHeight(parseInt(e.target.value) || 32)}
+                            className="w-full bg-transparent text-white outline-none text-right"
+                            min="8"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
