@@ -30,6 +30,6 @@ jobs:
         ENABLE_DEV_LOGIN: true
       run: |
         if [ ! -f .env ]; then cp .env.example .env; fi
-        nohup uvicorn backend.main:app --host 0.0.0.0 --port 5000 > uvicorn.log 2>&1 &
+        nohup python -m uvicorn backend.main:app --host 0.0.0.0 --port 5000 > uvicorn.log 2>&1 &
         sleep 5
-        pytest backend/tests/
+        python -m pytest backend/tests/
