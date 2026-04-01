@@ -835,6 +835,8 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
 
         if (!this.player || !this.cursors) return;
 
+        // Player top layer transparency omitted here since this mode is "先不處理, 我驗證地圖編輯模式後才來實作".
+
         if (!this.isAttacking && this.actionMode === 'attack') {
           if (this.cursors.space.isDown || this.attackButtonDown) {
             this.triggerAttack();

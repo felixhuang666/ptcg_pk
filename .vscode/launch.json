@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Pytest: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "pytest",
             "args": [

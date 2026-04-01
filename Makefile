@@ -23,6 +23,7 @@ help:
 	@echo "  make restart        - Restart the service"
 	@echo "  make status         - Check the service status"
 	@echo "  make logs           - Tail the service logs"
+	@echo "  make test           - Run tests"
 
 all: setup build
 
