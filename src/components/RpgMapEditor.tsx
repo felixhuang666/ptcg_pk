@@ -1061,8 +1061,8 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [isEraser, setIsEraser] = useState<boolean>(false);
   const [resizeWidth, setResizeWidth] = useState<number>(40);
   const [resizeHeight, setResizeHeight] = useState<number>(40);
-  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
-  const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(window.innerWidth > 768);
+  const [showRightSidebar, setShowRightSidebar] = useState(window.innerWidth > 768);
   const [rightSidebarTab, setRightSidebarTab] = useState<'tileDetails' | 'advancedSettings'>('tileDetails');
   const [blockWidth, setBlockWidth] = useState<number>(32);
   const [blockHeight, setBlockHeight] = useState<number>(32);
@@ -1470,10 +1470,10 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
       <main className="flex-1 flex flex-col items-center justify-center p-4 relative w-full bg-slate-900">
 
 
-        <div className="flex-1 w-full flex flex-row gap-2 md:gap-4 min-h-0">
+        <div className="flex-1 w-full flex flex-row gap-2 md:gap-4 min-h-0 relative">
 
           {showLeftSidebar && (
-            <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
+            <div className="absolute md:relative z-[6000] left-0 md:left-auto h-full w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
               <div className="bg-slate-900 border-b border-slate-700 p-2 text-white font-bold text-center flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span>Tilesets</span>
@@ -1698,7 +1698,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
           </div>
 
           {showRightSidebar && (
-            <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
+            <div className="absolute md:relative z-[6000] right-0 md:right-auto h-full w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
               <div className="flex bg-slate-900 border-b border-slate-700">
                 <button
                   className={`flex-1 p-2 text-sm font-bold text-center transition-colors ${rightSidebarTab === 'tileDetails' ? 'text-white bg-slate-800 border-b-2 border-blue-500' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
