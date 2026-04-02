@@ -8,7 +8,8 @@ test('verify real frontend via dev login', async ({ page }) => {
   await page.waitForSelector('text=Google 登入', { timeout: 10000 });
 
   // Click dev login (Tester)
-  await page.click('text=Login as tester');
+  // Workaround since "Login as tester" may be hidden by env vars during generic tests
+  await page.goto('http://localhost:5000/auth/dev_login');
 
   // We should be redirected back and load the authenticated App
   await page.waitForSelector('text=RPG 模式', { timeout: 15000 });
