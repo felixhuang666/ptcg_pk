@@ -144,6 +144,65 @@ async def auth_callback(code: str, response: Response):
         redirect_res.set_cookie(key="session_id", value=user_id, httponly=True, samesite="lax")
         return redirect_res
 
+@app.get("/api/user/location")
+async def get_user_location(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            res = await client.table('game_player_data').select('*').eq('id', session_id).limit(1).execute()
+            if res.data and len(res.data) > 0:
+                return res.data[0]
+    except Exception as e:
+        print(f"Supabase warning (fetching user location): {e}")
+
+    return {"id": session_id, "map_id": None, "pos_x": None, "pos_y": None}
+
+@app.post("/api/user/location")
+async def update_user_location(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    data = await request.json()
+    map_id = data.get("map_id")
+    pos_x = data.get("pos_x")
+    pos_y = data.get("pos_y")
+
+    user_data = get_user_data(session_id)
+    name = "Player"
+    if user_data and "profile" in user_data and "nickname" in user_data["profile"]:
+        name = user_data["profile"]["nickname"]
+    elif user_data and "oauth_data" in user_data and "name" in user_data["oauth_data"]:
+        name = user_data["oauth_data"]["name"]
+
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            payload = {
+                'id': session_id,
+                'name': name,
+                'map_id': map_id,
+                'pos_x': pos_x,
+                'pos_y': pos_y
+            }
+            await client.table('game_player_data').upsert(payload).execute()
+            return {"success": True, "data": payload}
+    except Exception as e:
+        print(f"Supabase warning (saving user location): {e}")
+        return {"success": False, "error": str(e)}
+
+    return {"success": False, "error": "Supabase not configured"}
+
 @app.get("/api/auth/me")
 async def get_current_user(request: Request):
     session_id = request.cookies.get("session_id")
