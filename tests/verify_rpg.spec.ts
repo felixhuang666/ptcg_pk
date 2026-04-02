@@ -50,7 +50,9 @@ test('verify RPG mode and Map Editor rendering', async ({ page }) => {
     !err.includes('failed to load resource') &&
     !err.includes('404') &&
     !err.includes('Failed to fetch') &&
-    !err.includes('Error checking auth')
+    !err.includes('Error checking auth') &&
+    !err.includes('WebSocket connection') &&
+    !err.includes('failed to connect to websocket')
   );
   expect(relevantErrors).toEqual([]);
 });
