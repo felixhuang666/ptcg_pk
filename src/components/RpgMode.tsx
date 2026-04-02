@@ -311,8 +311,14 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
             }
 
             this.undoStack.push({
-              tiles: [...this.mapData.tiles],
-              objects: this.mapData.objects ? [...this.mapData.objects] : []
+              layers: {
+                base: [...this.mapData.layers.base],
+                decorations: [...this.mapData.layers.decorations],
+                obstacles: [...this.mapData.layers.obstacles],
+                objectCollides: [...this.mapData.layers.objectCollides],
+                objectEvent: [...this.mapData.layers.objectEvent],
+                topLayer: [...this.mapData.layers.topLayer]
+              }
             });
             this.redoStack = [];
 
@@ -873,22 +879,22 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
           const index = y * this.mapData.width + x;
           const targetVal = this.isEraser ? 0 : this.currentTileType;
 
-          if (this.currentEditLayer === 'ground') {
-            if (this.mapData.tiles[index] !== targetVal) {
-              this.mapData.tiles[index] = targetVal;
-              if (this.layer) {
-                if (targetVal === 0 || targetVal === -1) this.layer.removeTileAt(x, y);
-                else this.layer.putTileAt(targetVal, x, y);
-              }
+          if (this.mapData.layers[this.currentEditLayer][index] !== targetVal) {
+            this.mapData.layers[this.currentEditLayer][index] = targetVal;
+
+            let targetLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+            switch (this.currentEditLayer) {
+              case 'base': targetLayer = this.baseLayer; break;
+              case 'decorations': targetLayer = this.decorationsLayer; break;
+              case 'obstacles': targetLayer = this.obstaclesLayer; break;
+              case 'objectCollides': targetLayer = this.objectCollidesLayer; break;
+              case 'objectEvent': targetLayer = this.objectEventLayer; break;
+              case 'topLayer': targetLayer = this.topLayer; break;
             }
-          } else {
-            if (!this.mapData.objects) this.mapData.objects = Array(this.mapData.width * this.mapData.height).fill(0);
-            if (this.mapData.objects[index] !== targetVal) {
-              this.mapData.objects[index] = targetVal;
-              if (this.objectLayer) {
-                if (targetVal === 0 || targetVal === -1) this.objectLayer.removeTileAt(x, y);
-                else this.objectLayer.putTileAt(targetVal, x, y);
-              }
+
+            if (targetLayer) {
+              if (targetVal === 0 || targetVal === -1) targetLayer.removeTileAt(x, y);
+              else targetLayer.putTileAt(targetVal, x, y);
             }
           }
         }
