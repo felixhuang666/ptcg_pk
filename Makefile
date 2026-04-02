@@ -11,19 +11,23 @@ SHELL := /bin/bash
 
 help:
 	@echo "Available commands:"
-	@echo "  make help           - Show this help message"
-	@echo "  make setup          - Setup python venv, install node modules, and configure .env"
-	@echo "  make build          - Build react app and python backend to wheel files"
-	@echo "  make clean          - Remove generated build and tmp files"
-	@echo "  make install-service- Install, enable, and start the systemd service"
-	@echo "  make uninstall      - Stop and uninstall the systemd service"
-	@echo "  make start          - Start the service"
-	@echo "  make stop           - Stop the service"
-	@echo "  make bg-start       - Launch python backend in background"
-	@echo "  make restart        - Restart the service"
-	@echo "  make status         - Check the service status"
-	@echo "  make logs           - Tail the service logs"
-	@echo "  make test           - Run tests"
+	@echo "  make help                 - Show this help message"
+	@echo "  make setup                - Setup python venv, install node modules, and configure .env"
+	@echo "  make build                - Build react app and python backend to wheel files"
+	@echo "  make clean                - Remove generated build and tmp files"
+	@echo "  make install-service      - Install, enable, and start the systemd service"
+	@echo "  make uninstall            - Stop and uninstall the systemd service"
+	@echo "  make start                - Start the service"
+	@echo "  make stop                 - Stop the service"
+	@echo "  make bg-start             - Launch python backend in background"
+	@echo "  make restart              - Restart the service"
+	@echo "  make status               - Check the service status"
+	@echo "  make logs                 - Tail the service logs"
+	@echo "  make test                 - Run tests"
+	@echo "  make start-frontend-dev   - Launch frontend dev server on port 5000"
+	@echo "  make start-backend-dev    - Launch python backend dev server on port 5001"
+	@echo "  make bg-start-frontend-dev- Launch frontend dev server on port 5000 in background"
+	@echo "  make bg-start-backend-dev - Launch python backend dev server on port 5001 in background"
 
 all: setup build
 
@@ -109,30 +113,35 @@ bg-start: stop
 run: stop
 	$(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5000 --reload
 
-start-frontend-dev:
+stop-frontend:
+	-ps -eo pid,cmd | grep 'port 5000' | grep -v grep && echo "  Killing old frontend process ..."
+	-lsof -t -i :5000 | xargs -i kill {} 2>/dev/null || true
+	sleep 1
+
+stop-backend:
+	-ps -eo pid,cmd | grep 'port 5001' | grep -v grep && echo "  Killing old backend process ..."
+	-lsof -t -i :5001 | xargs -i kill {} 2>/dev/null || true
+	sleep 1
+
+start-frontend-dev: stop-frontend
 	npm run dev -- --port 5000
 
-start-backend-dev: stop
+start-backend-dev: stop-backend
 	$(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5001 --reload
 
-bg-start-frontend-dev:
+bg-start-frontend-dev: stop-frontend
 	nohup npm run dev -- --port 5000 > frontend.log 2>&1 &
 	@echo "Frontend started. Logs in frontend.log"
 
-bg-start-backend-dev: stop
+bg-start-backend-dev: stop-backend
 	@echo "Starting Uvicorn in background..."
 	nohup $(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5001 > uvicorn.log 2>&1 &
 	@echo "Uvicorn started. Logs in uvicorn.log"
 
-stop:
-	-ps -eo pid,cmd | grep 'port 5000' | grep -v grep && echo "  Killing old process ..."
-	-lsof -t -i :5000 | xargs -i kill {} 2>/dev/null || true
-	-ps -eo pid,cmd | grep 'port 5001' | grep -v grep && echo "  Killing old process ..."
-	-lsof -t -i :5001 | xargs -i kill {} 2>/dev/null || true
+stop: stop-frontend stop-backend
 	-if [ -f "$(SYSTEMD_DIR)/$(SERVICE_FILE)" ]; then \
 		sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true; \
 	fi
-	sleep 1
 
 .ONESHELL:
 
