@@ -936,8 +936,27 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
             const row = Math.floor(worldPoint.y / tileSize) + 1;
             const pointerPos = `Pos: Col ${col}, Row ${row}`;
 
+            // Get tile value
+            const x = Math.floor(worldPoint.x / tileSize);
+            const y = Math.floor(worldPoint.y / tileSize);
+
+            const lMap: Record<string, Phaser.Tilemaps.TilemapLayer | null> = {
+              'base': this.baseLayer,
+              'decorations': this.decorationsLayer,
+              'obstacles': this.obstaclesLayer,
+              'objectCollides': this.objectCollidesLayer,
+              'objectEvent': this.objectEventLayer,
+              'topLayer': this.topLayer
+            };
+            const l = lMap[this.currentEditLayer];
+            let targetVal = 0;
+            if (l) {
+              const tile = l.getTileAt(x, y);
+              if (tile) targetVal = tile.index;
+            }
+
             // Placeholder for future ID and Debug metadata based on grid position
-            const idText = "ID: ";
+            const idText = `ID: ${targetVal}`;
             const debugText = "Debug: ";
 
             infoTextRef.current.innerText = `Map: ${mapName}\n${pointerPos}\n${idText}\n${debugText}`;
