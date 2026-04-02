@@ -70,8 +70,14 @@
 2. **線上對戰 (PvP - 隨機)**: 透過 Matchmaking 系統，隨機配對兩名正在尋找對手的玩家。
 3. **私人對戰 (PvP - 房號)**: 玩家輸入自訂的房號 (Room Code)，與輸入相同房號的玩家進行對戰。
 4. **挑戰 Boss (Boss Battle)**: 玩家可以選擇挑戰強大的 Boss 隊伍。
+5. **RPG 模式 (RPG Mode)**: 玩家可以在 6 層架構 (6-layer architecture) 的大型地圖上自由探索、與其他玩家即時互動，並觸發地圖事件。
 
-## 6. 網路架構 (Networking)
+## 6. RPG 地圖系統 (RPG Map System)
+RPG 模式引入了專屬的地圖探索機制：
+* **六層地圖架構 (6-Layer Architecture)**: 地圖由 `base` (基礎地形)、`decorations` (裝飾物)、`obstacles` (阻擋通行)、`objectCollides` (具碰撞的物件)、`objectEvent` (觸發事件) 以及 `topLayer` (動態半透明的頂部圖層) 所組成。
+* **動態圖塊集 (Dynamic Tilesets)**: 支援從後端即時載入圖塊集詮釋資料 (Metadata) 以呈現豐富的地圖視覺。
+
+## 7. 網路架構 (Networking)
 * 使用 Socket.IO 進行即時雙向通訊。
 * 伺服器 (Server) 負責維護所有遊戲房間的狀態 (GameState)，並根據 `Game Tick` 的頻率更新 AP 與處理自動戰鬥邏輯。
 * 所有的擲骰、技能結算、傷害計算皆在伺服器端進行，確保遊戲公平性。

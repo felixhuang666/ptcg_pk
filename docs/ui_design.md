@@ -19,6 +19,15 @@ The UI for "Monster Battle" is designed to be modern, dark-themed, and fully res
 - **Center**: Large arena with animated monster SVGs and log window overlay.
 - **Bottom**: Full-width control panel for skills and dice.
 
+### 2.3 RPG Map Editor View
+The RPG Map Editor features a specialized, highly interactive interface for map creation:
+- **Top Bar**: Provides global controls including Map Selection, Grid Toggle, Info Toggle, Mode Switch (Draw/Move), Layer Selection (`Base`, `Decor`, `Obs`, `ObjCol`, `ObjEvt`, `Top`), Eraser, Undo/Redo, Save, and Generate Map.
+- **Left Sidebar (Tilesets)**: Displays the active tileset and provides a grid to select specific tiles for painting. It also displays predefined logical IDs (e.g., Wall, Empty) when editing logical layers.
+- **Center Canvas**: The main interactive grid powered by Phaser for painting and manipulating the map.
+- **Right Sidebar (Details & Settings)**:
+  - *Tile Details*: Displays detailed metadata about the currently selected tile (ID, Source Image, Coordinates, Tags).
+  - *Advanced Settings*: Provides tools to Rename the map, Resize dimensions (width/height), and modify block sizes.
+
 ## 3. Visual Elements
 
 ### 3.1 Color Palette
