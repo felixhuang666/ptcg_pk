@@ -17,4 +17,5 @@ backend/*.pyc
 backend/*.pyo
 tmp
 users/[0-9]*.json
-playwright-report/index.html
+playwright-report/
+test-results/
