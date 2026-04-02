@@ -42,7 +42,7 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
       private npcs: Record<string, Phaser.Physics.Arcade.Sprite> = {};
       private nameTags: Record<string, Phaser.GameObjects.Text> = {};
       private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-      private currentTileType: number = 1; // 2=grass, 48=water, 94=mountain
+      private currentTileType: number = 0;
       public currentEditLayer: 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer' = 'base';
       public isEraser: boolean = false;
       private isEditor: boolean = false;
@@ -87,7 +87,7 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
       private upgradeMapData(data: any) {
         if (!data.layers) {
           data.layers = {
-            base: data.tiles || Array(data.width * data.height).fill(2),
+            base: data.tiles || Array(data.width * data.height).fill(0),
             decorations: Array(data.width * data.height).fill(0),
             obstacles: Array(data.width * data.height).fill(0),
             objectCollides: data.objects ? data.objects.map((v: number) => Math.max(0, v)) : Array(data.width * data.height).fill(0),
@@ -166,7 +166,7 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
         const newLayers: Record<string, number[]> = {};
 
         for (const name of layerNames) {
-          newLayers[name] = Array(newW * newH).fill(name === 'base' ? 2 : 0);
+          newLayers[name] = Array(newW * newH).fill(0);
           for (let y = 0; y < Math.min(oldH, newH); y++) {
             for (let x = 0; x < Math.min(oldW, newW); x++) {
               newLayers[name][y * newW + x] = this.mapData.layers[name][y * oldW + x];
@@ -866,9 +866,7 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
       }
 
       setupEditorUI() {
-        this.input.keyboard!.on('keydown-ONE', () => { this.currentTileType = 0; });
-        this.input.keyboard!.on('keydown-TWO', () => { this.currentTileType = 48; });
-        this.input.keyboard!.on('keydown-THREE', () => { this.currentTileType = 94; });
+        // No longer using hardcoded keyboard shortcuts for tiles
       }
 
       updateSelectorText() {
@@ -1123,7 +1121,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [mapsList, setMapsList] = useState<{ id: string, name: string }[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
-  const [selectedTile, setSelectedTile] = useState<number>(2);
+  const [selectedTile, setSelectedTile] = useState<number>(0);
   type MapLayer = 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer';
   const [editLayer, setEditLayer] = useState<MapLayer>('base');
   const [isEraser, setIsEraser] = useState<boolean>(false);
@@ -1265,13 +1263,6 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
       console.error(err);
       alert('Error saving map');
     }
-  };
-
-  const getTileName = (id: number) => {
-    if (id === 2) return 'Grass';
-    if (id === 48) return 'Water';
-    if (id === 94) return 'Mountain';
-    return 'Unknown';
   };
 
   useEffect(() => {
@@ -1733,7 +1724,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                         block_width: blockWidth,
                         block_height: blockHeight,
                         layers: {
-                          base: Array(resizeWidth * resizeHeight).fill(2),
+                          base: Array(resizeWidth * resizeHeight).fill(0),
                           decorations: Array(resizeWidth * resizeHeight).fill(0),
                           obstacles: Array(resizeWidth * resizeHeight).fill(0),
                           objectCollides: Array(resizeWidth * resizeHeight).fill(0),
