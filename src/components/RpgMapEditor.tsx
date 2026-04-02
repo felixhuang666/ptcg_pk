@@ -1479,6 +1479,21 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
           </button>
 
           <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const searchParams = new URLSearchParams(window.location.search);
+                searchParams.set('view', 'RPG_SCENE_EDITOR');
+                window.location.search = searchParams.toString();
+              }
+            }}
+            className="p-2 bg-slate-700 text-purple-400 hover:text-purple-300 rounded-lg hover:bg-slate-600 transition-colors flex items-center justify-center group relative border border-purple-500/30"
+            title="場景編輯器"
+          >
+            <span className="font-bold text-xs whitespace-nowrap">Scene</span>
+            <span className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">場景編輯器</span>
+          </button>
+
+          <button
             onClick={() => setShowLeftSidebar(!showLeftSidebar)}
             className={`p-2 transition-colors rounded-lg group relative ${showLeftSidebar ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600'}`}
             title="Toggle Left Sidebar"

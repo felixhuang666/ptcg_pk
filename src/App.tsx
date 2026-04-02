@@ -10,6 +10,8 @@ import BossSelect from './components/BossSelect';
 import Admin from './components/Admin';
 import RpgMode from './components/RpgMode';
 import RoleSetting from './components/RoleSetting';
+import RpgSceneEditor from './components/RpgSceneEditor';
+import RpgMapEditor from './components/RpgMapEditor';
 import { useAppStore } from './store/appStore';
 import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
 import { TeamConfig } from './shared/types';
@@ -19,7 +21,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING'>(() => {
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR'>(() => {
     const match = document.cookie.match(/(?:^|;\s*)last_view=([^;]*)/);
     return match && match[1] === 'RPG_MODE' ? 'RPG_MODE' : 'MENU';
   });
@@ -205,6 +207,14 @@ export default function App() {
     return <RoleSetting onBack={() => setView('MENU')} />;
   }
 
+  if (view === 'RPG_SCENE_EDITOR') {
+    return <RpgSceneEditor onBack={() => setView('MENU')} />;
+  }
+
+  if (view === 'RPG_MAP_EDITOR') {
+    return <RpgMapEditor onBack={() => setView('MENU')} />;
+  }
+
   const handleJoinPrivate = () => {
     if (roomCode.trim()) {
       handleStartBattle('BATTLE_PRIVATE');
@@ -214,6 +224,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8 relative">
       <div className="absolute top-4 right-4 flex items-center gap-4 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
+        <button
+          onClick={() => setView('RPG_MAP_EDITOR')}
+          className="text-sm text-blue-400 hover:text-blue-300 font-bold mr-2 border border-blue-400 px-2 py-1 rounded"
+          title="RPG 地圖編輯器"
+        >
+          地圖編輯器
+        </button>
+        <button
+          onClick={() => setView('RPG_SCENE_EDITOR')}
+          className="text-sm text-purple-400 hover:text-purple-300 font-bold mr-4 border border-purple-400 px-2 py-1 rounded"
+          title="RPG 場景編輯器"
+        >
+          場景編輯器
+        </button>
         <img src={user.picture} alt="Avatar" className="w-8 h-8 rounded-full" />
         <span className="text-sm font-medium">{user.name}</span>
         <button onClick={handleLogout} className="text-sm text-red-400 hover:text-red-300 font-bold ml-2">登出</button>

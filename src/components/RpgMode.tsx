@@ -1410,6 +1410,35 @@ export default function RpgMode({ onBack }: RpgModeProps) {
 
         <div className="flex items-center gap-4">
           <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const searchParams = new URLSearchParams(window.location.search);
+                searchParams.set('view', 'RPG_MAP_EDITOR');
+                window.location.search = searchParams.toString();
+              }
+            }}
+            className="p-2 bg-slate-700 text-blue-400 hover:text-blue-300 rounded-lg hover:bg-slate-600 transition-colors flex items-center justify-center group relative border border-blue-500/30"
+            title="地圖編輯器"
+          >
+            <span className="font-bold text-xs whitespace-nowrap">Map</span>
+            <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">獨立地圖編輯器</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const searchParams = new URLSearchParams(window.location.search);
+                searchParams.set('view', 'RPG_SCENE_EDITOR');
+                window.location.search = searchParams.toString();
+              }
+            }}
+            className="p-2 bg-slate-700 text-purple-400 hover:text-purple-300 rounded-lg hover:bg-slate-600 transition-colors flex items-center justify-center group relative border border-purple-500/30"
+            title="場景編輯器"
+          >
+            <span className="font-bold text-xs whitespace-nowrap">Scene</span>
+            <span className="absolute right-full mr-2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none">場景編輯器</span>
+          </button>
+          <button
             onClick={toggleFullscreen}
             className="p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-700 group relative"
             title={isFullscreenActive ? "退出全螢幕" : "進入全螢幕"}

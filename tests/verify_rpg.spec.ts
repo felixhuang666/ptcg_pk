@@ -34,7 +34,8 @@ test('verify RPG mode and Map Editor rendering', async ({ page }) => {
   // Switch to Map Editor
   await page.waitForSelector('button[title="設定"]', { timeout: 10000 });
   await page.click('button[title="設定"]');
-  await page.click('text=地圖編輯');
+  // Handle potentially multiple "地圖編輯" texts by selecting the button specifically
+  await page.click('button:has-text("地圖編輯")');
 
   // Verify Map Editor renders
   // RpgMapEditor also uses a canvas
