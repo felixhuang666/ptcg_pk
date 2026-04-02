@@ -286,6 +286,8 @@ async def save_map(request: Request):
         "map_data": map_data
     }
     from .socket_app import sio
+    # Send the updated payload with map_id
+    await sio.emit("map_updated_v2", {"map_id": map_id, "map_data": map_data})
     # Support old payload for legacy clients
     await sio.emit("map_updated", map_data)
     return {"success": True, "id": map_id, "name": map_name}
@@ -371,6 +373,8 @@ async def generate_map(request: Request):
     }
 
     from .socket_app import sio
+    await sio.emit("map_updated_v2", {"map_id": map_id, "map_data": map_data})
+    # legacy
     await sio.emit("map_updated", map_data)
 
     return {"success": True, "id": map_id, "name": name, "map_data": map_data}

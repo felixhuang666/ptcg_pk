@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles, Maximize, Minimize } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles, Maximize, Minimize, Info } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -16,7 +16,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', mapName: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
+function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady, showInfoOverlay }: { key?: React.Key, mode: 'play' | 'edit', mapName: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void, showInfoOverlay?: boolean }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const infoTextRef = useRef<HTMLDivElement>(null);
   const mainSceneRef = useRef<any>(null);
@@ -65,6 +65,8 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       public editorMode: 'draw' | 'move' = 'draw';
       private panStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private camStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
+      private initialZoomDistance: number = 0;
+      private initialZoom: number = 1;
       private tilemap: Phaser.Tilemaps.Tilemap | null = null;
       private tileset: Phaser.Tilemaps.Tileset | null = null;
       private baseLayer: Phaser.Tilemaps.TilemapLayer | null = null;
@@ -76,13 +78,28 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
+      public currentMapId: string = 'main_200';
 
       constructor() {
         super('MainScene');
       }
 
+      private upgradeMapData(data: any) {
+        if (!data.layers) {
+          data.layers = {
+            base: data.tiles || Array(data.width * data.height).fill(2),
+            decorations: Array(data.width * data.height).fill(0),
+            obstacles: Array(data.width * data.height).fill(0),
+            objectCollides: data.objects ? data.objects.map((v: number) => Math.max(0, v)) : Array(data.width * data.height).fill(0),
+            objectEvent: Array(data.width * data.height).fill(0),
+            topLayer: Array(data.width * data.height).fill(0),
+          };
+        }
+      }
+
       init(data: any) {
         this.isEditor = data.mode === 'edit';
+        this.currentMapId = data.currentMapId || 'main_200';
         mainSceneRef.current = this;
         (window as any).__PHASER_MAIN_SCENE__ = this;
       }
@@ -166,21 +183,9 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
         this.renderMap();
       }
 
-      private upgradeMapData(data: any) {
-        if (!data.layers) {
-          data.layers = {
-            base: data.tiles || Array(data.width * data.height).fill(2),
-            decorations: Array(data.width * data.height).fill(0),
-            obstacles: Array(data.width * data.height).fill(0),
-            objectCollides: data.objects ? data.objects.map((v: number) => Math.max(0, v)) : Array(data.width * data.height).fill(0),
-            objectEvent: Array(data.width * data.height).fill(0),
-            topLayer: Array(data.width * data.height).fill(0),
-          };
-        }
-      }
-
       public async loadNewMap(id: string) {
         try {
+          this.currentMapId = id;
           const res = await fetch(`/api/map?id=${id}`);
           if (res.ok) {
             const data = await res.json();
@@ -283,7 +288,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
         this.cursors = this.input.keyboard!.createCursorKeys();
 
         try {
-          const res = await fetch('/api/map');
+          const res = await fetch(`/api/map?id=${this.currentMapId}`);
           if (!res.ok) throw new Error('Failed to fetch map');
           const data = await res.json();
           this.mapData = data.map_data ? data.map_data : data;
@@ -305,7 +310,34 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           this.renderMap();
           this.setupEditorUI();
 
+          const performZoom = (newZoom: number, pointerX: number, pointerY: number) => {
+            if (this.cameras.main.zoom === newZoom) return;
+            const worldPoint = this.cameras.main.getWorldPoint(pointerX, pointerY);
+
+            this.cameras.main.setZoom(newZoom);
+
+            const newWorldPoint = this.cameras.main.getWorldPoint(pointerX, pointerY);
+            this.cameras.main.scrollX -= newWorldPoint.x - worldPoint.x;
+            this.cameras.main.scrollY -= newWorldPoint.y - worldPoint.y;
+          };
+
+          this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any, deltaX: number, deltaY: number) => {
+            if (pointer.y >= this.scale.height - 80) return; // Editor UI bounds check
+            let newZoom = this.cameras.main.zoom - deltaY * 0.001;
+            newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
+            performZoom(newZoom, pointer.x, pointer.y);
+          });
+
           this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            if (this.input.pointer1.isDown && this.input.pointer2.isDown) {
+              this.initialZoomDistance = Phaser.Math.Distance.Between(
+                this.input.pointer1.x, this.input.pointer1.y,
+                this.input.pointer2.x, this.input.pointer2.y
+              );
+              this.initialZoom = this.cameras.main.zoom;
+              return;
+            }
+
             if (this.editorMode === 'move' || pointer.middleButtonDown() || pointer.rightButtonDown()) {
               this.isPanning = true;
               this.panStart.set(pointer.x, pointer.y);
@@ -320,21 +352,42 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           });
 
           this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-            if (this.isPanning && (this.editorMode === 'move' || pointer.middleButtonDown() || pointer.rightButtonDown())) {
-              const dx = pointer.x - this.panStart.x;
-              const dy = pointer.y - this.panStart.y;
-              this.cameras.main.scrollX = this.camStart.x - dx;
-              this.cameras.main.scrollY = this.camStart.y - dy;
+            if (this.input.pointer1.isDown && this.input.pointer2.isDown) {
+              const currentDistance = Phaser.Math.Distance.Between(
+                this.input.pointer1.x, this.input.pointer1.y,
+                this.input.pointer2.x, this.input.pointer2.y
+              );
+
+              if (this.initialZoomDistance > 0) {
+                const zoomFactor = currentDistance / this.initialZoomDistance;
+                let newZoom = this.initialZoom * zoomFactor;
+                newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
+
+                const midX = (this.input.pointer1.x + this.input.pointer2.x) / 2;
+                const midY = (this.input.pointer1.y + this.input.pointer2.y) / 2;
+                performZoom(newZoom, midX, midY);
+              }
               return;
             }
 
-            if (this.editorMode === 'draw' && pointer.isDown && !pointer.middleButtonDown() && !pointer.rightButtonDown()) {
+            if (this.isPanning && (this.editorMode === 'move' || pointer.middleButtonDown() || pointer.rightButtonDown())) {
+              const dx = pointer.x - this.panStart.x;
+              const dy = pointer.y - this.panStart.y;
+              this.cameras.main.scrollX = this.camStart.x - dx / this.cameras.main.zoom;
+              this.cameras.main.scrollY = this.camStart.y - dy / this.cameras.main.zoom;
+              return;
+            }
+
+            if (this.editorMode === 'draw' && pointer.isDown && !pointer.middleButtonDown() && !pointer.rightButtonDown() && !this.input.pointer2.isDown) {
               this.handlePointerDown(pointer);
             }
           });
 
           this.input.on('pointerup', () => {
             this.isPanning = false;
+            if (!this.input.pointer1.isDown || !this.input.pointer2.isDown) {
+              this.initialZoomDistance = 0;
+            }
           });
 
         } else {
@@ -532,10 +585,23 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           this.input.keyboard!.on('keydown-SPACE', () => this.triggerAttack());
         }
 
-        socket.on('map_updated', (newMapData: any) => {
+        socket.on('map_updated_v2', (payload: any) => {
           if (isDestroyed || !this.sys || !this.sys.game) return;
-          this.mapData = newMapData;
-          this.renderMap();
+          if (payload.map_id && payload.map_id === this.currentMapId) {
+            this.mapData = payload.map_data;
+            this.upgradeMapData(this.mapData);
+            this.renderMap();
+          }
+        });
+
+        // fallback for legacy
+        socket.on('map_updated', (payload: any) => {
+          if (isDestroyed || !this.sys || !this.sys.game) return;
+          if (!payload.map_id && this.currentMapId === 'main_200') {
+            this.mapData = payload;
+            this.upgradeMapData(this.mapData);
+            this.renderMap();
+          }
         });
 
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
@@ -810,6 +876,8 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       }
 
       handlePointerDown(pointer: Phaser.Input.Pointer) {
+        if (this.input.pointer1.isDown && this.input.pointer2.isDown) return; // Ignore draw if multi-touch
+
         if (!this.mapData || !this.mapData.layers) return;
 
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
@@ -1013,7 +1081,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
     };
 
     phaserGameRef.current = new Phaser.Game(config);
-    phaserGameRef.current.scene.start('MainScene', { mode });
+    phaserGameRef.current.scene.start('MainScene', { mode, currentMapId });
 
     return () => {
       isDestroyed = true;
@@ -1031,7 +1099,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
     <div className="relative w-full h-full">
       <div ref={gameRef} className="w-full h-full flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl" />
       <div className="absolute inset-0 pointer-events-none rounded-lg overflow-hidden z-[1000]">
-        <div ref={infoTextRef} className="absolute top-2 left-2 bg-black/60 text-white text-sm px-2 py-1 rounded whitespace-pre text-left font-mono"></div>
+        <div ref={infoTextRef} className="absolute top-2 left-2 bg-black/60 text-white text-sm px-2 py-1 rounded whitespace-pre text-left font-mono" style={{ display: showInfoOverlay !== false ? 'block' : 'none' }}></div>
       </div>
     </div>
   );
@@ -1061,8 +1129,8 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [isEraser, setIsEraser] = useState<boolean>(false);
   const [resizeWidth, setResizeWidth] = useState<number>(40);
   const [resizeHeight, setResizeHeight] = useState<number>(40);
-  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
-  const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(window.innerWidth > 768);
+  const [showRightSidebar, setShowRightSidebar] = useState(window.innerWidth > 768);
   const [rightSidebarTab, setRightSidebarTab] = useState<'tileDetails' | 'advancedSettings'>('tileDetails');
   const [blockWidth, setBlockWidth] = useState<number>(32);
   const [blockHeight, setBlockHeight] = useState<number>(32);
@@ -1072,6 +1140,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [tilesets, setTilesets] = useState<any[]>([]);
   const [activeTileset, setActiveTileset] = useState<any>(null);
   const [selectedTileData, setSelectedTileData] = useState<any>(null);
+  const [showInfoOverlay, setShowInfoOverlay] = useState<boolean>(true);
 
   useEffect(() => {
     // Notify Phaser scene when grid settings change
@@ -1470,10 +1539,10 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
       <main className="flex-1 flex flex-col items-center justify-center p-4 relative w-full bg-slate-900">
 
 
-        <div className="flex-1 w-full flex flex-row gap-2 md:gap-4 min-h-0">
+        <div className="flex-1 w-full flex flex-row gap-2 md:gap-4 min-h-0 relative">
 
           {showLeftSidebar && (
-            <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
+            <div className="absolute md:relative z-[6000] left-0 md:left-auto h-full w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
               <div className="bg-slate-900 border-b border-slate-700 p-2 text-white font-bold text-center flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span>Tilesets</span>
@@ -1595,10 +1664,19 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setShowGrid(!showGrid)}
-                  className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 p-1 rounded transition-colors`}
+                  className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 p-1 rounded transition-colors group relative`}
                   title="Toggle Grid"
                 >
                   <Grid className="w-4 h-4 text-white" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Toggle Grid</span>
+                </button>
+                <button
+                  onClick={() => setShowInfoOverlay(!showInfoOverlay)}
+                  className={`${showInfoOverlay ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 p-1 rounded transition-colors group relative`}
+                  title="Toggle Info Overlay"
+                >
+                  <Info className="w-4 h-4 text-white" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Toggle Info Overlay</span>
                 </button>
                 <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
                   <button
@@ -1688,17 +1766,19 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                 key={mode}
                 mode={mode}
                 mapName={currentMapName}
+                currentMapId={currentMapId}
                 roleWalkSprite={selectedRole.role_walk_sprite}
                 roleAtkSprite={selectedRole.role_atk_sprite}
                 playerName={playerName}
                 onChatReceived={handleChatReceived}
                 onSocketReady={setSocketInstance}
+                showInfoOverlay={showInfoOverlay}
               />
             </div>
           </div>
 
           {showRightSidebar && (
-            <div className="w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
+            <div className="absolute md:relative z-[6000] right-0 md:right-auto h-full w-64 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col shrink-0">
               <div className="flex bg-slate-900 border-b border-slate-700">
                 <button
                   className={`flex-1 p-2 text-sm font-bold text-center transition-colors ${rightSidebarTab === 'tileDetails' ? 'text-white bg-slate-800 border-b-2 border-blue-500' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
