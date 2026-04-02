@@ -30,6 +30,32 @@
             "request": "launch",
             "url": "http://felix9977.mooo.com",
             "webRoot": "${workspaceFolder}/dist"
+        },
+        {
+            "name": "debug frontend-dev",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5000",
+            "webRoot": "${workspaceFolder}/src",
+            "sourceMapPathOverrides": {
+                "webpack:///src/*": "${webRoot}/*"
+            }
+        },
+        {
+            "name": "debug backend-dev",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "backend.main:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "5001",
+                "--reload"
+            ],
+            "jinja": true,
+            "justMyCode": true
         }
     ]
 }
