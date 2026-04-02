@@ -486,6 +486,25 @@ async def delete_npc(npc_id: str):
     await sio.emit("npc_deleted", {"id": npc_id})
     return {"success": True}
 
+@app.delete("/api/map/{map_id}")
+async def delete_map(map_id: str):
+    global in_memory_maps
+    if map_id in in_memory_maps:
+        del in_memory_maps[map_id]
+
+    try:
+        from supabase import create_async_client
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+        if supabase_url and supabase_key:
+            client = await create_async_client(supabase_url, supabase_key)
+            await client.table('maps').delete().eq('id', map_id).execute()
+    except Exception as e:
+        print(f"Supabase warning (deleting map): {e}")
+        return {"success": False, "error": str(e)}
+
+    return {"success": True}
+
 @app.get("/api/map/tilesets")
 async def get_map_tilesets():
     tilesets = []

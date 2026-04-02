@@ -16,9 +16,18 @@ async def test_real_generate_map():
         "width": 20,
         "height": 20
     }
-    async with httpx.AsyncClient() as ac:
-        response = await ac.post("http://localhost:5000/api/map/generate", json=gen_req)
-    assert response.status_code == 200
-    res_data = response.json()
-    assert res_data["success"] is True
-    assert "id" in res_data
+    gen_id = None
+    try:
+        async with httpx.AsyncClient() as ac:
+            response = await ac.post("http://localhost:5000/api/map/generate", json=gen_req)
+        assert response.status_code == 200
+        res_data = response.json()
+        assert res_data["success"] is True
+        assert "id" in res_data
+        gen_id = res_data["id"]
+    finally:
+        # Clean up generated map
+        if gen_id:
+            async with httpx.AsyncClient() as ac:
+                cleanup_resp = await ac.delete(f"http://localhost:5000/api/map/{gen_id}")
+            assert cleanup_resp.status_code == 200
