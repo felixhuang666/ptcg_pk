@@ -20,13 +20,19 @@ async def test_save_resized_map():
         }
     }
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        response = await ac.post("/api/map", json=resized_map)
-    assert response.status_code == 200
-    res_data = response.json()
-    assert res_data["success"] is True
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            response = await ac.post("/api/map", json=resized_map)
+        assert response.status_code == 200
+        res_data = response.json()
+        assert res_data["success"] is True
 
-    assert "test_map_resized" in in_memory_maps
-    saved_data = in_memory_maps["test_map_resized"]["map_data"]
-    assert saved_data["width"] == 15
-    assert len(saved_data["tiles"]) == 150
+        assert "test_map_resized" in in_memory_maps
+        saved_data = in_memory_maps["test_map_resized"]["map_data"]
+        assert saved_data["width"] == 15
+        assert len(saved_data["tiles"]) == 150
+    finally:
+        # Clean up test data
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            cleanup_resp = await ac.delete("/api/map/test_map_resized")
+        assert cleanup_resp.status_code == 200
