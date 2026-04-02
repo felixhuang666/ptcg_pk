@@ -21,7 +21,18 @@ export default defineConfig(({mode}) => {
       hmr: process.env.DISABLE_HMR !== 'true',
       allowedHosts: [
         "felix9977.mooo.com"
-      ]
+      ],
+      proxy: {
+        '/api': {
+          target: 'http://127.0.0.1:5001',
+          changeOrigin: true,
+        },
+        '/socket.io': {
+          target: 'http://127.0.0.1:5001',
+          changeOrigin: true,
+          ws: true,
+        },
+      },
     },
   };
 });

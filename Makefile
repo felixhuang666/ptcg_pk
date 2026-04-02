@@ -109,9 +109,26 @@ bg-start: stop
 run: stop
 	$(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5000 --reload
 
+start-frontend-dev:
+	npm run dev -- --port 5000
+
+start-backend-dev: stop
+	$(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5001 --reload
+
+bg-start-frontend-dev:
+	nohup npm run dev -- --port 5000 > frontend.log 2>&1 &
+	@echo "Frontend started. Logs in frontend.log"
+
+bg-start-backend-dev: stop
+	@echo "Starting Uvicorn in background..."
+	nohup $(PWD)/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5001 > uvicorn.log 2>&1 &
+	@echo "Uvicorn started. Logs in uvicorn.log"
+
 stop:
 	-ps -eo pid,cmd | grep 'port 5000' | grep -v grep && echo "  Killing old process ..."
 	-lsof -t -i :5000 | xargs -i kill {} 2>/dev/null || true
+	-ps -eo pid,cmd | grep 'port 5001' | grep -v grep && echo "  Killing old process ..."
+	-lsof -t -i :5001 | xargs -i kill {} 2>/dev/null || true
 	-if [ -f "$(SYSTEMD_DIR)/$(SERVICE_FILE)" ]; then \
 		sudo systemctl stop $(SERVICE_NAME) 2>/dev/null || true; \
 	fi
