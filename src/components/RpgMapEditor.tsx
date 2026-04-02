@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles, Maximize, Minimize } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles, Maximize, Minimize, Info } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -16,7 +16,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', mapName: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
+function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady, showInfoOverlay }: { key?: React.Key, mode: 'play' | 'edit', mapName: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void, showInfoOverlay?: boolean }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const infoTextRef = useRef<HTMLDivElement>(null);
   const mainSceneRef = useRef<any>(null);
@@ -1031,7 +1031,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
     <div className="relative w-full h-full">
       <div ref={gameRef} className="w-full h-full flex items-center justify-center bg-black rounded-lg overflow-hidden shadow-2xl" />
       <div className="absolute inset-0 pointer-events-none rounded-lg overflow-hidden z-[1000]">
-        <div ref={infoTextRef} className="absolute top-2 left-2 bg-black/60 text-white text-sm px-2 py-1 rounded whitespace-pre text-left font-mono"></div>
+        <div ref={infoTextRef} className="absolute top-2 left-2 bg-black/60 text-white text-sm px-2 py-1 rounded whitespace-pre text-left font-mono" style={{ display: showInfoOverlay !== false ? 'block' : 'none' }}></div>
       </div>
     </div>
   );
@@ -1072,6 +1072,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const [tilesets, setTilesets] = useState<any[]>([]);
   const [activeTileset, setActiveTileset] = useState<any>(null);
   const [selectedTileData, setSelectedTileData] = useState<any>(null);
+  const [showInfoOverlay, setShowInfoOverlay] = useState<boolean>(true);
 
   useEffect(() => {
     // Notify Phaser scene when grid settings change
@@ -1595,10 +1596,19 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setShowGrid(!showGrid)}
-                  className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 p-1 rounded transition-colors`}
+                  className={`${showGrid ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 p-1 rounded transition-colors group relative`}
                   title="Toggle Grid"
                 >
                   <Grid className="w-4 h-4 text-white" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Toggle Grid</span>
+                </button>
+                <button
+                  onClick={() => setShowInfoOverlay(!showInfoOverlay)}
+                  className={`${showInfoOverlay ? 'bg-indigo-600' : 'bg-slate-600'} hover:bg-indigo-500 p-1 rounded transition-colors group relative`}
+                  title="Toggle Info Overlay"
+                >
+                  <Info className="w-4 h-4 text-white" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Toggle Info Overlay</span>
                 </button>
                 <div className="flex items-center bg-slate-800 rounded px-2 py-1 text-xs text-white border border-slate-600 mr-2 gap-2">
                   <button
@@ -1693,6 +1703,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                 playerName={playerName}
                 onChatReceived={handleChatReceived}
                 onSocketReady={setSocketInstance}
+                showInfoOverlay={showInfoOverlay}
               />
             </div>
           </div>
