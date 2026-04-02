@@ -22,6 +22,16 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
 
   const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR'>(() => {
+    // Check URL parameters first
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlView = searchParams.get('view');
+      if (urlView === 'RPG_SCENE_EDITOR') return 'RPG_SCENE_EDITOR';
+      if (urlView === 'RPG_MAP_EDITOR') return 'RPG_MAP_EDITOR';
+      if (urlView === 'RPG_MODE') return 'RPG_MODE';
+    }
+
+    // Fallback to cookie
     const match = document.cookie.match(/(?:^|;\s*)last_view=([^;]*)/);
     return match && match[1] === 'RPG_MODE' ? 'RPG_MODE' : 'MENU';
   });

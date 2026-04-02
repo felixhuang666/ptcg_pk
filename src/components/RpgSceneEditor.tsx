@@ -2,6 +2,145 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight } from 'lucide-react';
 import Phaser from 'phaser';
 
+class SceneEditorPhaser extends Phaser.Scene {
+  private gridGraphics!: Phaser.GameObjects.Graphics;
+  private mapsContainer!: Phaser.GameObjects.Container;
+  private onSelect!: (item: any) => void;
+
+  constructor() {
+    super({ key: 'SceneEditorPhaser' });
+  }
+
+  init(data: any) {
+    this.onSelect = data.onSelect;
+    (window as any).__PHASER_SCENE_EDITOR__ = this;
+  }
+
+  create() {
+    this.cameras.main.setBackgroundColor('#1a1a1a');
+
+    // Draw Grid
+    const gridSize = 32;
+    this.gridGraphics = this.add.graphics();
+    this.gridGraphics.lineStyle(1, 0x444444, 0.5);
+    for (let x = -4000; x <= 4000; x += gridSize) {
+      this.gridGraphics.moveTo(x, -4000);
+      this.gridGraphics.lineTo(x, 4000);
+    }
+    for (let y = -4000; y <= 4000; y += gridSize) {
+      this.gridGraphics.moveTo(-4000, y);
+      this.gridGraphics.lineTo(4000, y);
+    }
+    this.gridGraphics.strokePath();
+
+    this.mapsContainer = this.add.container(0, 0);
+
+    // Zoom and Pan
+    this.input.on('wheel', (pointer: any, gameObjects: any, deltaX: number, deltaY: number, deltaZ: number) => {
+      let newZoom = this.cameras.main.zoom - (deltaY * 0.001);
+      newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
+      this.cameras.main.setZoom(newZoom);
+    });
+
+    let isPanning = false;
+    this.input.on('pointerdown', (pointer: any) => {
+      if (pointer.middleButtonDown() || this.input.keyboard?.checkDown(this.input.keyboard.addKey('SPACE'), 0)) {
+        isPanning = true;
+      }
+    });
+
+    this.input.on('pointerup', () => {
+      isPanning = false;
+    });
+
+    this.input.on('pointermove', (pointer: any) => {
+      if (isPanning && pointer.isDown) {
+        this.cameras.main.scrollX -= (pointer.x - pointer.prevPosition.x) / this.cameras.main.zoom;
+        this.cameras.main.scrollY -= (pointer.y - pointer.prevPosition.y) / this.cameras.main.zoom;
+      }
+    });
+  }
+
+  updateSceneData(sceneData: any) {
+    if (!this.mapsContainer) return;
+    this.mapsContainer.removeAll(true);
+
+    if (!sceneData || !sceneData.map_list) return;
+
+    sceneData.map_list.forEach((map: any) => {
+      const pxX = map.offset_position.x * 32;
+      const pxY = map.offset_position.y * 32;
+      const pxW = (map.map_size?.width || 20) * 32;
+      const pxH = (map.map_size?.height || 20) * 32;
+
+      const rect = this.add.rectangle(pxX + pxW/2, pxY + pxH/2, pxW, pxH, 0x00ff00, 0.2);
+      rect.setStrokeStyle(2, 0x00ff00);
+      rect.setInteractive();
+
+      rect.on('pointerdown', (pointer: any) => {
+        if (pointer.leftButtonDown()) {
+          this.onSelect({ type: 'map', ...map });
+        }
+      });
+
+      const text = this.add.text(pxX + 5, pxY + 5, map.map_id, { color: '#ffffff', fontSize: '16px' });
+
+      this.mapsContainer.add([rect, text]);
+    });
+  }
+}
+
+function PhaserGameComponent({ sceneData, onSelect }: { sceneData: any, onSelect: (item: any) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const gameRef = useRef<Phaser.Game | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || gameRef.current) return;
+
+    const config: Phaser.Types.Core.GameConfig = {
+      type: Phaser.AUTO,
+      parent: containerRef.current,
+      width: '100%',
+      height: '100%',
+      scene: [SceneEditorPhaser],
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+      },
+    };
+
+    gameRef.current = new Phaser.Game(config);
+
+    gameRef.current.events.on('ready', () => {
+      const scene = gameRef.current?.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
+      if (scene) {
+        scene.init({ onSelect });
+        if (sceneData) {
+          scene.updateSceneData(sceneData);
+        }
+      }
+    });
+
+    return () => {
+      if (gameRef.current) {
+        gameRef.current.destroy(true);
+        gameRef.current = null;
+      }
+      (window as any).__PHASER_SCENE_EDITOR__ = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
+      if (scene && scene.updateSceneData) {
+        scene.updateSceneData(sceneData);
+      }
+    }
+  }, [sceneData]);
+
+  return <div ref={containerRef} className="w-full h-full" />;
+}
+
 export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [scenes, setScenes] = useState<any[]>([]);
   const [currentSceneId, setCurrentSceneId] = useState<number | null>(null);
