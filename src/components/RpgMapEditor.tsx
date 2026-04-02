@@ -288,7 +288,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
         this.cursors = this.input.keyboard!.createCursorKeys();
 
         try {
-          const res = await fetch(`/api/map?id=${currentMapId}`);
+          const res = await fetch(`/api/map?id=${this.currentMapId}`);
           if (!res.ok) throw new Error('Failed to fetch map');
           const data = await res.json();
           this.mapData = data.map_data ? data.map_data : data;
