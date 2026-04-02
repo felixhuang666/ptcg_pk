@@ -104,6 +104,19 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
         (window as any).__PHASER_MAIN_SCENE__ = this;
       }
 
+      public updateBestZoom() {
+        if (this.isEditor || !this.player || isDestroyed || !this.sys || !this.sys.game) return;
+        const FOG_RADIUS = parseInt(import.meta.env.VITE_RPG_CAMERA_SIZE || '10', 10);
+        const visibleSize = 2 * FOG_RADIUS * 32;
+        const screenWidth = this.scale.width;
+        const screenHeight = this.scale.height;
+        const bestZoom = Math.min(screenWidth / visibleSize, screenHeight / visibleSize);
+        // Clamp it just in case, but keep maximum 10
+        const clampedZoom = Phaser.Math.Clamp(bestZoom, 0.1, 10);
+        this.cameras.main.setZoom(clampedZoom);
+        this.cameras.main.centerOn(this.player.x, this.player.y);
+      }
+
       preload() {
         this.load.image('player_img', `/assets/players/${roleWalkSprite}?t=${Date.now()}`);
         this.load.image('player_atk_img', `/assets/players/${roleAtkSprite}?t=${Date.now()}`);
@@ -235,7 +248,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
         this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any, deltaX: number, deltaY: number) => {
           if (pointer.y >= this.scale.height - 80 && this.isEditor) return; // Editor UI
           let newZoom = this.cameras.main.zoom - deltaY * 0.001;
-          newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
+          newZoom = Phaser.Math.Clamp(newZoom, 0.1, 10);
           performZoom(newZoom, pointer.x, pointer.y);
         });
 
@@ -265,7 +278,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
             if (this.initialZoomDistance > 0) {
               const zoomFactor = currentDistance / this.initialZoomDistance;
               let newZoom = this.initialZoom * zoomFactor;
-              newZoom = Phaser.Math.Clamp(newZoom, 0.1, 2);
+              newZoom = Phaser.Math.Clamp(newZoom, 0.1, 10);
 
               const midX = (this.input.pointer1.x + this.input.pointer2.x) / 2;
               const midY = (this.input.pointer1.y + this.input.pointer2.y) / 2;
@@ -346,6 +359,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
           this.player.setDepth(10);
 
           this.renderMap();
+          this.updateBestZoom();
 
           const addNameTag = (id: string, name: string, sprite: Phaser.Physics.Arcade.Sprite, isNpc: boolean = false) => {
             const color = isNpc ? '#fde047' : '#ffffff';
@@ -561,11 +575,8 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
             this.infoText.setPosition(width - 10, 10);
           }
 
-
-
           if (!this.isEditor && this.player) {
-            this.cameras.main.setZoom(1);
-            this.cameras.main.centerOn(this.player.x, this.player.y);
+            this.updateBestZoom();
             this.cameras.main.startFollow(this.player, true, 0.05, 0.05);
           }
 
@@ -574,6 +585,24 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
             // The old UI is at y=520, but we need to update it to use height
             // For now we'll just adjust the infoText. Editor UI will need more advanced repositioning if we care, but RpgMode edit isn't the main issue.
           }
+        });
+
+        // Also add orientation change listener for mobile browsers
+        const handleOrientationChange = () => {
+          if (isDestroyed) return;
+          setTimeout(() => {
+            if (this.scale && !isDestroyed) {
+              this.scale.refresh();
+              if (!this.isEditor) {
+                 this.updateBestZoom();
+              }
+            }
+          }, 300); // Wait for the browser to complete orientation change
+        };
+        window.addEventListener('orientationchange', handleOrientationChange);
+
+        this.events.on('destroy', () => {
+           window.removeEventListener('orientationchange', handleOrientationChange);
         });
       }
 
