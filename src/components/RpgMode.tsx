@@ -17,7 +17,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', currentMapId: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
+function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', currentMapId: string, initialPosX?: number, initialPosY?: number, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const infoTextRef = useRef<HTMLDivElement>(null);
   const mainSceneRef = useRef<any>(null);
@@ -101,6 +101,7 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
         this.isEditor = data.mode === 'edit';
         this.currentMapId = data.currentMapId || 'main_200';
         mainSceneRef.current = this;
+        (window as any).__PHASER_MAIN_SCENE__ = this;
       }
 
       preload() {
@@ -324,7 +325,9 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
           });
 
         } else {
-          this.player = this.physics.add.sprite(100, 100, 'player', 1);
+          const startX = initialPosX !== undefined ? initialPosX : 100;
+          const startY = initialPosY !== undefined ? initialPosY : 100;
+          this.player = this.physics.add.sprite(startX, startY, 'player', 1);
 
           if (this.textures.exists('player_img')) {
             const img = this.textures.get('player_img').getSourceImage() as HTMLImageElement | HTMLCanvasElement;
@@ -1121,8 +1124,33 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [tilesetsLoaded, setTilesetsLoaded] = useState(false);
+  const [initialPosX, setInitialPosX] = useState<number>(100);
+  const [initialPosY, setInitialPosY] = useState<number>(100);
+  const [locationLoaded, setLocationLoaded] = useState<boolean>(false);
 
   useEffect(() => {
+    // Load last player location
+    if (playerName !== 'Player') {
+      fetch('/api/user/location')
+        .then(res => {
+          if (res.ok) return res.json();
+          return null;
+        })
+        .then(data => {
+          if (data && data.map_id) {
+            setCurrentMapId(data.map_id);
+            if (data.pos_x !== null && data.pos_x !== undefined) setInitialPosX(data.pos_x);
+            if (data.pos_y !== null && data.pos_y !== undefined) setInitialPosY(data.pos_y);
+          }
+        })
+        .catch(err => console.error('Failed to load last location', err))
+        .finally(() => {
+          setLocationLoaded(true);
+        });
+    } else {
+      setLocationLoaded(true);
+    }
+
     // Load tilesets first to ensure proper rendering
     fetch('/api/map/tilesets')
       .then(res => res.json())
@@ -1269,6 +1297,54 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
 
   const [speechSupported, setSpeechSupported] = useState(false);
+
+  useEffect(() => {
+    let saveInterval: NodeJS.Timeout | null = null;
+
+    if (mode === 'play' && playerName !== 'Player') {
+      let lastSavedX = 0;
+      let lastSavedY = 0;
+      let lastSavedMapId = '';
+
+      saveInterval = setInterval(() => {
+        // Find the active MainScene using the global variable
+        const scene = (window as any).__PHASER_MAIN_SCENE__;
+        if (scene && scene.player) {
+          const currentX = Math.round(scene.player.x);
+          const currentY = Math.round(scene.player.y);
+          const currentMap = scene.currentMapId;
+
+          if (currentX !== lastSavedX || currentY !== lastSavedY || currentMap !== lastSavedMapId) {
+            // Location or map changed, save to backend
+            fetch('/api/user/location', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                map_id: currentMap,
+                pos_x: currentX,
+                pos_y: currentY
+              }),
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                lastSavedX = currentX;
+                lastSavedY = currentY;
+                lastSavedMapId = currentMap;
+              }
+            })
+            .catch(err => console.error('Failed to save location periodically', err));
+          }
+        }
+      }, 5000); // Check and save every 5 seconds
+    }
+
+    return () => {
+      if (saveInterval) clearInterval(saveInterval);
+    };
+  }, [mode, playerName]);
 
   useEffect(() => {
     // Check if browser supports speech recognition
@@ -1478,11 +1554,13 @@ export default function RpgMode({ onBack }: RpgModeProps) {
             </div>
 
             <div className="flex-1 relative min-h-0">
-            {playerName !== 'Player' && tilesetsLoaded && (
+            {playerName !== 'Player' && tilesetsLoaded && locationLoaded && (
               <PhaserGame
                 key={mode}
                 mode={mode}
                 currentMapId={currentMapId}
+                initialPosX={initialPosX}
+                initialPosY={initialPosY}
                 roleWalkSprite={selectedRole.role_walk_sprite}
                 roleAtkSprite={selectedRole.role_atk_sprite}
                 playerName={playerName}
@@ -1490,7 +1568,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 onSocketReady={setSocketInstance}
               />
             )}
-            {(!tilesetsLoaded || (playerName === 'Player' && mode === 'play')) && (
+            {(!tilesetsLoaded || !locationLoaded || (playerName === 'Player' && mode === 'play')) && (
               <div className="w-full h-full flex items-center justify-center bg-black">
                 <div className="text-white text-xl animate-pulse">載入中...</div>
               </div>
