@@ -6,9 +6,9 @@ This document tracks identified conflicts between original design specifications
 *   **Conflict**: The original `RpgMapEditor` design only defined two layers: a "Ground" layer (`tiles`) and an "Object" layer (`objects`). However, the implementation has since evolved to utilize a comprehensive 6-layer architecture (`base`, `decorations`, `obstacles`, `objectCollides`, `objectEvent`, `topLayer`).
 *   **Resolution**: Documentation across `docs/rpg_map_editor_design.md` and `docs/rpg_mode_design.md` has been updated to reflect the new 6-layer standard.
 
-## 2. Hardcoded Tiles vs. Dynamic Tilesets
+## 2. Hardcoded Tiles vs. Dynamic Tilesets (Resolved)
 *   **Conflict**: Early implementations of the map editor and RPG mode used hardcoded tile index assumptions (e.g., `2` for grass, `48` for water, `94` for mountain). The new system dynamically loads tileset metadata from `/api/map/tilesets` and maps index values to whatever tileset is currently active.
-*   **Resolution**: Hardcoded references have been minimized. The frontend now fetches the `__ACTIVE_TILESET__` global object and calculates tile source positions based on dynamic rows/columns and IDs.
+*   **Resolution**: Hardcoded visual tile references have been completely removed. The system now strictly relies on dynamic loading, with the only hardcoded exception being `id=0` to represent an "empty" tile. The frontend fetches the `__ACTIVE_TILESET__` global object and calculates tile source positions based on dynamic rows/columns and IDs.
 
 ## 3. Tile Index Base (0-based vs 1-based)
 *   **Conflict**: There is inconsistency regarding whether tile IDs are 0-based or 1-based.
