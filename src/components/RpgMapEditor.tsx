@@ -16,7 +16,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady, showInfoOverlay }: { key?: React.Key, mode: 'play' | 'edit', mapName: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void, showInfoOverlay?: boolean }) {
+function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady, showInfoOverlay }: { key?: React.Key, mode: 'play' | 'edit', currentMapId: string, mapName: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void, showInfoOverlay?: boolean }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const infoTextRef = useRef<HTMLDivElement>(null);
   const mainSceneRef = useRef<any>(null);
