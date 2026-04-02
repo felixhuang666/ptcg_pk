@@ -16,7 +16,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', mapName: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
+function PhaserGame({ mode, mapName, currentMapId, onMapSaved, roleWalkSprite, roleAtkSprite, playerName, onChatReceived, onSocketReady }: { key?: React.Key, mode: 'play' | 'edit', mapName: string, currentMapId: string, onMapSaved?: () => void, roleWalkSprite: string, roleAtkSprite: string, playerName: string, onChatReceived: (msg: ChatMessage) => void, onSocketReady: (socket: Socket) => void }) {
   const gameRef = useRef<HTMLDivElement>(null);
   const infoTextRef = useRef<HTMLDivElement>(null);
   const mainSceneRef = useRef<any>(null);
@@ -76,13 +76,28 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
+      public currentMapId: string = 'main_200';
 
       constructor() {
         super('MainScene');
       }
 
+      private upgradeMapData(data: any) {
+        if (!data.layers) {
+          data.layers = {
+            base: data.tiles || Array(data.width * data.height).fill(2),
+            decorations: Array(data.width * data.height).fill(0),
+            obstacles: Array(data.width * data.height).fill(0),
+            objectCollides: data.objects ? data.objects.map((v: number) => Math.max(0, v)) : Array(data.width * data.height).fill(0),
+            objectEvent: Array(data.width * data.height).fill(0),
+            topLayer: Array(data.width * data.height).fill(0),
+          };
+        }
+      }
+
       init(data: any) {
         this.isEditor = data.mode === 'edit';
+        this.currentMapId = data.currentMapId || 'main_200';
         mainSceneRef.current = this;
         (window as any).__PHASER_MAIN_SCENE__ = this;
       }
@@ -166,21 +181,9 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
         this.renderMap();
       }
 
-      private upgradeMapData(data: any) {
-        if (!data.layers) {
-          data.layers = {
-            base: data.tiles || Array(data.width * data.height).fill(2),
-            decorations: Array(data.width * data.height).fill(0),
-            obstacles: Array(data.width * data.height).fill(0),
-            objectCollides: data.objects ? data.objects.map((v: number) => Math.max(0, v)) : Array(data.width * data.height).fill(0),
-            objectEvent: Array(data.width * data.height).fill(0),
-            topLayer: Array(data.width * data.height).fill(0),
-          };
-        }
-      }
-
       public async loadNewMap(id: string) {
         try {
+          this.currentMapId = id;
           const res = await fetch(`/api/map?id=${id}`);
           if (res.ok) {
             const data = await res.json();
@@ -532,10 +535,23 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
           this.input.keyboard!.on('keydown-SPACE', () => this.triggerAttack());
         }
 
-        socket.on('map_updated', (newMapData: any) => {
+        socket.on('map_updated_v2', (payload: any) => {
           if (isDestroyed || !this.sys || !this.sys.game) return;
-          this.mapData = newMapData;
-          this.renderMap();
+          if (payload.map_id && payload.map_id === this.currentMapId) {
+            this.mapData = payload.map_data;
+            this.upgradeMapData(this.mapData);
+            this.renderMap();
+          }
+        });
+
+        // fallback for legacy
+        socket.on('map_updated', (payload: any) => {
+          if (isDestroyed || !this.sys || !this.sys.game) return;
+          if (!payload.map_id && this.currentMapId === 'main_200') {
+            this.mapData = payload;
+            this.upgradeMapData(this.mapData);
+            this.renderMap();
+          }
         });
 
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
@@ -1013,7 +1029,7 @@ function PhaserGame({ mode, mapName, onMapSaved, roleWalkSprite, roleAtkSprite, 
     };
 
     phaserGameRef.current = new Phaser.Game(config);
-    phaserGameRef.current.scene.start('MainScene', { mode });
+    phaserGameRef.current.scene.start('MainScene', { mode, currentMapId });
 
     return () => {
       isDestroyed = true;
@@ -1688,6 +1704,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                 key={mode}
                 mode={mode}
                 mapName={currentMapName}
+                currentMapId={currentMapId}
                 roleWalkSprite={selectedRole.role_walk_sprite}
                 roleAtkSprite={selectedRole.role_atk_sprite}
                 playerName={playerName}

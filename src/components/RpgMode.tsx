@@ -44,7 +44,7 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
       private nameTags: Record<string, Phaser.GameObjects.Text> = {};
       private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
       private currentTileType: number = 1; // 1=grass, 49=water, 95=mountain
-      public currentEditLayer: 'ground' | 'object' = 'ground';
+      public currentEditLayer: 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer' = 'base';
       public isEraser: boolean = false;
       private isEditor: boolean = false;
       private saveButton: Phaser.GameObjects.Text | null = null;
@@ -59,28 +59,47 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
       public actionMode: 'walk' | 'attack' = 'walk';
       private currentDirection: string = 'down';
       public attackButtonDown: boolean = false;
-      private undoStack: {tiles: number[], objects?: number[]}[] = [];
-      private redoStack: {tiles: number[], objects?: number[]}[] = [];
+      private undoStack: { layers?: Record<string, number[]>, tiles?: number[], objects?: number[] }[] = [];
+      private redoStack: { layers?: Record<string, number[]>, tiles?: number[], objects?: number[] }[] = [];
       private isPanning: boolean = false;
       private panStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private camStart: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
       private tilemap: Phaser.Tilemaps.Tilemap | null = null;
       private tileset: Phaser.Tilemaps.Tileset | null = null;
-      private layer: Phaser.Tilemaps.TilemapLayer | null = null;
-      private objectLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private baseLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private decorationsLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private obstaclesLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private objectCollidesLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private objectEventLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+      private topLayer: Phaser.Tilemaps.TilemapLayer | null = null;
       private infoText: Phaser.GameObjects.Text | null = null;
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
       private initialZoomDistance: number = 0;
       private initialZoom: number = 1;
       private fogGraphics: Phaser.GameObjects.Graphics | null = null;
+      public currentMapId: string = 'main_200';
 
       constructor() {
         super('MainScene');
       }
 
+      private upgradeMapData(data: any) {
+        if (!data.layers) {
+          data.layers = {
+            base: data.tiles || Array(data.width * data.height).fill(2),
+            decorations: Array(data.width * data.height).fill(0),
+            obstacles: Array(data.width * data.height).fill(0),
+            objectCollides: data.objects ? data.objects.map((v: number) => Math.max(0, v)) : Array(data.width * data.height).fill(0),
+            objectEvent: Array(data.width * data.height).fill(0),
+            topLayer: Array(data.width * data.height).fill(0),
+          };
+        }
+      }
+
       init(data: any) {
         this.isEditor = data.mode === 'edit';
+        this.currentMapId = data.currentMapId || 'main_200';
         mainSceneRef.current = this;
       }
 
@@ -185,9 +204,11 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
           if (!res.ok) throw new Error('Failed to fetch map');
           const data = await res.json();
           this.mapData = data.map_data ? data.map_data : data;
+          this.upgradeMapData(this.mapData);
         } catch (err) {
           console.error('Failed to load map', err);
           this.mapData = { width: 200, height: 200, tiles: Array(200 * 200).fill(0) };
+          this.upgradeMapData(this.mapData);
         }
 
         if (isDestroyed || !this.sys || !this.sys.game) return;
@@ -510,10 +531,23 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
           this.input.keyboard!.on('keydown-SPACE', () => this.triggerAttack());
         }
 
-        socket.on('map_updated', (newMapData: any) => {
+        socket.on('map_updated_v2', (payload: any) => {
           if (isDestroyed || !this.sys || !this.sys.game) return;
-          this.mapData = newMapData;
-          this.renderMap();
+          if (payload.map_id && payload.map_id === this.currentMapId) {
+            this.mapData = payload.map_data;
+            this.upgradeMapData(this.mapData);
+            this.renderMap();
+          }
+        });
+
+        // fallback for legacy
+        socket.on('map_updated', (payload: any) => {
+          if (isDestroyed || !this.sys || !this.sys.game) return;
+          if (!payload.map_id && this.currentMapId === 'main_200') {
+            this.mapData = payload;
+            this.upgradeMapData(this.mapData);
+            this.renderMap();
+          }
         });
 
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
@@ -661,10 +695,12 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
 
       public async loadNewMap(id: string) {
         try {
+          this.currentMapId = id;
           const res = await fetch(`/api/map?id=${id}`);
           if (res.ok) {
             const data = await res.json();
             this.mapData = data.map_data ? data.map_data : data;
+            this.upgradeMapData(this.mapData);
             this.renderMap();
           }
         } catch (err) {
@@ -693,51 +729,51 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
       }
 
       renderMap() {
-        if (!this.mapData) return;
+        if (!this.mapData || !this.mapData.layers) return;
 
-        const data2D: number[][] = [];
-        for (let y = 0; y < this.mapData.height; y++) {
-          const row: number[] = [];
-          for (let x = 0; x < this.mapData.width; x++) {
-            row.push(this.mapData.tiles[y * this.mapData.width + x]);
-          }
-          data2D.push(row);
-        }
+        if (this.baseLayer) this.baseLayer.destroy();
+        if (this.decorationsLayer) this.decorationsLayer.destroy();
+        if (this.obstaclesLayer) this.obstaclesLayer.destroy();
+        if (this.objectCollidesLayer) this.objectCollidesLayer.destroy();
+        if (this.objectEventLayer) this.objectEventLayer.destroy();
+        if (this.topLayer) this.topLayer.destroy();
+        if (this.tilemap) this.tilemap.destroy();
 
-        if (this.layer) {
-          this.layer.destroy();
-        }
-        if (this.objectLayer) {
-          this.objectLayer.destroy();
-        }
-        if (this.tilemap) {
-          this.tilemap.destroy();
-        }
-
-        this.tilemap = this.make.tilemap({ data: data2D, tileWidth: 32, tileHeight: 32 });
+        // Create an empty tilemap with the right dimensions
+        this.tilemap = this.make.tilemap({ width: this.mapData.width, height: this.mapData.height, tileWidth: 32, tileHeight: 32 });
 
         const setupLayers = () => {
           if (!this.tileset || !this.tilemap) return;
-          this.layer = this.tilemap.createLayer(0, this.tileset, 0, 0)!;
-          this.layer.setDepth(0);
-          this.layer.setCollision([2, 3]);
-          if (this.player) {
-            this.physics.add.collider(this.player, this.layer);
-          }
 
-          // Create object layer
-          this.objectLayer = this.tilemap.createBlankLayer('object_layer', this.tileset, 0, 0)!;
-          this.objectLayer.setDepth(1);
-          if (this.mapData.objects) {
-            for (let y = 0; y < this.mapData.height; y++) {
-              for (let x = 0; x < this.mapData.width; x++) {
-                const objVal = this.mapData.objects[y * this.mapData.width + x];
-                if (objVal !== undefined && objVal !== -1) {
-                  this.objectLayer.putTileAt(objVal + 1, x, y);
+          const createLayer = (name: string, depth: number, collides: boolean) => {
+            const l = this.tilemap!.createBlankLayer(name, this.tileset!, 0, 0)!;
+            l.setDepth(depth);
+            const data = this.mapData.layers[name];
+            if (data) {
+              for (let y = 0; y < this.mapData.height; y++) {
+                for (let x = 0; x < this.mapData.width; x++) {
+                  const val = data[y * this.mapData.width + x];
+                  if (val !== undefined && val !== 0 && val !== -1) {
+                    l.putTileAt(name === 'base' || name === 'decorations' || name === 'topLayer' ? val : val, x, y);
+                  }
                 }
               }
             }
-          }
+            if (collides) {
+              l.setCollisionByExclusion([-1, 0]);
+              if (this.player) {
+                this.physics.add.collider(this.player, l);
+              }
+            }
+            return l;
+          };
+
+          this.baseLayer = createLayer('base', 0, false);
+          this.decorationsLayer = createLayer('decorations', 1, false);
+          this.obstaclesLayer = createLayer('obstacles', 2, true);
+          this.objectCollidesLayer = createLayer('objectCollides', 3, true);
+          this.objectEventLayer = createLayer('objectEvent', 4, false);
+          this.topLayer = createLayer('topLayer', 10, false);
         };
 
         // Dynamically load tileset if not loaded yet
@@ -896,7 +932,20 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
 
         if (!this.player || !this.cursors) return;
 
-        // Player top layer transparency omitted here since this mode is "先不處理, 我驗證地圖編輯模式後才來實作".
+        if (this.topLayer && this.mapData) {
+          const tileSize = 32;
+          const x = Math.floor(this.player.x / tileSize);
+          const y = Math.floor(this.player.y / tileSize);
+
+          if (x >= 0 && x < this.mapData.width && y >= 0 && y < this.mapData.height) {
+            const tile = this.topLayer.getTileAt(x, y);
+            if (tile && tile.index > 0) {
+              this.topLayer.setAlpha(0.5);
+            } else {
+              this.topLayer.setAlpha(1.0);
+            }
+          }
+        }
 
         if (!this.isAttacking && this.actionMode === 'attack') {
           if (this.cursors.space.isDown || this.attackButtonDown) {
@@ -1004,7 +1053,7 @@ function PhaserGame({ mode, currentMapId, onMapSaved, roleWalkSprite, roleAtkSpr
     };
 
     phaserGameRef.current = new Phaser.Game(config);
-    phaserGameRef.current.scene.start('MainScene', { mode });
+    phaserGameRef.current.scene.start('MainScene', { mode, currentMapId });
 
     return () => {
       isDestroyed = true;
