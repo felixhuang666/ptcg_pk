@@ -235,7 +235,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
           const worldPoint = this.cameras.main.getWorldPoint(pointerX, pointerY);
 
           if (!this.isEditor) {
-             this.cameras.main.stopFollow();
+            this.cameras.main.stopFollow();
           }
 
           this.cameras.main.setZoom(newZoom);
@@ -600,7 +600,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
             if (this.scale && !isDestroyed) {
               this.scale.refresh();
               if (!this.isEditor) {
-                 this.updateBestZoom();
+                this.updateBestZoom();
               }
             }
           }, 300); // Wait for the browser to complete orientation change
@@ -608,7 +608,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
         window.addEventListener('orientationchange', handleOrientationChange);
 
         this.events.on('destroy', () => {
-           window.removeEventListener('orientationchange', handleOrientationChange);
+          window.removeEventListener('orientationchange', handleOrientationChange);
         });
       }
 
@@ -1155,7 +1155,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [isFullscreenActive, setIsFullscreenActive] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const [mapsList, setMapsList] = useState<{id: string, name: string}[]>([]);
+  const [mapsList, setMapsList] = useState<{ id: string, name: string }[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [tilesetsLoaded, setTilesetsLoaded] = useState(false);
@@ -1362,15 +1362,15 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 pos_y: currentY
               }),
             })
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                lastSavedX = currentX;
-                lastSavedY = currentY;
-                lastSavedMapId = currentMap;
-              }
-            })
-            .catch(err => console.error('Failed to save location periodically', err));
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  lastSavedX = currentX;
+                  lastSavedY = currentY;
+                  lastSavedMapId = currentMap;
+                }
+              })
+              .catch(err => console.error('Failed to save location periodically', err));
           }
         }
       }, 5000); // Check and save every 5 seconds
@@ -1618,25 +1618,25 @@ export default function RpgMode({ onBack }: RpgModeProps) {
             </div>
 
             <div className="flex-1 relative min-h-0">
-            {playerName !== 'Player' && tilesetsLoaded && locationLoaded && (
-              <PhaserGame
-                key={mode}
-                mode={mode}
-                currentMapId={currentMapId}
-                initialPosX={initialPosX}
-                initialPosY={initialPosY}
-                roleWalkSprite={selectedRole.role_walk_sprite}
-                roleAtkSprite={selectedRole.role_atk_sprite}
-                playerName={playerName}
-                onChatReceived={handleChatReceived}
-                onSocketReady={setSocketInstance}
-              />
-            )}
-            {(!tilesetsLoaded || !locationLoaded || (playerName === 'Player' && mode === 'play')) && (
-              <div className="w-full h-full flex items-center justify-center bg-black">
-                <div className="text-white text-xl animate-pulse">載入中...</div>
-              </div>
-            )}
+              {playerName !== 'Player' && tilesetsLoaded && locationLoaded && (
+                <PhaserGame
+                  key={mode}
+                  mode={mode}
+                  currentMapId={currentMapId}
+                  initialPosX={initialPosX}
+                  initialPosY={initialPosY}
+                  roleWalkSprite={selectedRole.role_walk_sprite}
+                  roleAtkSprite={selectedRole.role_atk_sprite}
+                  playerName={playerName}
+                  onChatReceived={handleChatReceived}
+                  onSocketReady={setSocketInstance}
+                />
+              )}
+              {(!tilesetsLoaded || !locationLoaded || (playerName === 'Player' && mode === 'play')) && (
+                <div className="w-full h-full flex items-center justify-center bg-black">
+                  <div className="text-white text-xl animate-pulse">載入中...</div>
+                </div>
+              )}
             </div>
           </div>
         </div>

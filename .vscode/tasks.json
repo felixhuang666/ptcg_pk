@@ -52,6 +52,32 @@
                 "clear": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "backend-dev",
+            "type": "shell",
+            "command": "make start-backend-dev",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "group": "HMR",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "frontend-dev",
+            "type": "shell",
+            "command": "make proxy start-frontend-dev",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "group": "HMR",
+                "clear": true
+            },
+            "problemMatcher": []
         }
     ]
 }
