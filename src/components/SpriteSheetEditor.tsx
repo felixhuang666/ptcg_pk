@@ -31,11 +31,27 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
+  // Panning logic
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+
   const tileW = parseInt(tileSize.split('x')[0]);
   const tileH = parseInt(tileSize.split('x')[1]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!imgRef.current) return;
+
+    // Right click for panning
+    if (e.button === 2) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+      return;
+    }
+
+    // Left click for cropping
+    if (e.button !== 0) return;
+
     const rect = imgRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
@@ -64,6 +80,14 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning) {
+      setPan({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+      return;
+    }
+
     if (!isDragging || !imgRef.current) return;
 
     const rect = imgRef.current.getBoundingClientRect();
@@ -93,8 +117,14 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
     setCropPos({ x, y });
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (e.button === 2) setIsPanning(false);
+    if (e.button === 0) setIsDragging(false);
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent) => {
     setIsDragging(false);
+    setIsPanning(false);
   };
 
   useEffect(() => {
@@ -339,121 +369,186 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-slate-200">
-      {/* Toolbar */}
-      <div className="h-14 border-b border-slate-700 bg-slate-800 flex items-center px-4 justify-between shrink-0">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm font-medium transition-colors"
-          >
-            返回
-          </button>
-          <h2 className="text-lg font-bold text-white">Sprite Sheet Editor</h2>
+      {/* Toolbar - Two Rows */}
+      <div className="border-b border-slate-700 bg-slate-800 flex flex-col shrink-0">
 
-          <div className="h-6 w-px bg-slate-600 mx-2"></div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-400">Tile Size:</span>
-            <select
-              value={tileSize}
-              onChange={(e) => setTileSize(e.target.value)}
-              className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
-            >
-              <option value="32x32">32x32</option>
-              <option value="64x64">64x64</option>
-              <option value="32x64">32x64</option>
-              <option value="64x32">64x32</option>
-            </select>
-          </div>
-
-          <div className="h-6 w-px bg-slate-600 mx-2"></div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-400">Output Name:</span>
-            <input
-              type="text"
-              value={outputName}
-              onChange={(e) => setOutputName(e.target.value)}
-              className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm w-40 focus:outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div className="h-6 w-px bg-slate-600 mx-2"></div>
-
-          {/* Advanced Toolbar Controls */}
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1 text-sm text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={manualCrop}
-                onChange={(e) => setManualCrop(e.target.checked)}
-                className="rounded border-slate-700 bg-slate-900"
-              />
-              Manual Crop
-            </label>
-
+        {/* Top Row */}
+        <div className="flex items-center px-4 h-14 justify-between border-b border-slate-700/50">
+          <div className="flex items-center gap-4">
             <button
-              onClick={() => setShowGrid(!showGrid)}
-              className={`p-1 rounded ${showGrid ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-slate-200'}`}
-              title="Toggle Grid Overlay"
+              onClick={onBack}
+              className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm font-medium transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+              返回
             </button>
+            <h2 className="text-lg font-bold text-white">Sprite Sheet Editor</h2>
 
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <span>Offset:</span>
-              <input type="number" value={offsetX} onChange={e => setOffsetX(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Offset X" />
-              <input type="number" value={offsetY} onChange={e => setOffsetY(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Offset Y" />
+            <div className="h-6 w-px bg-slate-600 mx-2"></div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-400">Tile Size:</span>
+              <select
+                value={tileSize}
+                onChange={(e) => setTileSize(e.target.value)}
+                className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+              >
+                <option value="32x32">32x32</option>
+                <option value="64x64">64x64</option>
+                <option value="32x64">32x64</option>
+                <option value="64x32">64x32</option>
+              </select>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <span>Gap:</span>
-              <input type="number" value={gapX} onChange={e => setGapX(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Gap X" />
-              <input type="number" value={gapY} onChange={e => setGapY(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Gap Y" />
+            <div className="h-6 w-px bg-slate-600 mx-2"></div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-400">Output Name:</span>
+              <input
+                type="text"
+                value={outputName}
+                onChange={(e) => setOutputName(e.target.value)}
+                className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm w-40 focus:outline-none focus:border-blue-500"
+              />
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <span>Zoom: {Math.round(zoom * 100)}%</span>
+            <div className="h-6 w-px bg-slate-600 mx-2"></div>
+
+            {/* Advanced Toolbar Controls (Top Row part) */}
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1 text-sm text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={manualCrop}
+                  onChange={(e) => setManualCrop(e.target.checked)}
+                  className="rounded border-slate-700 bg-slate-900"
+                />
+                Manual Crop
+              </label>
+
+              <button
+                onClick={() => setShowGrid(!showGrid)}
+                className={`p-1 rounded ${showGrid ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-slate-200'}`}
+                title="Toggle Grid Overlay"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+              </button>
+
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <span>Offset:</span>
+                <input type="number" value={offsetX} onChange={e => setOffsetX(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Offset X" />
+                <input type="number" value={offsetY} onChange={e => setOffsetY(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Offset Y" />
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <span>Gap:</span>
+                <input type="number" value={gapX} onChange={e => setGapX(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Gap X" />
+                <input type="number" value={gapY} onChange={e => setGapY(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Gap Y" />
+              </div>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              <button
+                className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-sm font-medium transition-colors"
+                title="Load existing tileset"
+                onClick={handleLoadTilesetsList}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                Load
+              </button>
+              <div className="absolute right-0 top-full mt-1 w-48 bg-slate-800 border border-slate-600 rounded shadow-xl hidden group-hover:block z-50 overflow-hidden">
+                {availableTilesets.length === 0 ? (
+                  <div className="p-2 text-sm text-slate-400">No tilesets found</div>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto">
+                    {availableTilesets.map((ts: any) => (
+                      <div
+                        key={ts.name}
+                        className="px-3 py-2 text-sm text-slate-200 hover:bg-blue-600 cursor-pointer"
+                        onClick={() => loadExistingTileset(ts)}
+                      >
+                        {ts.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-medium transition-colors"
+              title="Save output to public/assets/map_tileset"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+              Save
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative group">
-            <button
-              className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-sm font-medium transition-colors"
-              title="Load existing tileset"
-              onClick={handleLoadTilesetsList}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-              Load
-            </button>
-            <div className="absolute right-0 top-full mt-1 w-48 bg-slate-800 border border-slate-600 rounded shadow-xl hidden group-hover:block z-50 overflow-hidden">
-              {availableTilesets.length === 0 ? (
-                <div className="p-2 text-sm text-slate-400">No tilesets found</div>
-              ) : (
-                <div className="max-h-60 overflow-y-auto">
-                  {availableTilesets.map((ts: any) => (
-                    <div
-                      key={ts.name}
-                      className="px-3 py-2 text-sm text-slate-200 hover:bg-blue-600 cursor-pointer"
-                      onClick={() => loadExistingTileset(ts)}
-                    >
-                      {ts.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+        {/* Bottom Row */}
+        <div className="flex items-center px-4 h-12 bg-slate-800 gap-4">
           <button
-            onClick={handleSave}
-            className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-medium transition-colors"
-            title="Save output to public/assets/map_tileset"
+            onClick={cropTile}
+            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold shadow transition-colors"
+            title="Hotkey: C"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-            Save
+            Crop Selection & Add to Queue
           </button>
+
+          <div className="h-6 w-px bg-slate-600"></div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">Scale Raw:</span>
+            <input type="number" value={scaleInputW} onChange={e => setScaleInputW(parseInt(e.target.value) || 0)} className="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" />
+            <span className="text-xs text-slate-400">x</span>
+            <input type="number" value={scaleInputH} onChange={e => setScaleInputH(parseInt(e.target.value) || 0)} className="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" />
+            <button onClick={handleScaleRawImage} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs rounded transition-colors border border-slate-600">Apply</button>
+            <button
+              onClick={() => setRawImages(prev => {
+                const newImages = [...prev];
+                const img = newImages[selectedRawImageIndex];
+                if (img.currentIndex > 0) {
+                  newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex - 1 };
+                  // update inputs
+                  const tempImg = new Image();
+                  tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
+                  tempImg.src = img.history[img.currentIndex - 1];
+                }
+                return newImages;
+              })}
+              disabled={selectedRawImageIndex < 0 || rawImages[selectedRawImageIndex]?.currentIndex <= 0}
+              className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs rounded transition-colors"
+              title="Undo Scale"
+            >
+              Undo
+            </button>
+            <button
+              onClick={() => setRawImages(prev => {
+                const newImages = [...prev];
+                const img = newImages[selectedRawImageIndex];
+                if (img.currentIndex < img.history.length - 1) {
+                  newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex + 1 };
+                  // update inputs
+                  const tempImg = new Image();
+                  tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
+                  tempImg.src = img.history[img.currentIndex + 1];
+                }
+                return newImages;
+              })}
+              disabled={selectedRawImageIndex < 0 || rawImages[selectedRawImageIndex]?.currentIndex >= (rawImages[selectedRawImageIndex]?.history.length || 0) - 1}
+              className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs rounded transition-colors"
+              title="Redo Scale"
+            >
+              Redo
+            </button>
+          </div>
+
+          <div className="h-6 w-px bg-slate-600"></div>
+
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <span>Zoom: {Math.round(zoom * 100)}%</span>
+          </div>
         </div>
       </div>
 
@@ -662,10 +757,11 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
         {/* Right Main Area (Cropping/Preview) */}
         <div
-          className="flex-1 bg-slate-900 relative overflow-auto p-8 flex flex-col items-center justify-center select-none"
+          className="flex-1 bg-slate-900 relative overflow-hidden p-8 flex flex-col items-center justify-center select-none"
           onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
           onMouseMove={handleMouseMove}
+          onContextMenu={(e) => e.preventDefault()}
           onWheel={(e) => {
             if (e.ctrlKey || e.metaKey || !manualCrop) {
               e.preventDefault();
@@ -677,64 +773,12 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
           }}
         >
           {selectedRawImageIndex >= 0 && rawImages[selectedRawImageIndex] ? (
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex gap-4 items-center bg-slate-800 p-2 rounded border border-slate-700">
-                <button
-                  onClick={cropTile}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold shadow transition-colors"
-                  title="Hotkey: C"
-                >
-                  Crop Selection & Add to Queue
-                </button>
-
-                <div className="h-6 w-px bg-slate-600"></div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">Scale:</span>
-                  <input type="number" value={scaleInputW} onChange={e => setScaleInputW(parseInt(e.target.value) || 0)} className="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" />
-                  <span className="text-xs text-slate-400">x</span>
-                  <input type="number" value={scaleInputH} onChange={e => setScaleInputH(parseInt(e.target.value) || 0)} className="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" />
-                  <button onClick={handleScaleRawImage} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs rounded transition-colors border border-slate-600">Apply</button>
-                  <button
-                    onClick={() => setRawImages(prev => {
-                      const newImages = [...prev];
-                      const img = newImages[selectedRawImageIndex];
-                      if (img.currentIndex > 0) {
-                        newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex - 1 };
-                        // update inputs
-                        const tempImg = new Image();
-                        tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
-                        tempImg.src = img.history[img.currentIndex - 1];
-                      }
-                      return newImages;
-                    })}
-                    disabled={rawImages[selectedRawImageIndex].currentIndex <= 0}
-                    className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs rounded transition-colors"
-                    title="Undo Scale"
-                  >
-                    Undo
-                  </button>
-                  <button
-                    onClick={() => setRawImages(prev => {
-                      const newImages = [...prev];
-                      const img = newImages[selectedRawImageIndex];
-                      if (img.currentIndex < img.history.length - 1) {
-                        newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex + 1 };
-                        // update inputs
-                        const tempImg = new Image();
-                        tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
-                        tempImg.src = img.history[img.currentIndex + 1];
-                      }
-                      return newImages;
-                    })}
-                    disabled={rawImages[selectedRawImageIndex].currentIndex >= rawImages[selectedRawImageIndex].history.length - 1}
-                    className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs rounded transition-colors"
-                    title="Redo Scale"
-                  >
-                    Redo
-                  </button>
-                </div>
-              </div>
+            <div className="flex flex-col items-center gap-4 absolute"
+                 style={{
+                   transform: `translate(${pan.x}px, ${pan.y}px)`,
+                   transition: isPanning ? 'none' : 'transform 0.1s ease-out'
+                 }}
+            >
               <div
                 className="relative inline-block border border-slate-700 shadow-2xl bg-black transform-origin-top-left"
                 style={{ transform: `scale(${zoom})` }}
