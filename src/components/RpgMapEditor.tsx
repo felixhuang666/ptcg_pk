@@ -1453,8 +1453,8 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   }, []);
 
   const selectedRole = roles.find(r => r.id === selectedRoleId) || {
-    role_walk_sprite: 'character.png',
-    role_atk_sprite: 'character_atk.png'
+    role_walk_sprite: 'yo.png',
+    role_atk_sprite: 'yo_atk.png'
   };
 
   const handleChatReceived = (msg: ChatMessage) => {
