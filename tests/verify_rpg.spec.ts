@@ -10,10 +10,10 @@ test('verify RPG mode and Map Editor rendering', async ({ page }) => {
   });
 
   // Go to main page
-  await page.goto('http://localhost:5000');
+  await page.goto('http://127.0.0.1:5000');
 
   // Login as tester
-  await page.goto('http://localhost:5000/auth/dev_login');
+  await page.goto('http://127.0.0.1:5000/auth/dev_login');
 
   // Wait for RPG mode button and click it
   await page.waitForSelector('text=RPG 模式', { timeout: 15000 });
@@ -49,10 +49,7 @@ test('verify RPG mode and Map Editor rendering', async ({ page }) => {
   const relevantErrors = consoleErrors.filter(err =>
     !err.includes('failed to load resource') &&
     !err.includes('404') &&
-    !err.includes('Failed to fetch') &&
-    !err.includes('Error checking auth') &&
-    !err.includes('WebSocket connection') &&
-    !err.includes('failed to connect to websocket')
+    !err.includes('Failed to fetch')
   );
   expect(relevantErrors).toEqual([]);
 });
