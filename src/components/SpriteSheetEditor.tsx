@@ -7,6 +7,8 @@ interface SpriteSheetEditorProps {
 export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   const [activeTab, setActiveTab] = useState<'RAW' | 'WORKING' | 'OUTPUT' | 'JSON'>('RAW');
   const [tileSize, setTileSize] = useState('32x32');
+  const [customTileW, setCustomTileW] = useState(32);
+  const [customTileH, setCustomTileH] = useState(32);
   const [outputName, setOutputName] = useState('new_tileset');
   const [rawImages, setRawImages] = useState<{ name: string, history: string[], currentIndex: number }[]>([]);
   const [selectedRawImageIndex, setSelectedRawImageIndex] = useState<number>(-1);
@@ -24,6 +26,8 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   const [gapY, setGapY] = useState(0);
   const [showGrid, setShowGrid] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [transparentColor, setTransparentColor] = useState('#ff00ff');
+  const [isColorPicking, setIsColorPicking] = useState(false);
 
   // Cropping logic
   const imgRef = useRef<HTMLImageElement>(null);
@@ -36,11 +40,31 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
-  const tileW = parseInt(tileSize.split('x')[0]);
-  const tileH = parseInt(tileSize.split('x')[1]);
+  const tileW = tileSize === 'customized' ? customTileW : parseInt(tileSize.split('x')[0]);
+  const tileH = tileSize === 'customized' ? customTileH : parseInt(tileSize.split('x')[1]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!imgRef.current) return;
+
+    const rect = imgRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
+
+    // Color picking logic
+    if (isColorPicking && e.button === 0) {
+      const canvas = document.createElement('canvas');
+      canvas.width = imgRef.current.naturalWidth;
+      canvas.height = imgRef.current.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(imgRef.current, 0, 0);
+        const pixelData = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+        const hex = "#" + ("000000" + ((pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2]).toString(16)).slice(-6);
+        setTransparentColor(hex);
+      }
+      setIsColorPicking(false);
+      return;
+    }
 
     // Right click for panning
     if (e.button === 2) {
@@ -51,10 +75,6 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
     // Left click for cropping
     if (e.button !== 0) return;
-
-    const rect = imgRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoom;
-    const y = (e.clientY - rect.top) / zoom;
 
     if (manualCrop) {
       setCropPos({ x, y });
@@ -127,13 +147,123 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
     setIsPanning(false);
   };
 
+  const handleScaleRawImage = React.useCallback(() => {
+    if (selectedRawImageIndex < 0 || scaleInputW <= 0 || scaleInputH <= 0 || !imgRef.current) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = scaleInputW;
+    canvas.height = scaleInputH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.imageSmoothingEnabled = false; // keep it pixelated
+    ctx.drawImage(imgRef.current, 0, 0, imgRef.current.naturalWidth, imgRef.current.naturalHeight, 0, 0, scaleInputW, scaleInputH);
+
+    const newUrl = canvas.toDataURL('image/png');
+
+    setRawImages(prev => {
+      const newImages = [...prev];
+      const img = newImages[selectedRawImageIndex];
+      // discard future history if we are not at the end
+      const newHistory = img.history.slice(0, img.currentIndex + 1);
+      newHistory.push(newUrl);
+      newImages[selectedRawImageIndex] = { ...img, history: newHistory, currentIndex: newHistory.length - 1 };
+      return newImages;
+    });
+  }, [selectedRawImageIndex, scaleInputW, scaleInputH]);
+
+  // Hex to RGB helper
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  };
+
+  const handleMakeTransparent = React.useCallback(() => {
+    if (selectedRawImageIndex < 0 || !imgRef.current) return;
+
+    const rgb = hexToRgb(transparentColor);
+    if (!rgb) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = imgRef.current.naturalWidth;
+    canvas.height = imgRef.current.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(imgRef.current, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Tolerance for color matching
+    const tolerance = 5;
+
+    for (let i = 0; i < data.length; i += 4) {
+      if (
+        Math.abs(data[i] - rgb.r) <= tolerance &&
+        Math.abs(data[i + 1] - rgb.g) <= tolerance &&
+        Math.abs(data[i + 2] - rgb.b) <= tolerance
+      ) {
+        // Set alpha to 0
+        data[i + 3] = 0;
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    const newUrl = canvas.toDataURL('image/png');
+
+    setRawImages(prev => {
+      const newImages = [...prev];
+      const img = newImages[selectedRawImageIndex];
+      const newHistory = img.history.slice(0, img.currentIndex + 1);
+      newHistory.push(newUrl);
+      newImages[selectedRawImageIndex] = { ...img, history: newHistory, currentIndex: newHistory.length - 1 };
+      return newImages;
+    });
+  }, [selectedRawImageIndex, transparentColor]);
+
+  const cropTileCallback = React.useCallback(() => {
+    if (!imgRef.current || selectedRawImageIndex < 0) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = tileW;
+    canvas.height = tileH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(
+      imgRef.current,
+      cropPos.x, cropPos.y, tileW, tileH,
+      0, 0, tileW, tileH
+    );
+
+    const dataUrl = canvas.toDataURL('image/png');
+    const newId = `tile_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+    setWorkingQueue(prev => [...prev, { id: newId, dataUrl }]);
+    setActiveTab('WORKING');
+  }, [cropPos.x, cropPos.y, tileW, tileH, selectedRawImageIndex]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
 
+      if (e.key === 'd') {
+        setIsColorPicking(prev => !prev);
+        return;
+      }
+
+      if (e.key === 't') {
+        handleMakeTransparent();
+        return;
+      }
+
       if (e.key === 'c') {
-        cropTile();
+        cropTileCallback();
         return;
       }
 
@@ -165,33 +295,7 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [manualCrop, gapX, gapY, tileW, tileH, cropPos]); // Added cropPos to dependencies so cropTile gets the latest
-
-
-  const handleScaleRawImage = () => {
-    if (selectedRawImageIndex < 0 || scaleInputW <= 0 || scaleInputH <= 0 || !imgRef.current) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = scaleInputW;
-    canvas.height = scaleInputH;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.imageSmoothingEnabled = false; // keep it pixelated
-    ctx.drawImage(imgRef.current, 0, 0, imgRef.current.naturalWidth, imgRef.current.naturalHeight, 0, 0, scaleInputW, scaleInputH);
-
-    const newUrl = canvas.toDataURL('image/png');
-
-    setRawImages(prev => {
-      const newImages = [...prev];
-      const img = newImages[selectedRawImageIndex];
-      // discard future history if we are not at the end
-      const newHistory = img.history.slice(0, img.currentIndex + 1);
-      newHistory.push(newUrl);
-      newImages[selectedRawImageIndex] = { ...img, history: newHistory, currentIndex: newHistory.length - 1 };
-      return newImages;
-    });
-  };
+  }, [manualCrop, gapX, gapY, tileW, tileH, cropPos, isColorPicking, handleMakeTransparent, cropTileCallback]);
 
   const generateSpriteSheet = async () => {
     if (outputQueue.length === 0) return null;
@@ -345,28 +449,6 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
     handleLoadTilesetsList();
   }, []);
 
-  const cropTile = () => {
-    if (!imgRef.current || selectedRawImageIndex < 0) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = tileW;
-    canvas.height = tileH;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.drawImage(
-      imgRef.current,
-      cropPos.x, cropPos.y, tileW, tileH,
-      0, 0, tileW, tileH
-    );
-
-    const dataUrl = canvas.toDataURL('image/png');
-    const newId = `tile_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-
-    setWorkingQueue(prev => [...prev, { id: newId, dataUrl }]);
-    setActiveTab('WORKING'); // Auto switch to working tab
-  };
-
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-slate-200">
       {/* Toolbar - Two Rows */}
@@ -396,7 +478,15 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
                 <option value="64x64">64x64</option>
                 <option value="32x64">32x64</option>
                 <option value="64x32">64x32</option>
+                <option value="customized">customized</option>
               </select>
+              {tileSize === 'customized' && (
+                <div className="flex items-center gap-1">
+                  <input type="number" value={customTileW} onChange={e => setCustomTileW(parseInt(e.target.value) || 1)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" title="Custom Width" />
+                  <span className="text-slate-500">x</span>
+                  <input type="number" value={customTileH} onChange={e => setCustomTileH(parseInt(e.target.value) || 1)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" title="Custom Height" />
+                </div>
+              )}
             </div>
 
             <div className="h-6 w-px bg-slate-600 mx-2"></div>
@@ -489,7 +579,7 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
         {/* Bottom Row */}
         <div className="flex items-center px-4 h-12 bg-slate-800 gap-4">
           <button
-            onClick={cropTile}
+            onClick={cropTileCallback}
             className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold shadow transition-colors"
             title="Hotkey: C"
           >
@@ -541,6 +631,34 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
               title="Redo Scale"
             >
               Redo
+            </button>
+          </div>
+
+          <div className="h-6 w-px bg-slate-600"></div>
+
+          <div className="h-6 w-px bg-slate-600"></div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsColorPicking(!isColorPicking)}
+              className={`p-1.5 rounded transition-colors ${isColorPicking ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-600'}`}
+              title="Pick Transparent Color (Hotkey: d)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            </button>
+            <input
+              type="color"
+              value={transparentColor}
+              onChange={(e) => setTransparentColor(e.target.value)}
+              className="w-6 h-6 rounded cursor-pointer border-0 p-0"
+              title="Transparent Color"
+            />
+            <button
+              onClick={handleMakeTransparent}
+              className="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded transition-colors"
+              title="Apply Transparency (Hotkey: t)"
+            >
+              Set Transparent
             </button>
           </div>
 
@@ -796,7 +914,7 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
                        setScaleInputH((e.target as HTMLImageElement).naturalHeight);
                      }
                    }}
-                   style={{ imageRendering: 'pixelated', cursor: 'crosshair', display: 'block' }}
+                   style={{ imageRendering: 'pixelated', cursor: isColorPicking ? 'crosshair' : 'crosshair', display: 'block' }}
                  />
 
                  {/* Optional Grid Overlay */}
