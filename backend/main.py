@@ -649,6 +649,56 @@ async def delete_map(map_id: str):
 
     return {"success": True}
 
+from pydantic import BaseModel
+import base64
+
+class TilesetSaveRequest(BaseModel):
+    name: str
+    metadata: dict
+    image_base64: str
+
+@app.post("/api/map/tileset/save")
+async def save_map_tileset(req: TilesetSaveRequest):
+    try:
+        # Sanitize the filename to prevent path traversal vulnerabilities
+        safe_name = os.path.basename(req.name)
+        # Ensure it only contains safe characters (alphanumeric, underscores, hyphens)
+        import re
+        safe_name = re.sub(r'[^a-zA-Z0-9_\-]', '', safe_name)
+
+        if not safe_name:
+            return {"success": False, "error": "Invalid tileset name"}
+
+        # Decode the base64 image
+        if "," in req.image_base64:
+            header, encoded = req.image_base64.split(",", 1)
+        else:
+            encoded = req.image_base64
+
+        image_data = base64.b64decode(encoded)
+
+        # Save to both dist and public to ensure it works in both dev and prod
+        paths = ["dist/assets/map_tileset", "public/assets/map_tileset"]
+
+        for base_dir in paths:
+            if not os.path.exists(base_dir):
+                os.makedirs(base_dir, exist_ok=True)
+
+            # Save PNG
+            png_path = os.path.join(base_dir, f"{safe_name}.png")
+            with open(png_path, "wb") as f:
+                f.write(image_data)
+
+            # Save JSON metadata
+            json_path = os.path.join(base_dir, f"{safe_name}.json")
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(req.metadata, f, ensure_ascii=False, indent=2)
+
+        return {"success": True}
+    except Exception as e:
+        print(f"Error saving tileset: {e}")
+        return {"success": False, "error": str(e)}
+
 @app.get("/api/map/tilesets")
 async def get_map_tilesets():
     tilesets = []

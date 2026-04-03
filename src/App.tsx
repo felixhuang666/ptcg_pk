@@ -12,6 +12,7 @@ import RpgMode from './components/RpgMode';
 import RoleSetting from './components/RoleSetting';
 import RpgSceneEditor from './components/RpgSceneEditor';
 import RpgMapEditor from './components/RpgMapEditor';
+import SpriteSheetEditor from './components/SpriteSheetEditor';
 import { useAppStore } from './store/appStore';
 import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
 import { TeamConfig } from './shared/types';
@@ -21,7 +22,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR'>(() => {
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR' | 'SPRITE_SHEET_EDITOR'>(() => {
     // Check URL parameters first
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
@@ -29,6 +30,7 @@ export default function App() {
       if (urlView === 'RPG_SCENE_EDITOR') return 'RPG_SCENE_EDITOR';
       if (urlView === 'RPG_MAP_EDITOR') return 'RPG_MAP_EDITOR';
       if (urlView === 'RPG_MODE') return 'RPG_MODE';
+      if (urlView === 'SPRITE_SHEET_EDITOR') return 'SPRITE_SHEET_EDITOR';
     }
 
     // Fallback to cookie
@@ -225,6 +227,10 @@ export default function App() {
     return <RpgMapEditor onBack={() => setView('MENU')} />;
   }
 
+  if (view === 'SPRITE_SHEET_EDITOR') {
+    return <SpriteSheetEditor onBack={() => setView('MENU')} />;
+  }
+
   const handleJoinPrivate = () => {
     if (roomCode.trim()) {
       handleStartBattle('BATTLE_PRIVATE');
@@ -234,6 +240,13 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8 relative">
       <div className="absolute top-4 right-4 flex items-center gap-4 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
+        <button
+          onClick={() => setView('SPRITE_SHEET_EDITOR')}
+          className="text-sm text-emerald-400 hover:text-emerald-300 font-bold mr-2 border border-emerald-400 px-2 py-1 rounded"
+          title="Sprite Sheet Editor"
+        >
+          切圖工具
+        </button>
         <button
           onClick={() => setView('RPG_MAP_EDITOR')}
           className="text-sm text-blue-400 hover:text-blue-300 font-bold mr-2 border border-blue-400 px-2 py-1 rounded"
