@@ -24,7 +24,7 @@ Implement a sprite sheet editor that allows users to import raw images, crop the
 *   **Offsets & Gaps:** Toolbar inputs for `offset x`, `offset y`, `gap-x`, and `gap-y`. The cropping grid calculations and manual arrow key movements will respect these settings.
 *   **Grid Overlay:** A toggle icon button in the toolbar to show/hide a visual grid overlay, assisting users in identifying tile boundaries based on size, offsets, and gaps.
 *   **Zoom:** Mouse scroll wheel support to zoom in and out of the raw image preview.
-*   **Image Scaling:** Inputs to scale the raw image down/up (width and height) to adjust high-resolution images to the desired tile scale, complete with undo/redo functionality for these scaling actions.
+*   **Image Scaling:** Inputs to scale the raw image down/up (width and height) to adjust high-resolution images to the desired tile scale, complete with undo/redo functionality for these scaling actions. When a scaling action is performed (or undone/redone), the view automatically resets the zoom to 100% and resets the pan coordinates to (0,0) to ensure the newly sized image remains visible.
 *   **Output Queue Reordering:** Support drag-and-drop mouse reordering of tiles within the Output Queue.
 *   **Color Picker/Transparency:** A color input in the toolbar to specify a transparent color. An eyedropper button (hotkey 'd') allows clicking a pixel on the raw image to set the transparent color. A "Set Transparent" button (hotkey 't') processes the raw image, filling all matching pixels with transparency and saving the result to the history stack.
 

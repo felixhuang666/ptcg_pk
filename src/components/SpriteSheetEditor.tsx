@@ -170,6 +170,9 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
       newImages[selectedRawImageIndex] = { ...img, history: newHistory, currentIndex: newHistory.length - 1 };
       return newImages;
     });
+
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
   }, [selectedRawImageIndex, scaleInputW, scaleInputH]);
 
   // Hex to RGB helper
@@ -595,18 +598,22 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
             <input type="number" value={scaleInputH} onChange={e => setScaleInputH(parseInt(e.target.value) || 0)} className="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" />
             <button onClick={handleScaleRawImage} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs rounded transition-colors border border-slate-600">Apply</button>
             <button
-              onClick={() => setRawImages(prev => {
-                const newImages = [...prev];
-                const img = newImages[selectedRawImageIndex];
-                if (img.currentIndex > 0) {
-                  newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex - 1 };
-                  // update inputs
-                  const tempImg = new Image();
-                  tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
-                  tempImg.src = img.history[img.currentIndex - 1];
-                }
-                return newImages;
-              })}
+              onClick={() => {
+                setRawImages(prev => {
+                  const newImages = [...prev];
+                  const img = newImages[selectedRawImageIndex];
+                  if (img.currentIndex > 0) {
+                    newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex - 1 };
+                    // update inputs
+                    const tempImg = new Image();
+                    tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
+                    tempImg.src = img.history[img.currentIndex - 1];
+                  }
+                  return newImages;
+                });
+                setZoom(1);
+                setPan({ x: 0, y: 0 });
+              }}
               disabled={selectedRawImageIndex < 0 || rawImages[selectedRawImageIndex]?.currentIndex <= 0}
               className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs rounded transition-colors"
               title="Undo Scale"
@@ -614,18 +621,22 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
               Undo
             </button>
             <button
-              onClick={() => setRawImages(prev => {
-                const newImages = [...prev];
-                const img = newImages[selectedRawImageIndex];
-                if (img.currentIndex < img.history.length - 1) {
-                  newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex + 1 };
-                  // update inputs
-                  const tempImg = new Image();
-                  tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
-                  tempImg.src = img.history[img.currentIndex + 1];
-                }
-                return newImages;
-              })}
+              onClick={() => {
+                setRawImages(prev => {
+                  const newImages = [...prev];
+                  const img = newImages[selectedRawImageIndex];
+                  if (img.currentIndex < img.history.length - 1) {
+                    newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex + 1 };
+                    // update inputs
+                    const tempImg = new Image();
+                    tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
+                    tempImg.src = img.history[img.currentIndex + 1];
+                  }
+                  return newImages;
+                });
+                setZoom(1);
+                setPan({ x: 0, y: 0 });
+              }}
               disabled={selectedRawImageIndex < 0 || rawImages[selectedRawImageIndex]?.currentIndex >= (rawImages[selectedRawImageIndex]?.history.length || 0) - 1}
               className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs rounded transition-colors"
               title="Redo Scale"
@@ -730,6 +741,8 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
                            setScaleInputH(imgEl.naturalHeight);
                          };
                          imgEl.src = img.history[img.currentIndex];
+                         setZoom(1);
+                         setPan({ x: 0, y: 0 });
                       }}
                       className={`flex items-center gap-3 p-2 rounded cursor-pointer ${selectedRawImageIndex === idx ? 'bg-blue-600/30 border border-blue-500' : 'bg-slate-700/50 hover:bg-slate-700 border border-transparent'}`}
                     >
