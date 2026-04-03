@@ -17,6 +17,16 @@ Implement a sprite sheet editor that allows users to import raw images, crop the
 *   **Cropping Interface:** The right sidebar (main area) can draw a cropping edge/rectangle and adjust its width/height.
 *   **Tab Navigation:** The left sidebar supports a tab menu to switch functions between `Raw Files`, `Working Queue`, `Output Queue`, and `JSON Preview`.
 
+## 2.1 Advanced Requirements (v1.1)
+
+*   **Manual Crop Mode:** A checkbox in the toolbar to toggle "manual crop mode". When active, the crop rectangle can be moved freely without grid snapping via mouse drag or keyboard arrow keys.
+*   **Hotkeys:** Pressing "c" will perform a "crop selection" and add the current selection to the working queue.
+*   **Offsets & Gaps:** Toolbar inputs for `offset x`, `offset y`, `gap-x`, and `gap-y`. The cropping grid calculations and manual arrow key movements will respect these settings.
+*   **Grid Overlay:** A toggle icon button in the toolbar to show/hide a visual grid overlay, assisting users in identifying tile boundaries based on size, offsets, and gaps.
+*   **Zoom:** Mouse scroll wheel support to zoom in and out of the raw image preview.
+*   **Image Scaling:** Inputs to scale the raw image down/up (width and height) to adjust high-resolution images to the desired tile scale, complete with undo/redo functionality for these scaling actions.
+*   **Output Queue Reordering:** Support drag-and-drop mouse reordering of tiles within the Output Queue.
+
 ## 3. Architecture & Components
 
 ### 3.1. Frontend (`src/components/SpriteSheetEditor.tsx`)

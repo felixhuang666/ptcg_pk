@@ -8,11 +8,22 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   const [activeTab, setActiveTab] = useState<'RAW' | 'WORKING' | 'OUTPUT' | 'JSON'>('RAW');
   const [tileSize, setTileSize] = useState('32x32');
   const [outputName, setOutputName] = useState('new_tileset');
-  const [rawImages, setRawImages] = useState<{ name: string, dataUrl: string }[]>([]);
+  const [rawImages, setRawImages] = useState<{ name: string, history: string[], currentIndex: number }[]>([]);
   const [selectedRawImageIndex, setSelectedRawImageIndex] = useState<number>(-1);
+  const [scaleInputW, setScaleInputW] = useState<number>(0);
+  const [scaleInputH, setScaleInputH] = useState<number>(0);
   const [workingQueue, setWorkingQueue] = useState<{ id: string, dataUrl: string }[]>([]);
   const [outputQueue, setOutputQueue] = useState<{ id: string, dataUrl: string }[]>([]);
   const [availableTilesets, setAvailableTilesets] = useState<any[]>([]);
+
+  // Advanced feature states
+  const [manualCrop, setManualCrop] = useState(false);
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [gapX, setGapX] = useState(0);
+  const [gapY, setGapY] = useState(0);
+  const [showGrid, setShowGrid] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   // Cropping logic
   const imgRef = useRef<HTMLImageElement>(null);
@@ -26,14 +37,28 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!imgRef.current) return;
     const rect = imgRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
 
-    // Snap to tile grid for initial click
-    const snappedX = Math.floor(x / tileW) * tileW;
-    const snappedY = Math.floor(y / tileH) * tileH;
+    if (manualCrop) {
+      setCropPos({ x, y });
+    } else {
+      // Snap to tile grid considering offset and gap
+      const stepX = tileW + gapX;
+      const stepY = tileH + gapY;
 
-    setCropPos({ x: snappedX, y: snappedY });
+      let col = Math.floor((x - offsetX) / stepX);
+      let row = Math.floor((y - offsetY) / stepY);
+
+      if (col < 0) col = 0;
+      if (row < 0) row = 0;
+
+      const snappedX = offsetX + col * stepX;
+      const snappedY = offsetY + row * stepY;
+
+      setCropPos({ x: snappedX, y: snappedY });
+    }
+
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
   };
@@ -42,12 +67,22 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
     if (!isDragging || !imgRef.current) return;
 
     const rect = imgRef.current.getBoundingClientRect();
-    let x = e.clientX - rect.left;
-    let y = e.clientY - rect.top;
+    let x = (e.clientX - rect.left) / zoom;
+    let y = (e.clientY - rect.top) / zoom;
 
-    // Optional: snap during drag
-    x = Math.floor(x / tileW) * tileW;
-    y = Math.floor(y / tileH) * tileH;
+    if (!manualCrop) {
+      const stepX = tileW + gapX;
+      const stepY = tileH + gapY;
+
+      let col = Math.floor((x - offsetX) / stepX);
+      let row = Math.floor((y - offsetY) / stepY);
+
+      if (col < 0) col = 0;
+      if (row < 0) row = 0;
+
+      x = offsetX + col * stepX;
+      y = offsetY + row * stepY;
+    }
 
     // Bounds check
     if (x < 0) x = 0;
@@ -60,6 +95,72 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
   const handleMouseUp = () => {
     setIsDragging(false);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+
+      if (e.key === 'c') {
+        cropTile();
+        return;
+      }
+
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+
+        const stepX = manualCrop ? 1 : tileW + gapX;
+        const stepY = manualCrop ? 1 : tileH + gapY;
+
+        setCropPos(prev => {
+          let newX = prev.x;
+          let newY = prev.y;
+
+          if (e.key === 'ArrowUp') newY -= stepY;
+          if (e.key === 'ArrowDown') newY += stepY;
+          if (e.key === 'ArrowLeft') newX -= stepX;
+          if (e.key === 'ArrowRight') newX += stepX;
+
+          if (imgRef.current) {
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX + tileW > imgRef.current.naturalWidth) newX = imgRef.current.naturalWidth - tileW;
+            if (newY + tileH > imgRef.current.naturalHeight) newY = imgRef.current.naturalHeight - tileH;
+          }
+          return { x: newX, y: newY };
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [manualCrop, gapX, gapY, tileW, tileH, cropPos]); // Added cropPos to dependencies so cropTile gets the latest
+
+
+  const handleScaleRawImage = () => {
+    if (selectedRawImageIndex < 0 || scaleInputW <= 0 || scaleInputH <= 0 || !imgRef.current) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = scaleInputW;
+    canvas.height = scaleInputH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.imageSmoothingEnabled = false; // keep it pixelated
+    ctx.drawImage(imgRef.current, 0, 0, imgRef.current.naturalWidth, imgRef.current.naturalHeight, 0, 0, scaleInputW, scaleInputH);
+
+    const newUrl = canvas.toDataURL('image/png');
+
+    setRawImages(prev => {
+      const newImages = [...prev];
+      const img = newImages[selectedRawImageIndex];
+      // discard future history if we are not at the end
+      const newHistory = img.history.slice(0, img.currentIndex + 1);
+      newHistory.push(newUrl);
+      newImages[selectedRawImageIndex] = { ...img, history: newHistory, currentIndex: newHistory.length - 1 };
+      return newImages;
+    });
   };
 
   const generateSpriteSheet = async () => {
@@ -276,6 +377,45 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
               className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm w-40 focus:outline-none focus:border-blue-500"
             />
           </div>
+
+          <div className="h-6 w-px bg-slate-600 mx-2"></div>
+
+          {/* Advanced Toolbar Controls */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1 text-sm text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={manualCrop}
+                onChange={(e) => setManualCrop(e.target.checked)}
+                className="rounded border-slate-700 bg-slate-900"
+              />
+              Manual Crop
+            </label>
+
+            <button
+              onClick={() => setShowGrid(!showGrid)}
+              className={`p-1 rounded ${showGrid ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-slate-200'}`}
+              title="Toggle Grid Overlay"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+            </button>
+
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <span>Offset:</span>
+              <input type="number" value={offsetX} onChange={e => setOffsetX(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Offset X" />
+              <input type="number" value={offsetY} onChange={e => setOffsetY(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Offset Y" />
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <span>Gap:</span>
+              <input type="number" value={gapX} onChange={e => setGapX(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Gap X" />
+              <input type="number" value={gapY} onChange={e => setGapY(parseInt(e.target.value) || 0)} className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1" title="Gap Y" />
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <span>Zoom: {Math.round(zoom * 100)}%</span>
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -351,7 +491,11 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
                         const reader = new FileReader();
                         reader.onload = (event) => {
                           if (event.target?.result) {
-                            setRawImages(prev => [...prev, { name: file.name, dataUrl: event.target!.result as string }]);
+                            setRawImages(prev => [...prev, {
+                              name: file.name,
+                              history: [event.target!.result as string],
+                              currentIndex: 0
+                            }]);
                           }
                         };
                         reader.readAsDataURL(file);
@@ -365,10 +509,18 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
                   {rawImages.map((img, idx) => (
                     <div
                       key={idx}
-                      onClick={() => setSelectedRawImageIndex(idx)}
+                      onClick={() => {
+                         setSelectedRawImageIndex(idx);
+                         const imgEl = new Image();
+                         imgEl.onload = () => {
+                           setScaleInputW(imgEl.naturalWidth);
+                           setScaleInputH(imgEl.naturalHeight);
+                         };
+                         imgEl.src = img.history[img.currentIndex];
+                      }}
                       className={`flex items-center gap-3 p-2 rounded cursor-pointer ${selectedRawImageIndex === idx ? 'bg-blue-600/30 border border-blue-500' : 'bg-slate-700/50 hover:bg-slate-700 border border-transparent'}`}
                     >
-                      <img src={img.dataUrl} alt={img.name} className="w-10 h-10 object-contain bg-slate-800 rounded" />
+                      <img src={img.history[img.currentIndex]} alt={img.name} className="w-10 h-10 object-contain bg-slate-800 rounded" />
                       <span className="text-sm truncate text-slate-300">{img.name}</span>
                     </div>
                   ))}
@@ -442,9 +594,35 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
                 <div className="grid grid-cols-4 gap-2">
                   {outputQueue.map((tile, idx) => (
-                    <div key={tile.id} className="relative group border border-slate-700 bg-slate-800 rounded p-1 flex flex-col items-center justify-center">
+                    <div
+                      key={tile.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', idx.toString());
+                        e.currentTarget.style.opacity = '0.5';
+                      }}
+                      onDragEnd={(e) => {
+                        e.currentTarget.style.opacity = '1';
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                        if (isNaN(fromIdx) || fromIdx === idx) return;
+
+                        setOutputQueue(prev => {
+                          const newQueue = [...prev];
+                          const [movedItem] = newQueue.splice(fromIdx, 1);
+                          newQueue.splice(idx, 0, movedItem);
+                          return newQueue;
+                        });
+                      }}
+                      className="relative group border border-slate-700 bg-slate-800 rounded p-1 flex flex-col items-center justify-center cursor-move"
+                    >
                       <span className="absolute top-0 left-1 text-[10px] text-slate-500">{idx + 1}</span>
-                      <img src={tile.dataUrl} alt="tile" className="max-w-full max-h-full mt-2" style={{ imageRendering: 'pixelated' }} />
+                      <img src={tile.dataUrl} alt="tile" className="max-w-full max-h-full mt-2 pointer-events-none" style={{ imageRendering: 'pixelated' }} />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
                         <button
                           onClick={() => setOutputQueue(prev => prev.filter(t => t.id !== tile.id))}
@@ -488,26 +666,111 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onMouseMove={handleMouseMove}
+          onWheel={(e) => {
+            if (e.ctrlKey || e.metaKey || !manualCrop) {
+              e.preventDefault();
+              setZoom(prev => {
+                const newZoom = prev - e.deltaY * 0.001;
+                return Math.max(0.1, Math.min(newZoom, 5));
+              });
+            }
+          }}
         >
           {selectedRawImageIndex >= 0 && rawImages[selectedRawImageIndex] ? (
             <div className="flex flex-col items-center gap-4">
-              <div className="flex gap-2">
+              <div className="flex gap-4 items-center bg-slate-800 p-2 rounded border border-slate-700">
                 <button
                   onClick={cropTile}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold shadow transition-colors"
+                  title="Hotkey: C"
                 >
                   Crop Selection & Add to Queue
                 </button>
+
+                <div className="h-6 w-px bg-slate-600"></div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Scale:</span>
+                  <input type="number" value={scaleInputW} onChange={e => setScaleInputW(parseInt(e.target.value) || 0)} className="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" />
+                  <span className="text-xs text-slate-400">x</span>
+                  <input type="number" value={scaleInputH} onChange={e => setScaleInputH(parseInt(e.target.value) || 0)} className="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-sm" />
+                  <button onClick={handleScaleRawImage} className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs rounded transition-colors border border-slate-600">Apply</button>
+                  <button
+                    onClick={() => setRawImages(prev => {
+                      const newImages = [...prev];
+                      const img = newImages[selectedRawImageIndex];
+                      if (img.currentIndex > 0) {
+                        newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex - 1 };
+                        // update inputs
+                        const tempImg = new Image();
+                        tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
+                        tempImg.src = img.history[img.currentIndex - 1];
+                      }
+                      return newImages;
+                    })}
+                    disabled={rawImages[selectedRawImageIndex].currentIndex <= 0}
+                    className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs rounded transition-colors"
+                    title="Undo Scale"
+                  >
+                    Undo
+                  </button>
+                  <button
+                    onClick={() => setRawImages(prev => {
+                      const newImages = [...prev];
+                      const img = newImages[selectedRawImageIndex];
+                      if (img.currentIndex < img.history.length - 1) {
+                        newImages[selectedRawImageIndex] = { ...img, currentIndex: img.currentIndex + 1 };
+                        // update inputs
+                        const tempImg = new Image();
+                        tempImg.onload = () => { setScaleInputW(tempImg.naturalWidth); setScaleInputH(tempImg.naturalHeight); };
+                        tempImg.src = img.history[img.currentIndex + 1];
+                      }
+                      return newImages;
+                    })}
+                    disabled={rawImages[selectedRawImageIndex].currentIndex >= rawImages[selectedRawImageIndex].history.length - 1}
+                    className="px-2 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs rounded transition-colors"
+                    title="Redo Scale"
+                  >
+                    Redo
+                  </button>
+                </div>
               </div>
-              <div className="relative inline-block border border-slate-700 shadow-2xl bg-black">
+              <div
+                className="relative inline-block border border-slate-700 shadow-2xl bg-black transform-origin-top-left"
+                style={{ transform: `scale(${zoom})` }}
+              >
                  <img
                    ref={imgRef}
-                   src={rawImages[selectedRawImageIndex].dataUrl}
+                   src={rawImages[selectedRawImageIndex].history[rawImages[selectedRawImageIndex].currentIndex]}
                    alt="Selected Raw"
                    draggable={false}
                    onMouseDown={handleMouseDown}
+                   onLoad={(e) => {
+                     // Initial set of scale inputs if they are 0
+                     if (scaleInputW === 0 && scaleInputH === 0) {
+                       setScaleInputW((e.target as HTMLImageElement).naturalWidth);
+                       setScaleInputH((e.target as HTMLImageElement).naturalHeight);
+                     }
+                   }}
                    style={{ imageRendering: 'pixelated', cursor: 'crosshair', display: 'block' }}
                  />
+
+                 {/* Optional Grid Overlay */}
+                 {showGrid && imgRef.current && (
+                   <div
+                     className="absolute inset-0 pointer-events-none"
+                     style={{
+                       backgroundSize: `${tileW + gapX}px ${tileH + gapY}px`,
+                       backgroundImage: `
+                         linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
+                         linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px)
+                       `,
+                       backgroundPosition: `${offsetX}px ${offsetY}px`,
+                       width: imgRef.current.naturalWidth,
+                       height: imgRef.current.naturalHeight
+                     }}
+                   />
+                 )}
 
                  {/* Cropping Rectangle Overlay */}
                  <div
