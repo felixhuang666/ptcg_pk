@@ -7,7 +7,7 @@ Implement a sprite sheet editor that allows users to import raw images, crop the
 
 *   **Import Raw Image:** Import one or many image files (png, jpg, etc.) to a raw image queue. Users can select a file in the queue to preview the raw image.
 *   **Tile Size Definition:** Ability to define tile size in pixels (width x height, e.g., 32x32, 64x64).
-*   **Predefined Sizes:** A dropdown list with predefined tile sizes: `32x32`, `64x64`, `32x64`, `64x32`.
+*   **Predefined Sizes:** A dropdown list with predefined tile sizes: `32x32`, `64x64`, `32x64`, `64x32`, and `customized`. If `customized` is selected, two extra inputs for width and height appear to let the user specify arbitrary tile sizes.
 *   **Working Queue:** A tile working queue to save tiles. When a user crops the raw image, the cropped tile is saved to this queue first.
 *   **Output Queue:** A tile output queue for the final tileset output.
 *   **Rename Output:** Ability to rename the output tileset name.
@@ -26,6 +26,7 @@ Implement a sprite sheet editor that allows users to import raw images, crop the
 *   **Zoom:** Mouse scroll wheel support to zoom in and out of the raw image preview.
 *   **Image Scaling:** Inputs to scale the raw image down/up (width and height) to adjust high-resolution images to the desired tile scale, complete with undo/redo functionality for these scaling actions.
 *   **Output Queue Reordering:** Support drag-and-drop mouse reordering of tiles within the Output Queue.
+*   **Color Picker/Transparency:** A color input in the toolbar to specify a transparent color. An eyedropper button (hotkey 'd') allows clicking a pixel on the raw image to set the transparent color. A "Set Transparent" button (hotkey 't') processes the raw image, filling all matching pixels with transparency and saving the result to the history stack.
 
 ## 3. Architecture & Components
 
