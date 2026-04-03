@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload } from 'lucide-react';
 import Phaser from 'phaser';
 
 class SceneEditorPhaser extends Phaser.Scene {
@@ -228,6 +228,57 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           >
             <Save className="w-5 h-5" />
           </button>
+
+          <button
+            onClick={() => {
+              if (!sceneData) return;
+              const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sceneData, null, 2));
+              const downloadAnchorNode = document.createElement('a');
+              downloadAnchorNode.setAttribute("href", dataStr);
+              downloadAnchorNode.setAttribute("download", `scene_${currentSceneId || 'export'}.json`);
+              document.body.appendChild(downloadAnchorNode);
+              downloadAnchorNode.click();
+              downloadAnchorNode.remove();
+            }}
+            className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors flex items-center justify-center group relative"
+            title="Export Scene"
+          >
+            <Download className="w-5 h-5" />
+          </button>
+
+          <label
+            className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors flex items-center justify-center group relative cursor-pointer"
+            title="Import Scene"
+          >
+            <Upload className="w-5 h-5" />
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  try {
+                    const importedData = JSON.parse(event.target?.result as string);
+                    if (importedData && importedData.map_list) {
+                      setSceneData(importedData);
+                      alert('Scene imported! Don\'t forget to save.');
+                    } else {
+                      alert('Invalid scene data format.');
+                    }
+                  } catch (err) {
+                    console.error('Error parsing JSON:', err);
+                    alert('Error reading file.');
+                  }
+                };
+                reader.readAsText(file);
+                // Reset input value so the same file can be selected again
+                e.target.value = '';
+              }}
+            />
+          </label>
 
           <button
             onClick={() => setShowLeftSidebar(!showLeftSidebar)}

@@ -53,6 +53,7 @@ test('verify RPG mode and Map Editor rendering', async ({ page }) => {
     !err.includes('Error checking auth') &&
     !err.includes('WebSocket connection') &&
     !err.includes('failed to connect to websocket')
+    //&& !err.includes('Failed to process file:')
   );
   expect(relevantErrors).toEqual([]);
 });
