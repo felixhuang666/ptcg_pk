@@ -115,12 +115,12 @@ run: stop
 
 stop-frontend:
 	-ps -eo pid,cmd | grep 'port 5000' | grep -v grep && echo "  Killing old frontend process ..."
-	-lsof -t -i :5000 | xargs -i kill {} 2>/dev/null || true
+	-lsof -t -i :5000 && lsof -t -i :5000 | xargs -i kill {} 2>/dev/null || true
 	sleep 1
 
 stop-backend:
 	-ps -eo pid,cmd | grep 'port 5001' | grep -v grep && echo "  Killing old backend process ..."
-	-lsof -t -i :5001 | xargs -i kill {} 2>/dev/null || true
+	-lsof -t -i :5001 && lsof -t -i :5001 | xargs -i kill {} 2>/dev/null || true
 	sleep 1
 
 start-frontend-dev: stop-frontend
@@ -186,3 +186,6 @@ test-backend:
 	. venv/bin/activate && PYTHONPATH=. pytest backend/tests/
 
 test: test-frontend test-backend
+
+log:
+	tail -F -f uvicorn.log frontend.log

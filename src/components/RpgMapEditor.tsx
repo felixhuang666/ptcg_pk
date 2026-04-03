@@ -42,7 +42,7 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
       private npcs: Record<string, Phaser.Physics.Arcade.Sprite> = {};
       private nameTags: Record<string, Phaser.GameObjects.Text> = {};
       private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-      private currentTileType: number = 0;
+      private currentTileType: number = 1;
       public currentEditLayer: 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer' = 'base';
       public isEraser: boolean = false;
       private isEditor: boolean = false;
@@ -916,10 +916,12 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
             };
             const l = lMap[this.currentEditLayer];
             if (l) {
+              let tileIdx = Math.max(0, targetVal - 1);
+
               if (targetVal === 0 || targetVal === -1) l.removeTileAt(x, y);
               else l.putTileAt(targetVal, x, y);
 
-              console.log(">> ", this.currentEditLayer, targetVal)
+              console.log(">> ", this.currentEditLayer, "tileIdx", tileIdx, "targetVal", targetVal, "currentTileType", this.currentTileType)
             }
           }
         }
@@ -1453,8 +1455,8 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   }, []);
 
   const selectedRole = roles.find(r => r.id === selectedRoleId) || {
-    role_walk_sprite: 'character.png',
-    role_atk_sprite: 'character_atk.png'
+    role_walk_sprite: 'yo.png',
+    role_atk_sprite: 'yo_atk.png'
   };
 
   const handleChatReceived = (msg: ChatMessage) => {
@@ -1613,7 +1615,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                             setSelectedTile(id);
                             setSelectedTileData(tileMeta);
                             const scene = (window as any).__PHASER_MAIN_SCENE__;
-                            if (scene) scene.currentTileType = id;
+                            if (scene) scene.currentTileType = id; //FELIX
                           }}
                           className={`w-10 h-10 border-2 rounded ${selectedTile === id ? 'border-blue-500 z-10 scale-110 relative' : 'border-transparent hover:border-slate-500'}`}
                           title={tileMeta.name}

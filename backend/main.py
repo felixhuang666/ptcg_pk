@@ -448,12 +448,14 @@ async def get_roles():
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
             res = await client.table('game_roles').select('*').execute()
+            print(res)
             if res.data and len(res.data) > 0:
                 return res.data
     except Exception as e:
         print(f"Supabase warning (fetching roles): {e}")
 
     # Default role if table doesn't exist or is empty
+    print("Using default role")
     return [
         {
             "id": "1",
@@ -754,6 +756,7 @@ async def dev_login(response: Response):
 # Catch-all route to serve index.html for React Router
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
+    print(f"full_path: {full_path}")
     if os.path.exists("dist/index.html"):
         return FileResponse("dist/index.html")
     return {"message": "Frontend not built yet. Please run `make build`."}

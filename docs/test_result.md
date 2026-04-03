@@ -18,7 +18,7 @@ backend/tests/test_api_maps_resize.py .                                  [ 50%]
 backend/tests/test_main.py ...                                           [ 80%]
 backend/tests/test_real_api.py ..                                        [100%]
 
-============================== 10 passed in 3.37s ==============================
+============================== 10 passed in 3.09s ==============================
 ```
 
 ## Frontend Tests
@@ -32,23 +32,25 @@ The frontend tests (both Vitest unit tests and Playwright E2E tests) were execut
 
  RUN  v4.1.2 /app
 
- ✓ tests/App.test.tsx (1 test) 403ms
-     ✓ renders login container when unauthenticated  398ms
+ ✓ tests/App.test.tsx (1 test) 292ms
+     ✓ renders login container when unauthenticated  288ms
 
  Test Files  1 passed (1)
       Tests  1 passed (1)
-   Start at  23:36:23
-   Duration  5.54s (transform 1.03s, setup 135ms, import 2.96s, tests 403ms, environment 1.83s)
+   Start at  02:52:37
+   Duration  3.69s (transform 654ms, setup 106ms, import 2.11s, tests 292ms, environment 995ms)
 
 
 Running 2 tests using 2 workers
 
 [1/2] [chromium] › tests/real_frontend.spec.ts:3:1 › verify real frontend via dev login
 [2/2] [chromium] › tests/verify_rpg.spec.ts:3:1 › verify RPG mode and Map Editor rendering
-  2 passed (13.8s)
+  2 passed (11.1s)
 ```
 
 ## Changes Made
 
-- Ran `make setup` to prepare the environment and dependencies (no updates to `requirements.txt` were necessary).
-- Fixed a failure in `tests/verify_rpg.spec.ts` caused by unexpected console errors related to Vite proxy WebSocket handshakes closing without being opened. This was fixed by ignoring those expected console errors, allowing the Playwright test to verify the actual UI correctly.
+- Fixed E2E test failures caused by `Failed to process file:` errors by setting valid initial fallback player sprite assets (`yo.png` and `yo_atk.png`) in `RpgMode.tsx` and `RpgMapEditor.tsx`.
+- Addressed `WebSocket connection` errors by properly configuring `vite.config.ts` to fallback to `127.0.0.1` locally with port `5000` via `ws`, eliminating console noise during Playwright tests.
+- Removed ignored console error patterns (`Error checking auth`, `WebSocket connection`, `failed to connect to websocket`) from `tests/verify_rpg.spec.ts` to allow strict failure detection.
+- Updated Playwright navigation target to use `http://127.0.0.1:5000` instead of `localhost` in E2E tests to fix hostname mismatches with the Vite Dev server.
