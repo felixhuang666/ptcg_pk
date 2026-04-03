@@ -18,6 +18,10 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   const [outputQueue, setOutputQueue] = useState<{ id: string, dataUrl: string }[]>([]);
   const [availableTilesets, setAvailableTilesets] = useState<any[]>([]);
 
+  // Output grid configuration
+  const [outputCols, setOutputCols] = useState(10);
+  const [outputRows, setOutputRows] = useState(1);
+
   // Advanced feature states
   const [manualCrop, setManualCrop] = useState(false);
   const [offsetX, setOffsetX] = useState(0);
@@ -42,6 +46,13 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
   const tileW = tileSize === 'customized' ? customTileW : parseInt(tileSize.split('x')[0]);
   const tileH = tileSize === 'customized' ? customTileH : parseInt(tileSize.split('x')[1]);
+
+  useEffect(() => {
+    // Automatically expand rows if queue length exceeds capacity
+    if (outputQueue.length > outputCols * outputRows) {
+      setOutputRows(Math.ceil(outputQueue.length / outputCols));
+    }
+  }, [outputQueue.length, outputCols, outputRows]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!imgRef.current) return;
@@ -303,9 +314,11 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
   const generateSpriteSheet = async () => {
     if (outputQueue.length === 0) return null;
 
-    // Calculate sprite sheet dimensions (let's do a max of 10 columns)
-    const cols = Math.min(outputQueue.length, 10);
-    const rows = Math.ceil(outputQueue.length / cols);
+    // Use outputCols and outputRows for sprite sheet dimensions
+    const cols = outputCols;
+    const rows = outputRows;
+    const maxTiles = cols * rows;
+    const tilesToProcess = Math.min(outputQueue.length, maxTiles);
     const canvasWidth = cols * tileW;
     const canvasHeight = rows * tileH;
 
@@ -325,7 +338,7 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
     const metadataTiles: any[] = [];
 
-    for (let i = 0; i < outputQueue.length; i++) {
+    for (let i = 0; i < tilesToProcess; i++) {
       const tile = outputQueue[i];
       const img = await loadImage(tile.dataUrl);
 
@@ -350,7 +363,7 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
       tileheight: tileH,
       tiles: metadataTiles,
       tilewidth: tileW,
-      total_tiles: outputQueue.length
+      total_tiles: tilesToProcess
     };
 
     return {
@@ -410,6 +423,8 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
     setTileSize(`${tilesetMeta.tilewidth}x${tilesetMeta.tileheight}`);
     setOutputName(tilesetMeta.name);
+    setOutputCols(tilesetMeta.columns);
+    setOutputRows(Math.ceil(tilesetMeta.total_tiles / tilesetMeta.columns));
     setOutputQueue([]);
 
     const img = new Image();
@@ -807,15 +822,36 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
               <div className="space-y-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-slate-300">Output Queue ({outputQueue.length})</span>
-                  <button
-                    onClick={() => {
-                      setOutputQueue([]);
-                    }}
-                    disabled={outputQueue.length === 0}
-                    className="px-2 py-1 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 disabled:text-slate-500 text-xs rounded transition-colors"
-                  >
-                    Clear All
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setOutputQueue([]);
+                      }}
+                      disabled={outputQueue.length === 0}
+                      className="px-2 py-1 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 disabled:text-slate-500 text-xs rounded transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs text-slate-400">Cols:</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={outputCols}
+                    onChange={(e) => setOutputCols(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs focus:outline-none focus:border-blue-500"
+                  />
+                  <span className="text-xs text-slate-400">Rows:</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={outputRows}
+                    onChange={(e) => setOutputRows(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs focus:outline-none focus:border-blue-500"
+                  />
                 </div>
 
                 <div className="grid grid-cols-4 gap-2">
@@ -872,13 +908,13 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
                 <span className="text-sm font-medium text-slate-300">JSON Metadata Preview</span>
                 <pre className="text-xs text-emerald-400 bg-slate-950 p-4 rounded overflow-auto border border-slate-700">
                   {JSON.stringify({
-                    columns: Math.min(outputQueue.length, 10),
+                    columns: outputCols,
                     image_source: `${outputName}.png`,
                     name: outputName,
                     tileheight: tileH,
-                    tiles: Array.from({ length: outputQueue.length }).map((_, i) => ({ id: i + 1, properties: [] })),
+                    tiles: Array.from({ length: Math.min(outputQueue.length, outputCols * outputRows) }).map((_, i) => ({ id: i + 1, properties: [] })),
                     tilewidth: tileW,
-                    total_tiles: outputQueue.length
+                    total_tiles: Math.min(outputQueue.length, outputCols * outputRows)
                   }, null, 2)}
                 </pre>
               </div>
