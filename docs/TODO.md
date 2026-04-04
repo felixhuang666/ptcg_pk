@@ -16,3 +16,9 @@ This document tracks conflicting designs, implementation differences, or general
 ## 4. Tile Index Logic Inconsistencies
 *   **Conflict**: Documented in `docs/design_conflict.md` and `docs/design_todo.md`, the frontend `RpgMapEditor.tsx` sometimes handles tiles as 0-based and sometimes 1-based, relying on index checks like `val !== 0 && val !== -1`.
 *   **Action Needed**: This still remains to be formally fixed in both map procedural generation on the backend and tile map usage on the frontend.
+
+## 5. RPG Scene Editor UI Inconsistencies
+*   **Conflict / Missing Implementation**: `docs/rpg_scene_design.md` specifies several UI elements that are currently missing in `RpgSceneEditor.tsx`:
+    *   **Layer Visibility Toggles**: Missing toggles for static map layers vs. dynamic entity layers in the Top Bar.
+    *   **Mode Switch**: Missing `[ Scene Composition | Map Paint | Preview ]` in the Top Bar.
+    *   **Left Sidebar Tabs**: Missing "Outliner Tab" and "Asset Manager Tab". The current implementation only shows stacked "Scenes" and "Palette" sections without proper tabbed navigation.

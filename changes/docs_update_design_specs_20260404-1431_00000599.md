@@ -1,0 +1,2 @@
+# Summary
+User asked to check if there are any conflicts with design specs and update docs/TODO.md if so. I identified that `RpgSceneEditor.tsx` does not implement some UI elements specified in `docs/rpg_scene_design.md` such as Layer Visibility Toggles, Mode Switch, and Left Sidebar Tabs. I added these missing implementations to `docs/TODO.md` under a new heading '5. RPG Scene Editor UI Inconsistencies'.
