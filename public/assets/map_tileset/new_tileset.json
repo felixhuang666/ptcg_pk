@@ -1,0 +1,42 @@
+{
+  "columns": 8,
+  "image_source": "new_tileset.png",
+  "name": "new_tileset",
+  "tileheight": 32,
+  "tiles": [
+    {
+      "id": 1,
+      "properties": []
+    },
+    {
+      "id": 2,
+      "properties": []
+    },
+    {
+      "id": 3,
+      "properties": []
+    },
+    {
+      "id": 4,
+      "properties": []
+    },
+    {
+      "id": 5,
+      "properties": []
+    },
+    {
+      "id": 6,
+      "properties": []
+    },
+    {
+      "id": 7,
+      "properties": []
+    },
+    {
+      "id": 8,
+      "properties": []
+    }
+  ],
+  "tilewidth": 32,
+  "total_tiles": 8
+}
