@@ -259,7 +259,18 @@ in_memory_maps = {
             "width": 40,
             "height": 40,
             "tiles": [2] * (40 * 40), # 2 = grass
-            "objects": [-1] * (40 * 40) # -1 = empty
+            "objects": [-1] * (40 * 40), # -1 = empty
+            "map_meta": {
+                "tilesets": [{
+                    "firstgid": 1,
+                    "name": "main_20x10",
+                    "image_source": "main_20x10.png",
+                    "columns": 20,
+                    "tilewidth": 32,
+                    "tileheight": 32,
+                    "total_tiles": 200
+                }]
+            }
         }
     }
 }
@@ -405,7 +416,18 @@ async def generate_map(request: Request):
         "block_width": block_width,
         "block_height": block_height,
         "tiles": tiles,
-        "objects": objects
+        "objects": objects,
+        "map_meta": {
+            "tilesets": [{
+                "firstgid": 1,
+                "name": "main_20x10",
+                "image_source": "main_20x10.png",
+                "columns": 20,
+                "tilewidth": 32,
+                "tileheight": 32,
+                "total_tiles": 200
+            }]
+        }
     }
 
     try:
