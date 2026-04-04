@@ -91,20 +91,37 @@ The Scene Editor includes specialized tools for placing and configuring Non-Play
 
 - **Top Bar (Global Controls)**:
   * Save, Load, New, Export.
-  * **Mode Switch**: `[ Scene Composition | Map Paint ]`
+  * **Mode Switch**: `[ Scene Composition | Map Paint | Preview ]`
   * **Layer Visibility Toggles**: Toggle visibility of static map layers vs. dynamic entity layers.
 
-- **Left Sidebar (Palette & Outliner)**:
+- **Left Sidebar (Palette, Outliner & Assets)**:
   * **Outliner Tab**: A tree list showing the hierarchy of the scene (Maps -> Entities -> NPCs/Events).
-  * **Palette Tab**: Contains draggable assets organized by category (Maps, NPCs, Items, Triggers, Tilesets).
+  * **Palette Tab**: Contains draggable assets organized by category (Maps, NPCs, Items, Triggers, Tilesets, Particles).
+  * **Asset Manager Tab**: Comprehensive visual asset management (Images, Spritesheets, Fonts, Audio, Video, JSON/TXT) with file explorer.
 
-- **Center (Canvas)**:
-  * An infinite-pan/zoom Phaser canvas displaying the global scene.
+- **Center (Canvas & Console)**:
+  * An infinite-pan/zoom Phaser canvas displaying the global scene with coordinate rulers for precise placement.
   * Shows bounding boxes around individual maps.
   * Renders pathfinding lines for NPC patrol routes.
+  * Bottom toggleable **Console** for debugging and viewing errors.
 
 - **Right Sidebar (Property Inspector)**:
   * Context-sensitive panel.
-  * **If Map selected**: Edit `offset_position`, switch to Map Edit mode.
-  * **If NPC selected**: Edit name, sprite, patrol waypoints, and open Dialog Editor.
+  * **If Map selected**: Edit `offset_position`, switch to Map Edit mode, or configure global map properties (background color, physics bounds).
+  * **If NPC/Object selected**: Edit name, sprite, physics properties (collision shapes, categories, density, restitution, gravity), opacity, angle, depth, and patrol waypoints. Open Dialog Editor.
   * **If Event selected**: Define trigger conditions (e.g., Area of Effect size) and actions (e.g., Load Scene X, Give Item Y).
+
+## 8. Scripting & Logic Integration
+The Scene Editor provides an integrated text/script editor with syntax highlighting for defining custom logic:
+* **Scene Lifecycle Hooks**: Attach custom JS/TS scripts to main Phaser scene functions: `Init()`, `Preload()`, `Create()`, and `Update(time, delta)`.
+* **Custom Object Logic**: Write custom behavior scripts for specific entities, handling collisions, tween animations, or key events.
+* **Code Templates**: Built-in snippets for common tasks like adding events, setting up tweens, or collision handling.
+
+## 9. Preview & Debugging Modes
+To facilitate rapid iteration, the editor offers two robust preview modes:
+* **Scene Preview (Inspector Mode)**: Launches the current scene in an interactive mode where the game can be paused. Allows real-time interaction with objects and tweaking of parameters in the inspector while running. Automatically activates Physics Debug visualizations.
+* **Game Preview**: Launches the full game experience as a player would see it, starting from the selected scene, with standard gameplay UI and no interactive inspector capabilities.
+
+## 10. Advanced Object Properties & Asset Management
+* **Physics Integration**: One-click conversion of Sprites/Images into physical Matter/Arcade bodies directly in the inspector, with fine-grained control over physical properties.
+* **Visual Asset Variety**: Beyond simple sprites, the editor supports adding and configuring Particles (lifespan, frequency, speed), Text, TileSprites, and Video objects directly onto the scene.
