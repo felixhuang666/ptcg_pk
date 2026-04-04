@@ -780,11 +780,11 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
         // Create an empty tilemap with the right dimensions
         this.tilemap = this.make.tilemap({ width: this.mapData.width, height: this.mapData.height, tileWidth: 32, tileHeight: 32 });
 
-        const setupLayers = () => {
-          if (!this.tileset || !this.tilemap) return;
+        const setupLayers = (tilesetArray: Phaser.Tilemaps.Tileset[]) => {
+          if (!this.tilemap) return;
 
           const createLayer = (name: string, depth: number, collides: boolean) => {
-            const l = this.tilemap!.createBlankLayer(name, this.tileset!, 0, 0)!;
+            const l = this.tilemap!.createBlankLayer(name, tilesetArray, 0, 0)!;
             l.setDepth(depth);
             const data = this.mapData.layers[name];
             if (data) {
@@ -792,7 +792,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
                 for (let x = 0; x < this.mapData.width; x++) {
                   const val = data[y * this.mapData.width + x];
                   if (val !== undefined && val !== 0 && val !== -1) {
-                    l.putTileAt(name === 'base' || name === 'decorations' || name === 'topLayer' ? val : val, x, y);
+                    l.putTileAt(val, x, y);
                   }
                 }
               }
@@ -814,42 +814,58 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
           this.topLayer = createLayer('topLayer', 10, false);
         };
 
-        // Dynamically load tileset if not loaded yet
-        const loadAndRenderTileset = (imgUrl: string, key: string) => {
-          if (!this.textures.exists(key)) {
-            this.load.image(key, imgUrl);
-            this.load.once(`filecomplete-image-${key}`, () => {
-              this.tileset = this.tilemap!.addTilesetImage(key, key, 32, 32, 0, 0);
-              setupLayers();
-            });
-            this.load.start();
-          } else {
-            this.tileset = this.tilemap!.addTilesetImage(key, key, 32, 32, 0, 0);
-            setupLayers();
-          }
-        };
-
         if (this.fogGraphics) {
           this.fogGraphics.destroy();
         }
         this.fogGraphics = this.add.graphics().setDepth(20);
 
-        // We assume active tileset info is stored globally or default to cute
-        const activeTileset = (window as any).__ACTIVE_TILESET__;
-        if (activeTileset && activeTileset.image_source) {
-          let src = activeTileset.image_source;
+        const tilesetsMeta = this.mapData.map_meta?.tilesets || [
+          {
+            firstgid: 1,
+            name: 'main_20x10',
+            image_source: 'main_20x10.png',
+            tilewidth: 32,
+            tileheight: 32
+          }
+        ];
+
+        let loadedCount = 0;
+        const totalToLoad = tilesetsMeta.length;
+        const tilesetInstances: Phaser.Tilemaps.Tileset[] = [];
+
+        const checkAllLoaded = () => {
+          loadedCount++;
+          if (loadedCount >= totalToLoad) {
+            setupLayers(tilesetInstances);
+          }
+        };
+
+        if (totalToLoad === 0) {
+           setupLayers([]);
+        }
+
+        tilesetsMeta.forEach((tsMeta: any) => {
+          let src = tsMeta.image_source;
           if (!src.endsWith('.png')) {
             src += '.png';
           }
-          const imgUrl = `/assets/map_tileset/${activeTileset.name}.png`.replace('_512x256', '');
-          const finalUrl = activeTileset.name.includes('cute') ? '/assets/map_tileset/cute_tileset.png' : `/assets/map_tileset/${src}`;
+          const imgUrl = `/assets/map_tileset/${src}`;
+          const key = `tileset_${tsMeta.name}`;
 
-          const key = `tileset_${activeTileset.name}`;
-          loadAndRenderTileset(finalUrl, key);
-        } else {
-          // Fallback
-          loadAndRenderTileset('/assets/map_tileset/cute_tileset.png', 'tileset_cute_rpg');
-        }
+          if (!this.textures.exists(key)) {
+            this.load.image(key, imgUrl);
+            this.load.once(`filecomplete-image-${key}`, () => {
+              const ts = this.tilemap!.addTilesetImage(tsMeta.name, key, tsMeta.tilewidth || 32, tsMeta.tileheight || 32, 0, 0, tsMeta.firstgid);
+              if (ts) tilesetInstances.push(ts);
+              checkAllLoaded();
+            });
+            this.load.start();
+          } else {
+            const ts = this.tilemap!.addTilesetImage(tsMeta.name, key, tsMeta.tilewidth || 32, tsMeta.tileheight || 32, 0, 0, tsMeta.firstgid);
+            if (ts) tilesetInstances.push(ts);
+            checkAllLoaded();
+          }
+        });
 
         this.physics.world.setBounds(0, 0, this.mapData.width * 32, this.mapData.height * 32);
         this.cameras.main.setBounds(0, 0, this.mapData.width * 32, this.mapData.height * 32);

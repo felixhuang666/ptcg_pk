@@ -905,7 +905,7 @@ export default function SpriteSheetEditor({ onBack }: SpriteSheetEditorProps) {
 
             {activeTab === 'JSON' && (
               <div className="space-y-4">
-                <span className="text-sm font-medium text-slate-300">JSON Metadata Preview</span>
+                <span className="text-sm font-medium text-slate-300">Tileset Property JSON Preview</span>
                 <pre className="text-xs text-emerald-400 bg-slate-950 p-4 rounded overflow-auto border border-slate-700">
                   {JSON.stringify({
                     columns: outputCols,
