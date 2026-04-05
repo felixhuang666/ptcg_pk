@@ -67,9 +67,11 @@ class SceneEditorPhaser extends Phaser.Scene {
 
     if (!sceneData || !sceneData.map_list) return;
 
-    sceneData.map_list.forEach((map: any) => {
-      const pxX = map.offset_position.x * 32;
-      const pxY = map.offset_position.y * 32;
+    const mapList = getParsedMapList(sceneData.map_list);
+
+    mapList.forEach((map: any) => {
+      const pxX = (map.offset_position?.x || 0) * 32;
+      const pxY = (map.offset_position?.y || 0) * 32;
       const pxW = (map.map_size?.width || 20) * 32;
       const pxH = (map.map_size?.height || 20) * 32;
 
@@ -139,6 +141,14 @@ function PhaserGameComponent({ sceneData, onSelect }: { sceneData: any, onSelect
   }, [sceneData]);
 
   return <div ref={containerRef} className="w-full h-full" />;
+}
+
+function getParsedMapList(mapListRaw: any): any[] {
+  let list = mapListRaw;
+  if (typeof list === 'string') {
+    try { list = JSON.parse(list); } catch (e) { list = []; }
+  }
+  return Array.isArray(list) ? list : [];
 }
 
 export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
@@ -380,9 +390,11 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   offset_position: { x: worldX, y: worldY }
                 };
 
+                const currentList = getParsedMapList(sceneData.map_list);
+
                 setSceneData({
                   ...sceneData,
-                  map_list: [...(sceneData.map_list || []), newMapEntry]
+                  map_list: [...currentList, newMapEntry]
                 });
               }
             } catch (err) {
@@ -414,7 +426,8 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                         setSelectedItem({ ...selectedItem, offset_position: { ...selectedItem.offset_position, x: newX } });
                         // Update in sceneData
                         if (sceneData) {
-                          const newMapList = sceneData.map_list.map((m: any) => m.map_id === selectedItem.map_id ? { ...m, offset_position: { ...m.offset_position, x: newX } } : m);
+                          const currentList = getParsedMapList(sceneData.map_list);
+                          const newMapList = currentList.map((m: any) => m.map_id === selectedItem.map_id ? { ...m, offset_position: { ...m.offset_position, x: newX } } : m);
                           setSceneData({ ...sceneData, map_list: newMapList });
                         }
                       }}
@@ -430,7 +443,8 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                         const newY = Number(e.target.value);
                         setSelectedItem({ ...selectedItem, offset_position: { ...selectedItem.offset_position, y: newY } });
                         if (sceneData) {
-                          const newMapList = sceneData.map_list.map((m: any) => m.map_id === selectedItem.map_id ? { ...m, offset_position: { ...m.offset_position, y: newY } } : m);
+                          const currentList = getParsedMapList(sceneData.map_list);
+                          const newMapList = currentList.map((m: any) => m.map_id === selectedItem.map_id ? { ...m, offset_position: { ...m.offset_position, y: newY } } : m);
                           setSceneData({ ...sceneData, map_list: newMapList });
                         }
                       }}
@@ -440,7 +454,8 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   <button
                     onClick={() => {
                       if (sceneData) {
-                        const newMapList = sceneData.map_list.filter((m: any) => m.map_id !== selectedItem.map_id);
+                        const currentList = getParsedMapList(sceneData.map_list);
+                        const newMapList = currentList.filter((m: any) => m.map_id !== selectedItem.map_id);
                         setSceneData({ ...sceneData, map_list: newMapList });
                         setSelectedItem(null);
                       }
