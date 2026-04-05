@@ -355,6 +355,23 @@ async def save_map(request: Request):
         "name": map_name,
         "map_data": map_data
     }
+
+    # Save map_meta to file if it exists
+    if map_data and "map_meta" in map_data:
+        try:
+            safe_id = os.path.basename(map_id)
+            import re
+            safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '', safe_id)
+            paths = ["dist/assets/map_meta", "public/assets/map_meta"]
+            for base_dir in paths:
+                if not os.path.exists(base_dir):
+                    os.makedirs(base_dir, exist_ok=True)
+                json_path = os.path.join(base_dir, f"{safe_id}.json")
+                with open(json_path, "w", encoding="utf-8") as f:
+                    json.dump(map_data["map_meta"], f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Error saving map_meta for {map_id}: {e}")
+
     from .socket_app import sio
     # Send the updated payload with map_id
     await sio.emit("map_updated_v2", {"map_id": map_id, "map_data": map_data})
