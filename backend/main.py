@@ -251,6 +251,9 @@ async def root():
         return FileResponse("dist/index.html")
     return {"message": "Frontend not built yet. Please run `make build`."}
 
+in_memory_scenes = {}
+scene_id_counter = 1
+
 in_memory_maps = {
     "main_200": {
         "id": "main_200",
@@ -599,7 +602,7 @@ async def get_scenes():
                 return res.data
     except Exception as e:
         print(f"Supabase warning (fetching scenes): {e}")
-    return []
+    return [{"id": k, "name": v.get("name", f"Scene {k}")} for k, v in in_memory_scenes.items()]
 
 @app.get("/api/scene/{scene_id}")
 async def get_scene(scene_id: int):
@@ -614,10 +617,13 @@ async def get_scene(scene_id: int):
                 return res.data[0]
     except Exception as e:
         print(f"Supabase warning (fetching scene): {e}")
+    if scene_id in in_memory_scenes:
+        return in_memory_scenes[scene_id]
     raise HTTPException(status_code=404, detail="Scene not found")
 
 @app.post("/api/scene")
 async def create_scene(request: Request):
+    global scene_id_counter, in_memory_scenes
     scene_data = await request.json()
     try:
         from supabase import create_async_client
@@ -627,14 +633,20 @@ async def create_scene(request: Request):
             client = await create_async_client(supabase_url, supabase_key)
             res = await client.table('game_scene').insert(scene_data).execute()
             if res.data and len(res.data) > 0:
-                return {"success": True, "scene": res.data[0]}
+                created_data = res.data[0]
+                in_memory_scenes[created_data['id']] = created_data
+                return {"success": True, "scene": created_data}
     except Exception as e:
         print(f"Supabase warning (creating scene): {e}")
-        return {"success": False, "error": str(e)}
-    return {"success": False, "error": "Unknown error"}
+
+    scene_data['id'] = scene_id_counter
+    scene_id_counter += 1
+    in_memory_scenes[scene_data['id']] = scene_data
+    return {"success": True, "scene": scene_data}
 
 @app.put("/api/scene/{scene_id}")
 async def update_scene(scene_id: int, request: Request):
+    global in_memory_scenes
     scene_data = await request.json()
     # Ensure ID is not updated
     if 'id' in scene_data:
@@ -650,14 +662,21 @@ async def update_scene(scene_id: int, request: Request):
             client = await create_async_client(supabase_url, supabase_key)
             res = await client.table('game_scene').update(scene_data).eq('id', scene_id).execute()
             if res.data and len(res.data) > 0:
-                return {"success": True, "scene": res.data[0]}
+                updated_data = res.data[0]
+                in_memory_scenes[scene_id] = updated_data
+                return {"success": True, "scene": updated_data}
     except Exception as e:
         print(f"Supabase warning (updating scene): {e}")
-        return {"success": False, "error": str(e)}
-    return {"success": False, "error": "Unknown error"}
+
+    if scene_id in in_memory_scenes:
+        in_memory_scenes[scene_id].update(scene_data)
+        return {"success": True, "scene": in_memory_scenes[scene_id]}
+    return {"success": False, "error": "Scene not found"}
 
 @app.delete("/api/scene/{scene_id}")
 async def delete_scene(scene_id: int):
+    global in_memory_scenes
+    success = False
     try:
         from supabase import create_async_client
         supabase_url = os.environ.get("SUPABASE_URL")
@@ -665,11 +684,17 @@ async def delete_scene(scene_id: int):
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
             await client.table('game_scene').delete().eq('id', scene_id).execute()
-            return {"success": True}
+            success = True
     except Exception as e:
         print(f"Supabase warning (deleting scene): {e}")
-        return {"success": False, "error": str(e)}
-    return {"success": False, "error": "Unknown error"}
+
+    if scene_id in in_memory_scenes:
+        del in_memory_scenes[scene_id]
+        success = True
+
+    if success:
+        return {"success": True}
+    return {"success": False, "error": "Scene not found"}
 
 @app.delete("/api/map/{map_id}")
 async def delete_map(map_id: str):
