@@ -67,7 +67,20 @@ class SceneEditorPhaser extends Phaser.Scene {
 
     if (!sceneData || !sceneData.map_list) return;
 
-    const mapList = getParsedMapList(sceneData.map_list);
+    let mapList = getParsedMapList(sceneData.map_list);
+
+    // Sort maps by layer index so they render in correct order
+    const layers = sceneData.layers || [];
+    const layerIndices = layers.reduce((acc: any, layer: any, idx: number) => {
+      acc[layer.id] = idx;
+      return acc;
+    }, {});
+
+    mapList.sort((a: any, b: any) => {
+      const idxA = layerIndices[a.layer_id] ?? 999;
+      const idxB = layerIndices[b.layer_id] ?? 999;
+      return idxA - idxB;
+    });
 
     mapList.forEach((map: any) => {
       const pxX = (map.offset_position?.x || 0) * 32;
@@ -160,6 +173,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [mapsList, setMapsList] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [mode, setMode] = useState<'SCENE' | 'MAP'>('SCENE');
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
 
   const loadScenes = () => {
     fetch('/api/scenes')
@@ -188,7 +202,20 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
       fetch(`/api/scene/${currentSceneId}`)
         .then(res => res.json())
         .then(data => {
-          setSceneData(data);
+          let updatedData = { ...data };
+          if (!updatedData.layers || updatedData.layers.length === 0) {
+            const newLayerId = 'layer-' + Date.now();
+            updatedData.layers = [{ id: newLayerId, name: 'Base Layer' }];
+            const currentList = getParsedMapList(updatedData.map_list);
+            updatedData.map_list = currentList.map((m: any) => ({
+              ...m,
+              layer_id: m.layer_id || newLayerId
+            }));
+          }
+          setSceneData(updatedData);
+          if (updatedData.layers.length > 0) {
+            setActiveLayerId(updatedData.layers[0].id);
+          }
         });
     }
   }, [currentSceneId]);
@@ -213,7 +240,12 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                 fetch('/api/scene', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ name, map_list: [], scene_entities: { npcs: [], items: [], events: [] } })
+                  body: JSON.stringify({
+                    name,
+                    layers: [{ id: 'layer-' + Date.now(), name: 'Base Layer' }],
+                    map_list: [],
+                    scene_entities: { npcs: [], items: [], events: [] }
+                  })
                 }).then(() => loadScenes());
               }
             }}
@@ -335,6 +367,54 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
               ))}
             </div>
 
+            <div className="p-4 border-b border-slate-700 font-bold flex justify-between items-center">
+              <span>Layers</span>
+              <button
+                onClick={() => {
+                  if (sceneData) {
+                    const newLayerId = 'layer-' + Date.now();
+                    const newLayerName = prompt("Enter layer name:", "New Layer");
+                    if (newLayerName) {
+                      const newLayers = [...(sceneData.layers || []), { id: newLayerId, name: newLayerName }];
+                      setSceneData({ ...sceneData, layers: newLayers });
+                      setActiveLayerId(newLayerId);
+                    }
+                  }
+                }}
+                className="p-1 bg-slate-700 hover:bg-slate-600 rounded"
+                title="Add Layer"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-2 border-b border-slate-700">
+              {(sceneData?.layers || []).map((layer: any) => (
+                <div key={layer.id} className="flex gap-1 mb-1">
+                  <button
+                    className={`flex-1 text-left px-2 py-1 rounded text-sm ${layer.id === activeLayerId ? 'bg-indigo-600' : 'hover:bg-slate-700'}`}
+                    onClick={() => setActiveLayerId(layer.id)}
+                  >
+                    {layer.name}
+                  </button>
+                  <button
+                    className="p-1 text-red-400 hover:bg-slate-700 rounded"
+                    onClick={() => {
+                      if (confirm('Delete layer and all its maps?')) {
+                        const newLayers = sceneData.layers.filter((l: any) => l.id !== layer.id);
+                        const newMapList = getParsedMapList(sceneData.map_list).filter((m: any) => m.layer_id !== layer.id);
+                        setSceneData({ ...sceneData, layers: newLayers, map_list: newMapList });
+                        if (activeLayerId === layer.id) {
+                          setActiveLayerId(newLayers.length > 0 ? newLayers[0].id : null);
+                        }
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
             <div className="p-4 border-b border-slate-700 font-bold">Palette</div>
             <div className="p-2 space-y-4">
               <div>
@@ -384,10 +464,16 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   worldY = Math.round(worldPoint.y / 32);
                 }
 
+                if (!activeLayerId) {
+                  alert("Please select a layer first!");
+                  return;
+                }
+
                 const newMapEntry = {
                   map_id: data.map_id,
                   map_size: data.map_size,
-                  offset_position: { x: worldX, y: worldY }
+                  offset_position: { x: worldX, y: worldY },
+                  layer_id: activeLayerId
                 };
 
                 const currentList = getParsedMapList(sceneData.map_list);
@@ -412,6 +498,26 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
               {!selectedItem && <div className="text-slate-400">Select an item to view properties.</div>}
               {selectedItem && selectedItem.type === 'map' && (
                 <div className="space-y-4">
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Layer</label>
+                    <select
+                      value={selectedItem.layer_id || ''}
+                      onChange={(e) => {
+                        const newLayerId = e.target.value;
+                        setSelectedItem({ ...selectedItem, layer_id: newLayerId });
+                        if (sceneData) {
+                          const currentList = getParsedMapList(sceneData.map_list);
+                          const newMapList = currentList.map((m: any) => m.map_id === selectedItem.map_id ? { ...m, layer_id: newLayerId } : m);
+                          setSceneData({ ...sceneData, map_list: newMapList });
+                        }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white"
+                    >
+                      {(sceneData?.layers || []).map((l: any) => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-slate-400 text-xs mb-1">Map ID</label>
                     <input type="text" readOnly value={selectedItem.map_id} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1" />
