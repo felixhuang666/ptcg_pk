@@ -7,7 +7,7 @@ This document tracks conflicting designs, implementation differences, or general
 
 ## 2. RPG Scene Editor - Phaser Rendering
 *   **Difference**: `docs/rpg_scene_design.md` specifies that "The global grid... When a map is placed... local tiles are rendered at those global coordinates." Currently, the implementation of `RpgSceneEditor.tsx` renders a green bounding box (`rect = this.add.rectangle(...)`) to represent the map chunks instead of actually rendering the static map layers.
-*   **Resolution**: Render actual tiles using the `Phaser.Tilemaps` API inside `RpgSceneEditor` to give users a true WYSIWYG experience, or update the spec to mention bounding box representations.
+*   **Resolution**: (Resolved) The spec has been updated to mention bounding box representations.
 
 ## 3. Top Header Navigation Buttons
 *   **Design Note**: `docs/rpg_mode_design.md` describes a "Header Navigation" containing only a few actions (`Back`, `Refresh`, `Settings`, `Fullscreen`). However, the implementation adds multiple robust navigation methods (`Map` toggles, `Scene` toggles, etc.), which we've now documented in `docs/ui_header_navigation_design.md`.
