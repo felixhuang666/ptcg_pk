@@ -1175,7 +1175,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   }, [showGrid, blockWidth, blockHeight]);
 
   const loadTilesets = () => {
-    fetch('/api/map/tilesets')
+    fetch('/api/map/tilesets?t=' + Date.now())
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -1247,6 +1247,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
       setResizeHeight(e.detail.height);
       if (e.detail.block_width) setBlockWidth(e.detail.block_width);
       if (e.detail.block_height) setBlockHeight(e.detail.block_height);
+      loadTilesets();
     };
     window.addEventListener('tileTypeChanged', handleTileChange);
     window.addEventListener('mapLoaded', handleMapLoaded);
