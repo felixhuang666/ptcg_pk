@@ -1653,12 +1653,12 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                 const scene = (window as any).__PHASER_MAIN_SCENE__;
                 const mapTilesets = scene?.mapData?.map_meta?.tilesets || [];
                 return mapTilesets.length > 0 && (
-                  <div className="flex flex-wrap border-b border-slate-700 bg-slate-800 p-1 gap-1">
+                  <div className="flex overflow-x-auto border-b border-slate-700 bg-slate-800 p-1 gap-1 shrink-0">
                     {mapTilesets.map((ts: any, idx: number) => (
                       <button
                         key={ts.name}
                         onClick={() => setActiveTilesetIndex(idx)}
-                        className={`px-2 py-1 text-[10px] rounded transition-colors ${activeTilesetIndex === idx ? 'bg-blue-600 text-white font-bold' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                        className={`px-2 py-1 text-[10px] rounded transition-colors whitespace-nowrap shrink-0 ${activeTilesetIndex === idx ? 'bg-blue-600 text-white font-bold' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
                       >
                         {ts.name}
                       </button>
@@ -1667,7 +1667,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                 );
               })()}
 
-              <div className="flex-1 overflow-y-auto p-2">
+              <div className="flex-1 overflow-y-auto p-2 min-h-0">
                 {(editLayer === 'base' || editLayer === 'decorations' || editLayer === 'topLayer') && (() => {
                   const scene = (window as any).__PHASER_MAIN_SCENE__;
                   const mapTilesets = scene?.mapData?.map_meta?.tilesets || [];
