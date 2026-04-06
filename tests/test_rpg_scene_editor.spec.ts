@@ -14,14 +14,14 @@ test('RPG Scene Editor - Import/Export Scene', async ({ page }) => {
   await page.waitForSelector('h2:has-text("RPG場景編輯器")');
 
   // Create a new scene to make sure sceneData is not null
-  await page.click('button[title="New Scene"]');
-  page.on('dialog', async dialog => {
+  page.once('dialog', async dialog => {
       if (dialog.type() === 'prompt') {
           await dialog.accept('Test Scene');
       } else {
           await dialog.accept();
       }
   });
+  await page.click('button[title="New Scene"]');
   await page.waitForTimeout(1000);
 
   // Create dummy test file for import

@@ -1,44 +1,42 @@
-# Test Results
+# Test Result Report
 
-## Frontend & E2E Tests
-```
-> react-example@0.0.0 test
-> vitest run
+## Overview
+- **Date**: 2024-04-06
+- **Backend Tests**: Passed
+- **E2E Tests**: Passed
+- **Frontend Unit Tests**: Passed
 
- RUN  v4.1.2 /app
+## Details
 
- ✓ tests/App.test.tsx (1 test) 333ms
-     ✓ renders login container when unauthenticated  329ms
+### 1. Backend Tests
+Execution Command: `make test-backend`
 
- Test Files  1 passed (1)
-      Tests  1 passed (1)
-   Start at  23:41:53
-   Duration  3.94s (transform 739ms, setup 120ms, import 2.27s, tests 333ms, environment 1.02s)
-```
+**Results**:
+- `test_api_maps.py`: 4 tests passed
+- `test_api_maps_resize.py`: 1 test passed
+- `test_api_scenes.py`: 4 tests passed
+- `test_main.py`: 3 tests passed
+- `test_real_api.py`: 2 tests passed
 
-```
-Running 3 tests using 2 workers
+**Summary**: 14/14 tests passed.
 
-  1 passed [chromium] › tests/real_frontend.spec.ts:3:1 › verify real frontend via dev login
-  2 passed [chromium] › tests/test_rpg_scene_editor.spec.ts:5:1 › RPG Scene Editor - Import/Export Scene
-  3 passed [chromium] › tests/verify_rpg.spec.ts:3:1 › verify RPG mode and Map Editor rendering
-  3 passed (15.9s)
-```
+### 2. E2E Tests (Playwright)
+Execution Command: `npx playwright test --workers 1`
 
-## Backend Tests
-```
-============================= test session starts ==============================
-platform linux -- Python 3.12.13, pytest-9.0.2, pluggy-1.6.0
-rootdir: /app
-configfile: pyproject.toml
-plugins: asyncio-1.3.0, anyio-4.13.0
-asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
-collected 10 items
+**Results**:
+- `real_frontend.spec.ts:3:1 › verify real frontend via dev login` - Passed
+- `test_rpg_scene_editor.spec.ts:5:1 › RPG Scene Editor - Import/Export Scene` - Passed
+- `verify_rpg.spec.ts:3:1 › verify RPG mode and Map Editor rendering` - Passed
 
-backend/tests/test_api_maps.py ....                                      [ 40%]
-backend/tests/test_api_maps_resize.py .                                  [ 50%]
-backend/tests/test_main.py ...                                           [ 80%]
-backend/tests/test_real_api.py ..                                        [100%]
+**Summary**: 3/3 tests passed.
 
-============================== 10 passed in 4.98s ==============================
-```
+### 3. Frontend Unit Tests (Vitest)
+Execution Command: `npm run test`
+
+**Results**:
+- `tests/App.test.tsx` - Passed
+
+**Summary**: 1/1 tests passed.
+
+## Notes
+A timeout issue in `test_rpg_scene_editor.spec.ts` was identified and resolved by properly sequencing `page.once('dialog')` before `page.click('button[title="New Scene"]')`, and by ensuring e2e tests run sequentially (`--workers 1`) to avoid race conditions.
