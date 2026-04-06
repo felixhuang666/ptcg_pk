@@ -614,11 +614,17 @@ async def get_scene(scene_id: int):
             client = await create_async_client(supabase_url, supabase_key)
             res = await client.table('game_scene').select('*').eq('id', scene_id).execute()
             if res.data and len(res.data) > 0:
-                return res.data[0]
+                scene_data = res.data[0]
+                if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
+                    scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+                return scene_data
     except Exception as e:
         print(f"Supabase warning (fetching scene): {e}")
     if scene_id in in_memory_scenes:
-        return in_memory_scenes[scene_id]
+        scene_data = in_memory_scenes[scene_id]
+        if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
+            scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+        return scene_data
     raise HTTPException(status_code=404, detail="Scene not found")
 
 @app.post("/api/scene")
@@ -631,11 +637,30 @@ async def create_scene(request: Request):
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            res = await client.table('game_scene').insert(scene_data).execute()
-            if res.data and len(res.data) > 0:
-                created_data = res.data[0]
-                in_memory_scenes[created_data['id']] = created_data
-                return {"success": True, "scene": created_data}
+            try:
+                res = await client.table('game_scene').insert(scene_data).execute()
+                if res.data and len(res.data) > 0:
+                    created_data = res.data[0]
+                    in_memory_scenes[created_data['id']] = created_data
+                    return {"success": True, "scene": created_data}
+            except Exception as inner_e:
+                if 'PGRST204' in str(inner_e) and 'layers' in scene_data:
+                    # Fallback to saving layers inside scene_entities if schema is old
+                    scene_data_fallback = scene_data.copy()
+                    layers = scene_data_fallback.pop('layers', [])
+                    if 'scene_entities' not in scene_data_fallback:
+                        scene_data_fallback['scene_entities'] = {}
+                    scene_data_fallback['scene_entities']['layers'] = layers
+                    res = await client.table('game_scene').insert(scene_data_fallback).execute()
+                    if res.data and len(res.data) > 0:
+                        created_data = res.data[0]
+                        # Restore layers property for frontend
+                        if 'layers' in created_data.get('scene_entities', {}):
+                            created_data['layers'] = created_data['scene_entities'].pop('layers')
+                        in_memory_scenes[created_data['id']] = created_data
+                        return {"success": True, "scene": created_data}
+                else:
+                    raise inner_e
     except Exception as e:
         print(f"Supabase warning (creating scene): {e}")
 
@@ -660,11 +685,29 @@ async def update_scene(scene_id: int, request: Request):
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            res = await client.table('game_scene').update(scene_data).eq('id', scene_id).execute()
-            if res.data and len(res.data) > 0:
-                updated_data = res.data[0]
-                in_memory_scenes[scene_id] = updated_data
-                return {"success": True, "scene": updated_data}
+            try:
+                res = await client.table('game_scene').update(scene_data).eq('id', scene_id).execute()
+                if res.data and len(res.data) > 0:
+                    updated_data = res.data[0]
+                    in_memory_scenes[scene_id] = updated_data
+                    return {"success": True, "scene": updated_data}
+            except Exception as inner_e:
+                if 'PGRST204' in str(inner_e) and 'layers' in scene_data:
+                    # Fallback to saving layers inside scene_entities if schema is old
+                    scene_data_fallback = scene_data.copy()
+                    layers = scene_data_fallback.pop('layers', [])
+                    if 'scene_entities' not in scene_data_fallback:
+                        scene_data_fallback['scene_entities'] = {}
+                    scene_data_fallback['scene_entities']['layers'] = layers
+                    res = await client.table('game_scene').update(scene_data_fallback).eq('id', scene_id).execute()
+                    if res.data and len(res.data) > 0:
+                        updated_data = res.data[0]
+                        if 'layers' in updated_data.get('scene_entities', {}):
+                            updated_data['layers'] = updated_data['scene_entities'].pop('layers')
+                        in_memory_scenes[scene_id] = updated_data
+                        return {"success": True, "scene": updated_data}
+                else:
+                    raise inner_e
     except Exception as e:
         print(f"Supabase warning (updating scene): {e}")
 
