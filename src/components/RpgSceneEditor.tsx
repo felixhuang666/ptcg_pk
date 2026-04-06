@@ -6,7 +6,7 @@ class SceneEditorPhaser extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
   private mapsContainer!: Phaser.GameObjects.Container;
   private onSelect!: (item: any) => void;
-  private onUpdateMapOffset!: (mapId: string, layerId: string, newX: number, newY: number) => void;
+  private onUpdateMapOffset!: (instanceId: string, newX: number, newY: number) => void;
 
   constructor() {
     super({ key: 'SceneEditorPhaser' });
@@ -128,7 +128,7 @@ class SceneEditorPhaser extends Phaser.Scene {
 
         // Notify React to update sceneData
         if (this.onUpdateMapOffset && (snappedGridX !== startGridX || snappedGridY !== startGridY)) {
-          this.onUpdateMapOffset(map.map_id, map.layer_id, snappedGridX, snappedGridY);
+          this.onUpdateMapOffset(map.instance_id, snappedGridX, snappedGridY);
         }
       });
 
@@ -137,7 +137,7 @@ class SceneEditorPhaser extends Phaser.Scene {
   }
 }
 
-function PhaserGameComponent({ sceneData, onSelect, onUpdateMapOffset }: { sceneData: any, onSelect: (item: any) => void, onUpdateMapOffset: (mapId: string, layerId: string, newX: number, newY: number) => void }) {
+function PhaserGameComponent({ sceneData, onSelect, onUpdateMapOffset }: { sceneData: any, onSelect: (item: any) => void, onUpdateMapOffset: (instanceId: string, newX: number, newY: number) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
@@ -590,6 +590,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                 }
 
                 const newMapEntry = {
+                  instance_id: 'inst-' + Math.random().toString(36).substring(2, 9),
                   map_id: data.map_id,
                   map_size: data.map_size,
                   offset_position: { x: worldX, y: worldY },
@@ -611,17 +612,17 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           <PhaserGameComponent
             sceneData={sceneData}
             onSelect={(item) => setSelectedItem(item)}
-            onUpdateMapOffset={(mapId, layerId, newX, newY) => {
+            onUpdateMapOffset={(instanceId, newX, newY) => {
               if (sceneData) {
                 const currentList = getParsedMapList(sceneData.map_list);
                 const newMapList = currentList.map((m: any) =>
-                  (m.map_id === mapId && m.layer_id === layerId)
+                  (m.instance_id === instanceId)
                     ? { ...m, offset_position: { x: newX, y: newY } }
                     : m
                 );
                 setSceneData({ ...sceneData, map_list: newMapList });
 
-                if (selectedItem && selectedItem.map_id === mapId && selectedItem.layer_id === layerId) {
+                if (selectedItem && selectedItem.instance_id === instanceId) {
                   setSelectedItem({ ...selectedItem, offset_position: { x: newX, y: newY } });
                 }
               }
@@ -728,6 +729,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   onClick={() => {
                     if (sceneData) {
                       const newMapEntry = {
+                        instance_id: 'inst-' + Math.random().toString(36).substring(2, 9),
                         map_id: m.id,
                         map_size: { width: m.map_data?.width || 20, height: m.map_data?.height || 20 },
                         offset_position: { x: 0, y: 0 },

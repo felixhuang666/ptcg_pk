@@ -637,29 +637,38 @@ async def create_scene(request: Request):
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            try:
-                res = await client.table('game_scene').insert(scene_data).execute()
-                if res.data and len(res.data) > 0:
-                    created_data = res.data[0]
-                    in_memory_scenes[created_data['id']] = created_data
-                    return {"success": True, "scene": created_data}
-            except Exception as inner_e:
-                if 'PGRST204' in str(inner_e) and 'layers' in scene_data:
-                    # Fallback to saving layers inside scene_entities if schema is old
-                    scene_data_fallback = scene_data.copy()
-                    layers = scene_data_fallback.pop('layers', [])
-                    if 'scene_entities' not in scene_data_fallback:
-                        scene_data_fallback['scene_entities'] = {}
-                    scene_data_fallback['scene_entities']['layers'] = layers
-                    res = await client.table('game_scene').insert(scene_data_fallback).execute()
+            payload = scene_data.copy()
+            dropped_fields = {}
+
+            # Robust fallback for missing columns in Supabase
+            while True:
+                try:
+                    res = await client.table('game_scene').insert(payload).execute()
                     if res.data and len(res.data) > 0:
                         created_data = res.data[0]
-                        # Restore layers property for frontend
+                        # Merge back any dropped fields into the returned object so they stay in memory
+                        created_data.update(dropped_fields)
                         if 'layers' in created_data.get('scene_entities', {}):
                             created_data['layers'] = created_data['scene_entities'].pop('layers')
                         in_memory_scenes[created_data['id']] = created_data
                         return {"success": True, "scene": created_data}
-                else:
+                    break
+                except Exception as inner_e:
+                    err_str = str(inner_e)
+                    if 'PGRST204' in err_str:
+                        import re
+                        match = re.search(r"Could not find the '(.*?)' column", err_str)
+                        if match:
+                            missing_col = match.group(1)
+                            if missing_col in payload:
+                                dropped_fields[missing_col] = payload.pop(missing_col)
+
+                                # Special fallback: if 'layers' is missing, try stuffing it into 'scene_entities' first
+                                if missing_col == 'layers' and 'scene_entities' in payload:
+                                    if not isinstance(payload['scene_entities'], dict):
+                                        payload['scene_entities'] = {}
+                                    payload['scene_entities']['layers'] = dropped_fields['layers']
+                                continue
                     raise inner_e
     except Exception as e:
         print(f"Supabase warning (creating scene): {e}")
@@ -685,28 +694,34 @@ async def update_scene(scene_id: int, request: Request):
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            try:
-                res = await client.table('game_scene').update(scene_data).eq('id', scene_id).execute()
-                if res.data and len(res.data) > 0:
-                    updated_data = res.data[0]
-                    in_memory_scenes[scene_id] = updated_data
-                    return {"success": True, "scene": updated_data}
-            except Exception as inner_e:
-                if 'PGRST204' in str(inner_e) and 'layers' in scene_data:
-                    # Fallback to saving layers inside scene_entities if schema is old
-                    scene_data_fallback = scene_data.copy()
-                    layers = scene_data_fallback.pop('layers', [])
-                    if 'scene_entities' not in scene_data_fallback:
-                        scene_data_fallback['scene_entities'] = {}
-                    scene_data_fallback['scene_entities']['layers'] = layers
-                    res = await client.table('game_scene').update(scene_data_fallback).eq('id', scene_id).execute()
+            payload = scene_data.copy()
+            dropped_fields = {}
+
+            while True:
+                try:
+                    res = await client.table('game_scene').update(payload).eq('id', scene_id).execute()
                     if res.data and len(res.data) > 0:
                         updated_data = res.data[0]
+                        updated_data.update(dropped_fields)
                         if 'layers' in updated_data.get('scene_entities', {}):
                             updated_data['layers'] = updated_data['scene_entities'].pop('layers')
                         in_memory_scenes[scene_id] = updated_data
                         return {"success": True, "scene": updated_data}
-                else:
+                    break
+                except Exception as inner_e:
+                    err_str = str(inner_e)
+                    if 'PGRST204' in err_str:
+                        import re
+                        match = re.search(r"Could not find the '(.*?)' column", err_str)
+                        if match:
+                            missing_col = match.group(1)
+                            if missing_col in payload:
+                                dropped_fields[missing_col] = payload.pop(missing_col)
+                                if missing_col == 'layers' and 'scene_entities' in payload:
+                                    if not isinstance(payload['scene_entities'], dict):
+                                        payload['scene_entities'] = {}
+                                    payload['scene_entities']['layers'] = dropped_fields['layers']
+                                continue
                     raise inner_e
     except Exception as e:
         print(f"Supabase warning (updating scene): {e}")
