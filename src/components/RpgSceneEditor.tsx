@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight } from 'lucide-react';
 import Phaser from 'phaser';
 
 class SceneEditorPhaser extends Phaser.Scene {
@@ -219,6 +219,10 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null);
   const [showAddMapModal, setShowAddMapModal] = useState<string | null>(null);
 
+  const [isScenesExpanded, setIsScenesExpanded] = useState(true);
+  const [isLayersExpanded, setIsLayersExpanded] = useState(true);
+  const [isPaletteExpanded, setIsPaletteExpanded] = useState(true);
+
   const loadScenes = (newSceneId?: number) => {
     fetch('/api/scenes')
       .then(res => res.json())
@@ -397,32 +401,46 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
       <div className="flex-1 flex overflow-hidden">
         {showLeftSidebar && (
           <div className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col overflow-y-auto">
-            <div className="p-4 border-b border-slate-700 font-bold">Scenes</div>
-            <div className="p-2 border-b border-slate-700">
-              {scenes.map(s => (
-                <div key={s.id} className="flex gap-1 mb-1">
-                  <button
-                    className={`flex-1 text-left px-2 py-1 rounded text-sm ${s.id === currentSceneId ? 'bg-blue-600' : 'hover:bg-slate-700'}`}
-                    onClick={() => setCurrentSceneId(s.id)}
-                  >
-                    {s.name}
-                  </button>
-                  <button
-                    className="p-1 text-red-400 hover:bg-slate-700 rounded"
-                    onClick={() => {
-                      if (confirm('Delete scene?')) {
-                        fetch(`/api/scene/${s.id}`, { method: 'DELETE' }).then(() => loadScenes());
-                      }
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+            <div
+              className="p-4 border-b border-slate-700 font-bold flex items-center gap-2 cursor-pointer hover:bg-slate-700 transition-colors"
+              onClick={() => setIsScenesExpanded(!isScenesExpanded)}
+            >
+              {isScenesExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              <span>Scenes</span>
             </div>
+            {isScenesExpanded && (
+              <div className="p-2 border-b border-slate-700">
+                {scenes.map(s => (
+                  <div key={s.id} className="flex gap-1 mb-1">
+                    <button
+                      className={`flex-1 text-left px-2 py-1 rounded text-sm ${s.id === currentSceneId ? 'bg-blue-600' : 'hover:bg-slate-700'}`}
+                      onClick={() => setCurrentSceneId(s.id)}
+                    >
+                      {s.name}
+                    </button>
+                    <button
+                      className="p-1 text-red-400 hover:bg-slate-700 rounded"
+                      onClick={() => {
+                        if (confirm('Delete scene?')) {
+                          fetch(`/api/scene/${s.id}`, { method: 'DELETE' }).then(() => loadScenes());
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="p-4 border-b border-slate-700 font-bold flex justify-between items-center">
-              <span>Layers</span>
+              <div
+                className="flex items-center gap-2 cursor-pointer hover:text-slate-300 flex-1"
+                onClick={() => setIsLayersExpanded(!isLayersExpanded)}
+              >
+                {isLayersExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                <span>Layers</span>
+              </div>
               <button
                 onClick={() => {
                   if (sceneData) {
@@ -441,11 +459,12 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-2 border-b border-slate-700">
-              {(sceneData?.layers || []).map((layer: any, index: number) => (
-                <div
-                  key={layer.id}
-                  className="mb-2 border border-transparent hover:border-slate-600 rounded bg-slate-800/50 p-1"
+            {isLayersExpanded && (
+              <div className="p-2 border-b border-slate-700">
+                {(sceneData?.layers || []).map((layer: any, index: number) => (
+                  <div
+                    key={layer.id}
+                    className="mb-2 border border-transparent hover:border-slate-600 rounded bg-slate-800/50 p-1"
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData('layer_id', layer.id);
@@ -532,13 +551,21 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                       ))}
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
-            <div className="p-4 border-b border-slate-700 font-bold">Palette</div>
-            <div className="p-2 space-y-4">
-              <div>
-                <h3 className="text-sm text-slate-400 mb-2">Maps</h3>
+            <div
+              className="p-4 border-b border-slate-700 font-bold flex items-center gap-2 cursor-pointer hover:bg-slate-700 transition-colors"
+              onClick={() => setIsPaletteExpanded(!isPaletteExpanded)}
+            >
+              {isPaletteExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              <span>Palette</span>
+            </div>
+            {isPaletteExpanded && (
+              <div className="p-2 space-y-4">
+                <div>
+                  <h3 className="text-sm text-slate-400 mb-2">Maps</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {mapsList.map(m => (
                     <div
@@ -553,8 +580,9 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                     </div>
                   ))}
                 </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
