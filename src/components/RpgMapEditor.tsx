@@ -293,10 +293,26 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
           const data = await res.json();
           this.mapData = data.map_data ? data.map_data : data;
           this.upgradeMapData(this.mapData);
+          window.dispatchEvent(new CustomEvent('mapLoaded', {
+            detail: {
+              width: this.mapData.width,
+              height: this.mapData.height,
+              block_width: this.mapData.block_width || 32,
+              block_height: this.mapData.block_height || 32
+            }
+          }));
         } catch (err) {
           console.error('Failed to load map', err);
           this.mapData = { width: 40, height: 40, tiles: Array(40 * 40).fill(0) };
           this.upgradeMapData(this.mapData);
+          window.dispatchEvent(new CustomEvent('mapLoaded', {
+            detail: {
+              width: this.mapData.width,
+              height: this.mapData.height,
+              block_width: this.mapData.block_width || 32,
+              block_height: this.mapData.block_height || 32
+            }
+          }));
         }
 
         if (isDestroyed || !this.sys || !this.sys.game) return;
