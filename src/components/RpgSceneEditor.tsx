@@ -6,6 +6,7 @@ class SceneEditorPhaser extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
   private mapsContainer!: Phaser.GameObjects.Container;
   private onSelect!: (item: any) => void;
+  private onUpdateMapOffset!: (mapId: string, layerId: string, newX: number, newY: number) => void;
 
   constructor() {
     super({ key: 'SceneEditorPhaser' });
@@ -13,6 +14,7 @@ class SceneEditorPhaser extends Phaser.Scene {
 
   init(data: any) {
     this.onSelect = data.onSelect;
+    this.onUpdateMapOffset = data.onUpdateMapOffset;
     (window as any).__PHASER_SCENE_EDITOR__ = this;
   }
 
@@ -83,14 +85,18 @@ class SceneEditorPhaser extends Phaser.Scene {
     });
 
     mapList.forEach((map: any) => {
-      const pxX = (map.offset_position?.x || 0) * 32;
-      const pxY = (map.offset_position?.y || 0) * 32;
+      const startGridX = map.offset_position?.x || 0;
+      const startGridY = map.offset_position?.y || 0;
+      const pxX = startGridX * 32;
+      const pxY = startGridY * 32;
       const pxW = (map.map_size?.width || 20) * 32;
       const pxH = (map.map_size?.height || 20) * 32;
 
       const rect = this.add.rectangle(pxX + pxW/2, pxY + pxH/2, pxW, pxH, 0x00ff00, 0.2);
       rect.setStrokeStyle(2, 0x00ff00);
-      rect.setInteractive();
+      rect.setInteractive({ draggable: true });
+
+      const text = this.add.text(pxX + 5, pxY + 5, map.map_id, { color: '#ffffff', fontSize: '16px' });
 
       rect.on('pointerdown', (pointer: any) => {
         if (pointer.leftButtonDown()) {
@@ -98,14 +104,40 @@ class SceneEditorPhaser extends Phaser.Scene {
         }
       });
 
-      const text = this.add.text(pxX + 5, pxY + 5, map.map_id, { color: '#ffffff', fontSize: '16px' });
+      rect.on('drag', (pointer: any, dragX: number, dragY: number) => {
+        rect.x = dragX;
+        rect.y = dragY;
+        text.x = dragX - pxW/2 + 5;
+        text.y = dragY - pxH/2 + 5;
+      });
+
+      rect.on('dragend', () => {
+        // Calculate new top-left corner
+        const newLeftX = rect.x - pxW/2;
+        const newTopY = rect.y - pxH/2;
+
+        // Snap to grid
+        const snappedGridX = Math.round(newLeftX / 32);
+        const snappedGridY = Math.round(newTopY / 32);
+
+        // Visually snap
+        rect.x = snappedGridX * 32 + pxW/2;
+        rect.y = snappedGridY * 32 + pxH/2;
+        text.x = snappedGridX * 32 + 5;
+        text.y = snappedGridY * 32 + 5;
+
+        // Notify React to update sceneData
+        if (this.onUpdateMapOffset && (snappedGridX !== startGridX || snappedGridY !== startGridY)) {
+          this.onUpdateMapOffset(map.map_id, map.layer_id, snappedGridX, snappedGridY);
+        }
+      });
 
       this.mapsContainer.add([rect, text]);
     });
   }
 }
 
-function PhaserGameComponent({ sceneData, onSelect }: { sceneData: any, onSelect: (item: any) => void }) {
+function PhaserGameComponent({ sceneData, onSelect, onUpdateMapOffset }: { sceneData: any, onSelect: (item: any) => void, onUpdateMapOffset: (mapId: string, layerId: string, newX: number, newY: number) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
@@ -128,7 +160,7 @@ function PhaserGameComponent({ sceneData, onSelect }: { sceneData: any, onSelect
     gameRef.current.events.on('ready', () => {
       const scene = gameRef.current?.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
       if (scene) {
-        scene.init({ onSelect });
+        scene.init({ onSelect, onUpdateMapOffset });
         if (sceneData) {
           scene.updateSceneData(sceneData);
         }
@@ -143,6 +175,16 @@ function PhaserGameComponent({ sceneData, onSelect }: { sceneData: any, onSelect
       (window as any).__PHASER_SCENE_EDITOR__ = null;
     };
   }, []);
+
+  // Update callbacks internally in the scene if they change
+  useEffect(() => {
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
+      if (scene) {
+        scene.init({ onSelect, onUpdateMapOffset });
+      }
+    }
+  }, [onSelect, onUpdateMapOffset]);
 
   useEffect(() => {
     if (gameRef.current) {
@@ -174,6 +216,8 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [mode, setMode] = useState<'SCENE' | 'MAP'>('SCENE');
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
+  const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null);
+  const [showAddMapModal, setShowAddMapModal] = useState<string | null>(null);
 
   const loadScenes = (newSceneId?: number) => {
     fetch('/api/scenes')
@@ -398,29 +442,95 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
               </button>
             </div>
             <div className="p-2 border-b border-slate-700">
-              {(sceneData?.layers || []).map((layer: any) => (
-                <div key={layer.id} className="flex gap-1 mb-1">
-                  <button
-                    className={`flex-1 text-left px-2 py-1 rounded text-sm ${layer.id === activeLayerId ? 'bg-indigo-600' : 'hover:bg-slate-700'}`}
-                    onClick={() => setActiveLayerId(layer.id)}
-                  >
-                    {layer.name}
-                  </button>
-                  <button
-                    className="p-1 text-red-400 hover:bg-slate-700 rounded"
-                    onClick={() => {
-                      if (confirm('Delete layer and all its maps?')) {
-                        const newLayers = sceneData.layers.filter((l: any) => l.id !== layer.id);
-                        const newMapList = getParsedMapList(sceneData.map_list).filter((m: any) => m.layer_id !== layer.id);
-                        setSceneData({ ...sceneData, layers: newLayers, map_list: newMapList });
-                        if (activeLayerId === layer.id) {
-                          setActiveLayerId(newLayers.length > 0 ? newLayers[0].id : null);
+              {(sceneData?.layers || []).map((layer: any, index: number) => (
+                <div
+                  key={layer.id}
+                  className="mb-2 border border-transparent hover:border-slate-600 rounded bg-slate-800/50 p-1"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('layer_id', layer.id);
+                    setDraggedLayerId(layer.id);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (!draggedLayerId || draggedLayerId === layer.id || !sceneData) return;
+
+                    const newLayers = [...sceneData.layers];
+                    const draggedIdx = newLayers.findIndex((l: any) => l.id === draggedLayerId);
+                    const targetIdx = index;
+
+                    if (draggedIdx !== -1 && targetIdx !== -1) {
+                      const [draggedItem] = newLayers.splice(draggedIdx, 1);
+                      newLayers.splice(targetIdx, 0, draggedItem);
+                      setSceneData({ ...sceneData, layers: newLayers });
+                    }
+                    setDraggedLayerId(null);
+                  }}
+                >
+                  <div className="flex gap-1 mb-1 items-center">
+                    <button
+                      className={`flex-1 text-left px-2 py-1 rounded text-sm ${layer.id === activeLayerId ? 'bg-indigo-600' : 'hover:bg-slate-700'} cursor-grab`}
+                      onClick={() => setActiveLayerId(layer.id)}
+                    >
+                      {layer.name}
+                    </button>
+                    <button
+                      className="p-1 text-emerald-400 hover:bg-slate-700 rounded"
+                      title="Add Map"
+                      onClick={() => setShowAddMapModal(layer.id)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="p-1 text-red-400 hover:bg-slate-700 rounded"
+                      title="Delete Layer"
+                      onClick={() => {
+                        if (confirm('Delete layer and all its maps?')) {
+                          console.log(`[RpgSceneEditor] Deleted layer: ${layer.name} (ID: ${layer.id})`);
+                          const newLayers = sceneData.layers.filter((l: any) => l.id !== layer.id);
+                          const newMapList = getParsedMapList(sceneData.map_list).filter((m: any) => m.layer_id !== layer.id);
+                          setSceneData({ ...sceneData, layers: newLayers, map_list: newMapList });
+                          if (activeLayerId === layer.id) {
+                            setActiveLayerId(newLayers.length > 0 ? newLayers[0].id : null);
+                          }
+                        } else {
+                          console.log(`[RpgSceneEditor] Delete layer cancelled.`);
                         }
-                      }
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {/* Render maps in this layer */}
+                  <div className="pl-4 space-y-1">
+                    {getParsedMapList(sceneData.map_list)
+                      .filter((m: any) => m.layer_id === layer.id)
+                      .map((m: any, mIdx: number) => (
+                        <div key={`${m.map_id}-${mIdx}`} className="flex gap-1 items-center group">
+                          <button
+                            className="flex-1 text-left px-2 py-1 rounded text-xs text-slate-400 hover:text-white hover:bg-slate-700 truncate"
+                            onClick={() => setSelectedItem({ type: 'map', ...m })}
+                          >
+                            {m.map_id}
+                          </button>
+                          <button
+                            className="p-1 text-red-400/50 hover:text-red-400 hover:bg-slate-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Delete Map"
+                            onClick={() => {
+                              if (confirm(`Remove map ${m.map_id}?`)) {
+                                const newMapList = getParsedMapList(sceneData.map_list).filter((item: any) => item !== m);
+                                setSceneData({ ...sceneData, map_list: newMapList });
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -498,7 +608,25 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
             }
           }}
         >
-          <PhaserGameComponent sceneData={sceneData} onSelect={(item) => setSelectedItem(item)} />
+          <PhaserGameComponent
+            sceneData={sceneData}
+            onSelect={(item) => setSelectedItem(item)}
+            onUpdateMapOffset={(mapId, layerId, newX, newY) => {
+              if (sceneData) {
+                const currentList = getParsedMapList(sceneData.map_list);
+                const newMapList = currentList.map((m: any) =>
+                  (m.map_id === mapId && m.layer_id === layerId)
+                    ? { ...m, offset_position: { x: newX, y: newY } }
+                    : m
+                );
+                setSceneData({ ...sceneData, map_list: newMapList });
+
+                if (selectedItem && selectedItem.map_id === mapId && selectedItem.layer_id === layerId) {
+                  setSelectedItem({ ...selectedItem, offset_position: { x: newX, y: newY } });
+                }
+              }
+            }}
+          />
         </div>
 
         {showRightSidebar && (
@@ -514,10 +642,11 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                       value={selectedItem.layer_id || ''}
                       onChange={(e) => {
                         const newLayerId = e.target.value;
+                        console.log(`[RpgSceneEditor] Changed map instance ${selectedItem.instance_id} to layer ID: ${newLayerId}`);
                         setSelectedItem({ ...selectedItem, layer_id: newLayerId });
                         if (sceneData) {
                           const currentList = getParsedMapList(sceneData.map_list);
-                          const newMapList = currentList.map((m: any) => m.map_id === selectedItem.map_id ? { ...m, layer_id: newLayerId } : m);
+                          const newMapList = currentList.map((m: any) => m.instance_id === selectedItem.instance_id ? { ...m, layer_id: newLayerId } : m);
                           setSceneData({ ...sceneData, map_list: newMapList });
                         }
                       }}
@@ -543,7 +672,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                         // Update in sceneData
                         if (sceneData) {
                           const currentList = getParsedMapList(sceneData.map_list);
-                          const newMapList = currentList.map((m: any) => m.map_id === selectedItem.map_id ? { ...m, offset_position: { ...m.offset_position, x: newX } } : m);
+                          const newMapList = currentList.map((m: any) => m.instance_id === selectedItem.instance_id ? { ...m, offset_position: { ...m.offset_position, x: newX } } : m);
                           setSceneData({ ...sceneData, map_list: newMapList });
                         }
                       }}
@@ -560,7 +689,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                         setSelectedItem({ ...selectedItem, offset_position: { ...selectedItem.offset_position, y: newY } });
                         if (sceneData) {
                           const currentList = getParsedMapList(sceneData.map_list);
-                          const newMapList = currentList.map((m: any) => m.map_id === selectedItem.map_id ? { ...m, offset_position: { ...m.offset_position, y: newY } } : m);
+                          const newMapList = currentList.map((m: any) => m.instance_id === selectedItem.instance_id ? { ...m, offset_position: { ...m.offset_position, y: newY } } : m);
                           setSceneData({ ...sceneData, map_list: newMapList });
                         }
                       }}
@@ -571,7 +700,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                     onClick={() => {
                       if (sceneData) {
                         const currentList = getParsedMapList(sceneData.map_list);
-                        const newMapList = currentList.filter((m: any) => m.map_id !== selectedItem.map_id);
+                        const newMapList = currentList.filter((m: any) => m.instance_id !== selectedItem.instance_id);
                         setSceneData({ ...sceneData, map_list: newMapList });
                         setSelectedItem(null);
                       }
@@ -586,6 +715,49 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </div>
+
+      {showAddMapModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-slate-800 border border-slate-700 p-6 rounded-lg shadow-xl w-[500px] max-w-[90vw]">
+            <h3 className="text-xl font-bold mb-4">Select Map to Add</h3>
+            <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto mb-4">
+              {mapsList.map(m => (
+                <button
+                  key={m.id}
+                  className="bg-slate-700 hover:bg-indigo-600 p-3 rounded text-left flex flex-col gap-1 transition-colors"
+                  onClick={() => {
+                    if (sceneData) {
+                      const newMapEntry = {
+                        map_id: m.id,
+                        map_size: { width: m.map_data?.width || 20, height: m.map_data?.height || 20 },
+                        offset_position: { x: 0, y: 0 },
+                        layer_id: showAddMapModal
+                      };
+                      const currentList = getParsedMapList(sceneData.map_list);
+                      setSceneData({
+                        ...sceneData,
+                        map_list: [...currentList, newMapEntry]
+                      });
+                    }
+                    setShowAddMapModal(null);
+                  }}
+                >
+                  <span className="font-bold">{m.name}</span>
+                  <span className="text-xs text-slate-400">{m.id}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button
+                className="px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded font-bold"
+                onClick={() => setShowAddMapModal(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
