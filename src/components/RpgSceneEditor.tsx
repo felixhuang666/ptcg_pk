@@ -175,12 +175,14 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<'SCENE' | 'MAP'>('SCENE');
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
 
-  const loadScenes = () => {
+  const loadScenes = (newSceneId?: number) => {
     fetch('/api/scenes')
       .then(res => res.json())
       .then(data => {
         setScenes(data);
-        if (data.length > 0 && !currentSceneId) {
+        if (newSceneId) {
+          setCurrentSceneId(newSceneId);
+        } else if (data.length > 0 && !currentSceneId) {
           setCurrentSceneId(data[0].id);
         }
       });
@@ -246,7 +248,15 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                     map_list: [],
                     scene_entities: { npcs: [], items: [], events: [] }
                   })
-                }).then(() => loadScenes());
+                })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success && data.scene && data.scene.id) {
+                    loadScenes(data.scene.id);
+                  } else {
+                    loadScenes();
+                  }
+                });
               }
             }}
             className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center justify-center group relative"
