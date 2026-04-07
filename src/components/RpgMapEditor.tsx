@@ -1622,7 +1622,7 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 relative w-full bg-slate-900">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 relative w-full bg-slate-900 min-h-0">
 
 
         <div className="flex-1 w-full flex flex-row gap-2 md:gap-4 min-h-0 relative">
