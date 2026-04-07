@@ -1,12 +1,18 @@
 import os
 import asyncio
 from supabase import create_async_client
+from dotenv import load_dotenv
+
+# Ensure the parent directory is in sys.path if needed, or rely on python -m scripts.migrate...
+load_dotenv()
 
 async def migrate():
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
 
     if not supabase_url or not supabase_key:
+        print(f"SUPABASE_URL: {supabase_url}")
+        print(f"SUPABASE_SERVICE_ROLE_KEY: {supabase_key}")
         print("Supabase URL or Key not found. Cannot run migration.")
         return
 
