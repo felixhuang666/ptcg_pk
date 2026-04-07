@@ -22,3 +22,11 @@ This document tracks conflicting designs, implementation differences, or general
     *   **Layer Visibility Toggles**: Missing toggles for static map layers vs. dynamic entity layers in the Top Bar.
     *   **Mode Switch**: Missing `[ Scene Composition | Map Paint | Preview ]` in the Top Bar.
     *   **Left Sidebar Tabs**: Missing "Outliner Tab" and "Asset Manager Tab". The current implementation only shows stacked "Scenes" and "Palette" sections without proper tabbed navigation.
+
+## 6. RPG Scene Editor Missing Features
+*   **Conflict / Missing Implementation**: `docs/rpg_scene_design.md` specifies several features that are currently missing in `RpgSceneEditor.tsx`:
+    *   **Prefabs**: Dragging and dropping predefined "Prefabs" (e.g., Chest, Signpost, Switch).
+    *   **Path Tool**: A "Path Tool" for NPC patrol paths.
+    *   **Dialog Trees**: Node-based or JSON-based dialog editor in the Property Editor.
+    *   **Scripting & Logic Integration**: Integrated text/script editor for defining custom logic (e.g., Scene Lifecycle Hooks, Custom Object Logic).
+    *   **Physics Integration**: One-click conversion of Sprites/Images into physical Matter/Arcade bodies.
