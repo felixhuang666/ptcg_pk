@@ -1,42 +1,23 @@
-# Test Result Report
+# Test Results
 
-## Overview
-- **Date**: 2024-04-06
-- **Backend Tests**: Passed
-- **E2E Tests**: Passed
-- **Frontend Unit Tests**: Passed
+## Frontend Tests
+### Vitest (React Components)
+- `tests/App.test.tsx` (1 test): **Passed**
+- Summary: 1/1 test suites passed, 1/1 tests passed.
 
-## Details
+### Playwright (E2E Tests)
+- `tests/real_frontend.spec.ts:3:1` › verify real frontend via dev login: **Passed**
+- `tests/test_rpg_scene_editor.spec.ts:5:1` › RPG Scene Editor - Import/Export Scene: **Passed**
+- `tests/verify_rpg.spec.ts:3:1` › verify RPG mode and Map Editor rendering: **Passed**
+- Summary: 3 passed tests.
 
-### 1. Backend Tests
-Execution Command: `make test-backend`
+## Backend Tests (Pytest)
+- `backend/tests/test_api_maps.py`: 4 tests, **Passed**
+- `backend/tests/test_api_maps_resize.py`: 1 test, **Passed**
+- `backend/tests/test_api_scenes.py`: 4 tests, **Passed**
+- `backend/tests/test_main.py`: 3 tests, **Passed**
+- `backend/tests/test_real_api.py`: 2 tests, **Passed**
+- Summary: 14 passed tests in 3.16s.
 
-**Results**:
-- `test_api_maps.py`: 4 tests passed
-- `test_api_maps_resize.py`: 1 test passed
-- `test_api_scenes.py`: 4 tests passed
-- `test_main.py`: 3 tests passed
-- `test_real_api.py`: 2 tests passed
-
-**Summary**: 14/14 tests passed.
-
-### 2. E2E Tests (Playwright)
-Execution Command: `npx playwright test --workers 1`
-
-**Results**:
-- `real_frontend.spec.ts:3:1 › verify real frontend via dev login` - Passed
-- `test_rpg_scene_editor.spec.ts:5:1 › RPG Scene Editor - Import/Export Scene` - Passed
-- `verify_rpg.spec.ts:3:1 › verify RPG mode and Map Editor rendering` - Passed
-
-**Summary**: 3/3 tests passed.
-
-### 3. Frontend Unit Tests (Vitest)
-Execution Command: `npm run test`
-
-**Results**:
-- `tests/App.test.tsx` - Passed
-
-**Summary**: 1/1 tests passed.
-
-## Notes
-A timeout issue in `test_rpg_scene_editor.spec.ts` was identified and resolved by properly sequencing `page.once('dialog')` before `page.click('button[title="New Scene"]')`, and by ensuring e2e tests run sequentially (`--workers 1`) to avoid race conditions.
+## Changes Made
+- Updated `Makefile` to restrict Playwright to run with 1 worker (`npx playwright test --workers 1`) to prevent concurrent state conflict which could lead to flakiness (timeout) during the execution of `test_rpg_scene_editor.spec.ts`.
