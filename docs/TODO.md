@@ -18,7 +18,11 @@ This document tracks conflicting designs, implementation differences, or general
 *   **Action Needed**: This still remains to be formally fixed in both map procedural generation on the backend and tile map usage on the frontend.
 
 ## 5. RPG Scene Editor UI Inconsistencies
-*   **Conflict / Missing Implementation**: `docs/rpg_scene_design.md` specifies several UI elements that are currently missing in `RpgSceneEditor.tsx`:
+*   **Conflict / Missing Implementation**: `docs/rpg_scene_design.md` specifies several features and UI elements that are currently missing in `RpgSceneEditor.tsx`:
     *   **Layer Visibility Toggles**: Missing toggles for static map layers vs. dynamic entity layers in the Top Bar.
     *   **Mode Switch**: Missing `[ Scene Composition | Map Paint | Preview ]` in the Top Bar.
     *   **Left Sidebar Tabs**: Missing "Outliner Tab" and "Asset Manager Tab". The current implementation only shows stacked "Scenes" and "Palette" sections without proper tabbed navigation.
+    *   **Scripting & Logic Integration**: The integrated text/script editor for custom object logic and scene lifecycle hooks is not implemented.
+    *   **NPC & Dialog Tools**: The Path Tool for patrol routes and the Dialog Tree editor are not implemented.
+    *   **Preview & Debugging Modes**: The interactive Scene Preview (Inspector Mode) and Game Preview functionalities are missing.
+    *   **Advanced Physics Integration**: The UI for configuring Matter/Arcade physics properties directly from the inspector is missing.
