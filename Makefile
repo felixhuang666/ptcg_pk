@@ -180,7 +180,7 @@ proxy-status:
 test-frontend:
 	npm run test
 	npx playwright install chromium
-	npx playwright test
+	npx playwright test --workers 1
 
 test-backend:
 	. venv/bin/activate && PYTHONPATH=. pytest backend/tests/
