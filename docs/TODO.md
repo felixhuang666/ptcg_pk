@@ -26,3 +26,11 @@ This document tracks conflicting designs, implementation differences, or general
     *   **NPC & Dialog Tools**: The Path Tool for patrol routes and the Dialog Tree editor are not implemented.
     *   **Preview & Debugging Modes**: The interactive Scene Preview (Inspector Mode) and Game Preview functionalities are missing.
     *   **Advanced Physics Integration**: The UI for configuring Matter/Arcade physics properties directly from the inspector is missing.
+
+## 6. RPG Scene Editor Missing Features
+*   **Conflict / Missing Implementation**: `docs/rpg_scene_design.md` specifies several features that are currently missing in `RpgSceneEditor.tsx`:
+    *   **Prefabs**: Dragging and dropping predefined "Prefabs" (e.g., Chest, Signpost, Switch).
+    *   **Path Tool**: A "Path Tool" for NPC patrol paths.
+    *   **Dialog Trees**: Node-based or JSON-based dialog editor in the Property Editor.
+    *   **Scripting & Logic Integration**: Integrated text/script editor for defining custom logic (e.g., Scene Lifecycle Hooks, Custom Object Logic).
+    *   **Physics Integration**: One-click conversion of Sprites/Images into physical Matter/Arcade bodies.
