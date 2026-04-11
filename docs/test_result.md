@@ -21,3 +21,17 @@
 
 ## Changes Made
 - Updated `Makefile` to restrict Playwright to run with 1 worker (`npx playwright test --workers 1`) to prevent concurrent state conflict which could lead to flakiness (timeout) during the execution of `test_rpg_scene_editor.spec.ts`.
+
+## Test Run Sat Apr 11 23:50:47 UTC 2026
+
+Ran `make test` and `make bg-start && sleep 5 && npx playwright test && make stop`.
+
+### Frontend Tests
+- **Vitest**: `tests/App.test.tsx` (1 test): **Passed**
+- **Playwright (E2E Tests)**:
+  - `tests/real_frontend.spec.ts:3:1` › verify real frontend via dev login: **Passed**
+  - `tests/test_rpg_scene_editor.spec.ts:5:1` › RPG Scene Editor - Import/Export Scene: **Passed**
+  - `tests/verify_rpg.spec.ts:3:1` › verify RPG mode and Map Editor rendering: **Passed**
+
+### Backend Tests
+- `backend/tests/`: **14 tests Passed**
