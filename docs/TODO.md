@@ -4,6 +4,7 @@ This document tracks conflicting designs, implementation differences, or general
 
 ## 1. Map Layer Editor Toggle UI
 *   **Conflict / Missing Implementation**: `docs/rpg_map_layer_design.md` mentions a planned feature: "Enhance the editor UI to allow hiding/showing individual layers during the editing process." However, this is not fully implemented in the UI yet.
+*   **Resolution**: (Resolved) Layer visibility toggles (eye icons) have been added to the Map Editor's top bar.
 
 ## 2. RPG Scene Editor - Phaser Rendering
 *   **Difference**: `docs/rpg_scene_design.md` specifies that "The global grid... When a map is placed... local tiles are rendered at those global coordinates." Currently, the implementation of `RpgSceneEditor.tsx` renders a green bounding box (`rect = this.add.rectangle(...)`) to represent the map chunks instead of actually rendering the static map layers.

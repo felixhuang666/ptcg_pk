@@ -17,9 +17,7 @@ This document tracks actionable technical debt and planned features identified d
 
 ## 3. Enhance Map Editor Layer Visibility
 *   **Description**: Editing complex maps with 6 layers is difficult when the `topLayer` obscures the `base` and `decorations` layers.
-*   **Action Items**:
-    *   Add "eye" icons next to the layer selection buttons in the `RpgMapEditor` Top Bar.
-    *   Wire these toggles to the `.setVisible()` properties of the corresponding Phaser `TilemapLayer` instances.
+*   **Status**: Resolved. Eye icons have been added next to layer selection buttons to easily toggle the visibility of individual layers while painting.
 
 ## 4. Standardize Tileset Fallbacks
 *   **Description**: If a map's associated tileset image is missing or the backend fails to load the JSON metadata, the map can crash or render black squares.
