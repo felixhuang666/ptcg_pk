@@ -45,9 +45,6 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
       private currentTileType: number = 1;
       public currentEditLayer: 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer' = 'base';
       public isEraser: boolean = false;
-      public layerVisibility: Record<string, boolean> = {
-        base: true, decorations: true, obstacles: true, objectCollides: true, objectEvent: true, topLayer: true
-      };
       private isEditor: boolean = false;
       private saveButton: Phaser.GameObjects.Text | null = null;
       private tileSelector: Phaser.GameObjects.Text | null = null;
@@ -785,14 +782,6 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
         });
       }
 
-      public setLayerVisibility(layer: string, isVisible: boolean) {
-        this.layerVisibility[layer] = isVisible;
-        const layerObj = (this as any)[`${layer}Layer`];
-        if (layerObj) {
-          layerObj.setVisible(isVisible);
-        }
-      }
-
       renderMap() {
         if (!this.mapData || !this.mapData.layers) return;
 
@@ -839,12 +828,6 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
           this.objectCollidesLayer = createLayer('objectCollides', 3, true);
           this.objectEventLayer = createLayer('objectEvent', 4, false);
           this.topLayer = createLayer('topLayer', 10, false);
-
-          // Apply current visibility settings
-          Object.entries(this.layerVisibility).forEach(([layer, isVisible]) => {
-            const layerObj = (this as any)[`${layer}Layer`];
-            if (layerObj) layerObj.setVisible(isVisible);
-          });
         };
 
         const tilesetsMeta = this.mapData.map_meta?.tilesets || [
@@ -1320,16 +1303,6 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
     setEditLayer(layer);
     const scene = (window as any).__PHASER_MAIN_SCENE__;
     if (scene) scene.currentEditLayer = layer;
-  };
-
-  const handleVisibilityToggle = (layer: MapLayer, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newVisibility = { ...layerVisibility, [layer]: !layerVisibility[layer] };
-    setLayerVisibility(newVisibility);
-    const scene = (window as any).__PHASER_MAIN_SCENE__;
-    if (scene && scene.setLayerVisibility) {
-      scene.setLayerVisibility(layer, newVisibility[layer]);
-    }
   };
 
   const handleEraserToggle = () => {
