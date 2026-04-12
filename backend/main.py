@@ -280,6 +280,8 @@ in_memory_maps = {
 
 @app.get("/api/maps")
 async def list_maps():
+    maps = []
+    # 1. Try Supabase
     try:
         from supabase import create_async_client
         supabase_url = os.environ.get("SUPABASE_URL")
@@ -289,20 +291,45 @@ async def list_maps():
             try:
                 res = await client.table('maps').select('id, name').execute()
                 if res.data is not None:
-                    return res.data
+                    maps.extend(res.data)
             except Exception as inner_e:
                 if 'PGRST204' in str(inner_e):
                     res = await client.table('maps').select('id').execute()
                     if res.data is not None:
-                        return [{"id": m["id"], "name": "Unknown"} for m in res.data]
+                        maps.extend([{"id": m["id"], "name": "Unknown"} for m in res.data])
                 else:
                     raise inner_e
     except Exception as e:
         print(f"Supabase warning (fetching maps): {e}")
-    return [{"id": k, "name": v.get("name", k)} for k, v in in_memory_maps.items()]
+
+    # 2. Add in-memory
+    existing_ids = {m["id"] for m in maps}
+    for k, v in in_memory_maps.items():
+        if k not in existing_ids:
+            maps.append({"id": k, "name": v.get("name", k)})
+            existing_ids.add(k)
+
+    # 3. Add local json from dist/assets/maps and public/assets/maps
+    paths = ["dist/assets/maps", "public/assets/maps"]
+    for p in paths:
+        if os.path.exists(p):
+            for filename in os.listdir(p):
+                if filename.endswith(".json"):
+                    map_id = filename[:-5]
+                    if map_id not in existing_ids:
+                        try:
+                            with open(os.path.join(p, filename), "r", encoding="utf-8") as f:
+                                map_data = json.load(f)
+                                maps.append({"id": map_id, "name": map_data.get("name", map_id)})
+                                existing_ids.add(map_id)
+                        except Exception as e:
+                            print(f"Error reading local map {filename}: {e}")
+
+    return maps
 
 @app.get("/api/map")
 async def get_map(id: str = "main_200"):
+    # 1. Try Supabase
     try:
         from supabase import create_async_client
         supabase_url = os.environ.get("SUPABASE_URL")
@@ -319,8 +346,27 @@ async def get_map(id: str = "main_200"):
                 }
     except Exception as e:
         print(f"Supabase warning (fetching map): {e}")
+
+    # 2. Try in-memory
     if id in in_memory_maps:
         return in_memory_maps[id]
+
+    # 3. Try local json
+    paths = ["dist/assets/maps", "public/assets/maps"]
+    for p in paths:
+        filepath = os.path.join(p, f"{id}.json")
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    map_obj = json.load(f)
+                    return {
+                        "id": map_obj.get("id", id),
+                        "name": map_obj.get("name", id),
+                        "map_data": map_obj.get("map_data", map_obj) # Fallback if structure differs
+                    }
+            except Exception as e:
+                print(f"Error reading local map {id}.json: {e}")
+
     return in_memory_maps.get("main_200")
 
 @app.post("/api/map")
@@ -591,6 +637,7 @@ async def delete_npc(npc_id: str):
 
 @app.get("/api/scenes")
 async def get_scenes():
+    scenes = []
     try:
         from supabase import create_async_client
         supabase_url = os.environ.get("SUPABASE_URL")
@@ -599,13 +646,43 @@ async def get_scenes():
             client = await create_async_client(supabase_url, supabase_key)
             res = await client.table('game_scene').select('id, name').execute()
             if res.data is not None:
-                return res.data
+                scenes.extend(res.data)
     except Exception as e:
         print(f"Supabase warning (fetching scenes): {e}")
-    return [{"id": k, "name": v.get("name", f"Scene {k}")} for k, v in in_memory_scenes.items()]
+
+    existing_ids = {str(s["id"]) for s in scenes}
+
+    for k, v in in_memory_scenes.items():
+        if str(k) not in existing_ids:
+            scenes.append({"id": k, "name": v.get("name", f"Scene {k}")})
+            existing_ids.add(str(k))
+
+    paths = ["dist/assets/game_scene", "public/assets/game_scene"]
+    for p in paths:
+        if os.path.exists(p):
+            for filename in os.listdir(p):
+                if filename.endswith(".json"):
+                    scene_id = filename[:-5]
+                    if str(scene_id) not in existing_ids:
+                        try:
+                            with open(os.path.join(p, filename), "r", encoding="utf-8") as f:
+                                scene_data = json.load(f)
+                                scenes.append({"id": scene_id, "name": scene_data.get("name", f"Scene {scene_id}")})
+                                existing_ids.add(str(scene_id))
+                        except Exception as e:
+                            print(f"Error reading local scene {filename}: {e}")
+
+    return scenes
 
 @app.get("/api/scene/{scene_id}")
-async def get_scene(scene_id: int):
+async def get_scene(scene_id: str):
+    # Support both int and str IDs
+    scene_id_int = None
+    try:
+        scene_id_int = int(scene_id)
+    except ValueError:
+        pass
+
     try:
         from supabase import create_async_client
         supabase_url = os.environ.get("SUPABASE_URL")
@@ -613,6 +690,9 @@ async def get_scene(scene_id: int):
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
             res = await client.table('game_scene').select('*').eq('id', scene_id).execute()
+            if not res.data and scene_id_int is not None:
+                 res = await client.table('game_scene').select('*').eq('id', scene_id_int).execute()
+
             if res.data and len(res.data) > 0:
                 scene_data = res.data[0]
                 if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
@@ -620,11 +700,32 @@ async def get_scene(scene_id: int):
                 return scene_data
     except Exception as e:
         print(f"Supabase warning (fetching scene): {e}")
+
     if scene_id in in_memory_scenes:
-        scene_data = in_memory_scenes[scene_id]
+        scene_data = in_memory_scenes[scene_id].copy()
         if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
             scene_data['layers'] = scene_data['scene_entities'].pop('layers')
         return scene_data
+    elif scene_id_int is not None and scene_id_int in in_memory_scenes:
+        scene_data = in_memory_scenes[scene_id_int].copy()
+        if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
+            scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+        return scene_data
+
+    # Try local json
+    paths = ["dist/assets/game_scene", "public/assets/game_scene"]
+    for p in paths:
+        filepath = os.path.join(p, f"{scene_id}.json")
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    scene_data = json.load(f)
+                    if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
+                        scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+                    return scene_data
+            except Exception as e:
+                print(f"Error reading local scene {scene_id}.json: {e}")
+
     raise HTTPException(status_code=404, detail="Scene not found")
 
 @app.post("/api/scene")
@@ -839,6 +940,72 @@ async def get_map_tilesets():
                 except Exception as e:
                     print(f"Error reading tileset {filename}: {e}")
     return tilesets
+
+
+@app.post("/api/save_local")
+async def save_local(request: Request):
+    data = await request.json()
+    scene = data.get("scene")
+    maps = data.get("maps", [])
+    game_obj_templates = data.get("game_obj_templates", [])
+
+    import re
+    def get_safe_id(id_val):
+        safe_id = os.path.basename(str(id_val))
+        return re.sub(r'[^a-zA-Z0-9_\-]', '', safe_id)
+
+    res_data = {"saved_scene": False, "saved_maps": 0, "saved_game_obj_templates": 0}
+
+    paths = ["dist/assets", "public/assets"]
+
+    try:
+        for p in paths:
+            if not os.path.exists(p):
+                os.makedirs(p, exist_ok=True)
+
+            if scene and "id" in scene:
+                scene_dir = os.path.join(p, "game_scene")
+                os.makedirs(scene_dir, exist_ok=True)
+                safe_id = get_safe_id(scene["id"])
+                with open(os.path.join(scene_dir, f"{safe_id}.json"), "w", encoding="utf-8") as f:
+                    # Keep layers inside scene_entities for persistence to match DB logic
+                    save_scene = scene.copy()
+                    if 'layers' in save_scene:
+                        if not isinstance(save_scene.get('scene_entities'), dict):
+                            save_scene['scene_entities'] = {}
+                        save_scene['scene_entities']['layers'] = save_scene.pop('layers')
+                    json.dump(save_scene, f, ensure_ascii=False, indent=2)
+                res_data["saved_scene"] = True
+
+            if maps:
+                maps_dir = os.path.join(p, "maps")
+                os.makedirs(maps_dir, exist_ok=True)
+                saved_count = 0
+                for m in maps:
+                    if "id" in m:
+                        safe_id = get_safe_id(m["id"])
+                        with open(os.path.join(maps_dir, f"{safe_id}.json"), "w", encoding="utf-8") as f:
+                            json.dump(m, f, ensure_ascii=False, indent=2)
+                        saved_count += 1
+                res_data["saved_maps"] = saved_count
+
+            if game_obj_templates:
+                templates_dir = os.path.join(p, "game_obj_templates")
+                os.makedirs(templates_dir, exist_ok=True)
+                saved_count = 0
+                for t in game_obj_templates:
+                    if "id" in t:
+                        safe_id = get_safe_id(t["id"])
+                        with open(os.path.join(templates_dir, f"{safe_id}.json"), "w", encoding="utf-8") as f:
+                            json.dump(t, f, ensure_ascii=False, indent=2)
+                        saved_count += 1
+                res_data["saved_game_obj_templates"] = saved_count
+
+        return {"success": True, "data": res_data}
+    except Exception as e:
+        print(f"Error saving local data: {e}")
+        return {"success": False, "error": str(e)}
+
 
 @app.get("/favicon.ico")
 async def favicon():

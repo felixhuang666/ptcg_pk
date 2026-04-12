@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
 import Phaser from 'phaser';
 
 class SceneEditorPhaser extends Phaser.Scene {
@@ -443,6 +443,50 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
             title="Save Scene"
           >
             <Save className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={async () => {
+              if (!sceneData) return;
+              try {
+                // Fetch maps used in the scene
+                const maps = [];
+                const currentList = getParsedMapList(sceneData.map_list);
+                const usedMapIds = [...new Set(currentList.map((m: any) => m.map_id))];
+                for (const mapId of usedMapIds) {
+                  const res = await fetch(`/api/map?id=${mapId}`);
+                  if (res.ok) {
+                    const mapData = await res.json();
+                    maps.push(mapData);
+                  }
+                }
+
+                // Note: game_obj_templates can be handled similarly if needed
+
+                const res = await fetch('/api/save_local', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    scene: sceneData,
+                    maps: maps,
+                    game_obj_templates: []
+                  })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                  alert(`Successfully saved to local assets!\nMaps saved: ${result.data.saved_maps}`);
+                } else {
+                  alert(`Failed to save: ${result.error}`);
+                }
+              } catch (e: any) {
+                alert(`Error saving to local assets: ${e.message}`);
+              }
+            }}
+            className="p-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors flex items-center justify-center group relative"
+            title="Save to Local Asset"
+          >
+            <HardDrive className="w-5 h-5" />
           </button>
 
           <button
