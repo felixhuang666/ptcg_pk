@@ -251,8 +251,27 @@ async def root():
         return FileResponse("dist/index.html")
     return {"message": "Frontend not built yet. Please run `make build`."}
 
-in_memory_scenes = {}
-scene_id_counter = 1
+in_memory_scenes = {
+    1: {
+        "id": 1,
+        "name": "Scene 1",
+        "scene_entities": {
+            "layers": [
+                {"id": "layer1", "name": "Layer 1"}
+            ],
+            "map_list": [
+                {
+                    "instance_id": "inst_1",
+                    "map_id": "main_200",
+                    "layer_id": "layer1",
+                    "offset_position": {"x": 0, "y": 0},
+                    "map_size": {"width": 40, "height": 40}
+                }
+            ]
+        }
+    }
+}
+scene_id_counter = 2
 
 in_memory_maps = {
     "main_200": {
@@ -261,6 +280,9 @@ in_memory_maps = {
         "map_data": {
             "width": 40,
             "height": 40,
+            "layers": {
+                "base": [2] * (40 * 40)
+            },
             "tiles": [2] * (40 * 40), # 2 = grass
             "objects": [-1] * (40 * 40), # -1 = empty
             "map_meta": {

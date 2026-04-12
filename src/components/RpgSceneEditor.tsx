@@ -72,9 +72,13 @@ class SceneEditorPhaser extends Phaser.Scene {
     this.mapTilemaps = [];
     this.mapsContainer.removeAll(true);
 
-    if (!sceneData || !sceneData.map_list) return;
+    const sceneMapList = sceneData?.map_list || sceneData?.scene_entities?.map_list;
 
-    let mapList = getParsedMapList(sceneData.map_list);
+    if (!sceneData || !sceneMapList) {
+      return;
+    }
+
+    let mapList = getParsedMapList(sceneMapList);
 
     // Sort maps by layer index so they render in correct order
     const layers = sceneData.layers || [];
@@ -94,18 +98,23 @@ class SceneEditorPhaser extends Phaser.Scene {
     mapList.forEach((map: any) => {
       const fullMapData = mapsList.find(m => m.id === map.map_id);
       if (fullMapData && fullMapData.map_data) {
-        const tilesetsMeta = fullMapData.map_data.map_meta?.tilesets || [
-          {
+        const tilesetsMeta = fullMapData.map_data.map_meta?.tilesets || [];
+        if (tilesetsMeta.length === 0 && fullMapData.map_data.tilesets) {
+          // fallback
+          tilesetsMeta.push(...fullMapData.map_data.tilesets);
+        }
+        if (tilesetsMeta.length === 0) {
+          tilesetsMeta.push({
             firstgid: 1,
             name: 'main_20x10',
             image_source: 'main_20x10.png',
             tilewidth: 32,
             tileheight: 32
-          }
-        ];
+          });
+        }
         tilesetsMeta.forEach((tsMeta: any) => {
           let src = tsMeta.image_source;
-          if (!src.endsWith('.png') && !src.endsWith('.jpg') && !src.endsWith('.jpeg')) src += '.png';
+          if (src && !src.endsWith('.png') && !src.endsWith('.jpg') && !src.endsWith('.jpeg')) src += '.png';
           const key = `tileset_${tsMeta.name}`;
           if (!tilesetsToLoad.find(t => t.key === key)) {
             tilesetsToLoad.push({ key, src, tsMeta });
@@ -114,8 +123,17 @@ class SceneEditorPhaser extends Phaser.Scene {
       }
     });
 
-    let loadedCount = 0;
-    const totalToLoad = tilesetsToLoad.length; // Process all
+    // Track what needs actual loading
+    let filesToLoad = 0;
+
+    tilesetsToLoad.forEach(t => {
+      if (!this.textures.exists(t.key)) {
+        console.log(`[SceneEditorPhaser] Loading missing texture: ${t.key}`);
+        const imgUrl = `/assets/map_tileset/${t.src}`;
+        this.load.image(t.key, imgUrl);
+        filesToLoad++;
+      }
+    });
 
     const renderAllMaps = () => {
       mapList.forEach((map: any) => {
@@ -134,15 +152,19 @@ class SceneEditorPhaser extends Phaser.Scene {
           const tilemap = this.make.tilemap({ width: mapData.width || 20, height: mapData.height || 20, tileWidth: 32, tileHeight: 32 });
           this.mapTilemaps.push(tilemap);
 
-          const tilesetsMeta = mapData.map_meta?.tilesets || [
-            {
+          const tilesetsMeta = mapData.map_meta?.tilesets || [];
+          if (tilesetsMeta.length === 0 && mapData.tilesets) {
+             tilesetsMeta.push(...mapData.tilesets);
+          }
+          if (tilesetsMeta.length === 0) {
+            tilesetsMeta.push({
               firstgid: 1,
               name: 'main_20x10',
               image_source: 'main_20x10.png',
               tilewidth: 32,
               tileheight: 32
-            }
-          ];
+            });
+          }
 
           const tilesetInstances: Phaser.Tilemaps.Tileset[] = [];
           tilesetsMeta.forEach((tsMeta: any) => {
@@ -152,8 +174,12 @@ class SceneEditorPhaser extends Phaser.Scene {
           });
 
           const createLayer = (name: string, depth: number) => {
+            if (tilesetInstances.length === 0) return null;
             const l = tilemap.createBlankLayer(name, tilesetInstances, 0, 0);
-            if (!l) return null;
+            if (!l) {
+                console.error(`[SceneEditorPhaser] Failed to create blank layer ${name}`);
+                return null;
+            }
             l.setDepth(depth);
             const data = mapData.layers[name];
             if (data) {
@@ -161,7 +187,10 @@ class SceneEditorPhaser extends Phaser.Scene {
                 for (let x = 0; x < mapData.width; x++) {
                   const val = data[y * mapData.width + x];
                   if (val !== undefined && val !== 0 && val !== -1) {
-                    l.putTileAt(val, x, y);
+                    const tile = l.putTileAt(val, x, y);
+                    if (!tile) {
+                        console.warn(`[SceneEditorPhaser] putTileAt failed for val ${val} at ${x},${y} on layer ${name}`);
+                    }
                   }
                 }
               }
@@ -180,7 +209,9 @@ class SceneEditorPhaser extends Phaser.Scene {
 
           layersToRender.forEach(ld => {
             const l = createLayer(ld.name, ld.depth);
-            if (l) mapGroup.add(l);
+            if (l) {
+               mapGroup.add(l);
+            }
           });
           mapGroup.setPosition(pxX, pxY);
         }
@@ -188,8 +219,10 @@ class SceneEditorPhaser extends Phaser.Scene {
         const rect = this.add.rectangle(pxX + pxW/2, pxY + pxH/2, pxW, pxH, 0x00ff00, 0.0);
         rect.setStrokeStyle(2, 0x00ff00);
         rect.setInteractive({ draggable: true });
+        rect.setDepth(100);
 
         const text = this.add.text(pxX + 5, pxY + 5, map.map_id, { color: '#ffffff', fontSize: '16px' });
+        text.setDepth(100);
 
         rect.on('pointerdown', (pointer: any) => {
           if (pointer.leftButtonDown()) {
@@ -228,26 +261,25 @@ class SceneEditorPhaser extends Phaser.Scene {
       });
     };
 
-    if (totalToLoad === 0) {
+    if (filesToLoad === 0) {
       renderAllMaps();
     } else {
+      let loadedCount = 0;
       tilesetsToLoad.forEach(t => {
-        if (!this.textures.exists(t.key)) {
-          const imgUrl = `/assets/map_tileset/${t.src}`;
-          this.load.image(t.key, imgUrl);
-          this.load.once(`filecomplete-image-${t.key}`, () => {
-            loadedCount++;
-            if (loadedCount >= totalToLoad) {
-              renderAllMaps();
-            }
-          });
-        } else {
+        this.load.once(`filecomplete-image-${t.key}`, () => {
           loadedCount++;
-          if (loadedCount >= totalToLoad) {
+          if (loadedCount >= filesToLoad) {
             renderAllMaps();
           }
-        }
+        });
       });
+
+      this.load.once('loaderror', (fileObj: any) => {
+         console.error(`[SceneEditorPhaser] Load error for ${fileObj?.key}`);
+         loadedCount++;
+         if (loadedCount >= filesToLoad) renderAllMaps();
+      });
+
       this.load.start();
     }
   }
