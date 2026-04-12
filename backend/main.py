@@ -255,18 +255,18 @@ in_memory_scenes = {
     1: {
         "id": 1,
         "name": "Scene 1",
+        "map_list": [
+            {
+                "instance_id": "inst_1",
+                "map_id": "main_200",
+                "layer_id": "layer1",
+                "offset_position": {"x": 0, "y": 0},
+                "map_size": {"width": 40, "height": 40}
+            }
+        ],
         "scene_entities": {
             "layers": [
                 {"id": "layer1", "name": "Layer 1"}
-            ],
-            "map_list": [
-                {
-                    "instance_id": "inst_1",
-                    "map_id": "main_200",
-                    "layer_id": "layer1",
-                    "offset_position": {"x": 0, "y": 0},
-                    "map_size": {"width": 40, "height": 40}
-                }
             ]
         }
     }
@@ -717,21 +717,30 @@ async def get_scene(scene_id: str):
 
             if res.data and len(res.data) > 0:
                 scene_data = res.data[0]
-                if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
-                    scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+                if scene_data.get('scene_entities'):
+                    if 'layers' in scene_data['scene_entities']:
+                        scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+                    if 'map_list' in scene_data['scene_entities']:
+                        scene_data['map_list'] = scene_data['scene_entities'].pop('map_list')
                 return scene_data
     except Exception as e:
         print(f"Supabase warning (fetching scene): {e}")
 
     if scene_id in in_memory_scenes:
         scene_data = in_memory_scenes[scene_id].copy()
-        if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
-            scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+        if scene_data.get('scene_entities'):
+            if 'layers' in scene_data['scene_entities']:
+                scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+            if 'map_list' in scene_data['scene_entities']:
+                scene_data['map_list'] = scene_data['scene_entities'].pop('map_list')
         return scene_data
     elif scene_id_int is not None and scene_id_int in in_memory_scenes:
         scene_data = in_memory_scenes[scene_id_int].copy()
-        if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
-            scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+        if scene_data.get('scene_entities'):
+            if 'layers' in scene_data['scene_entities']:
+                scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+            if 'map_list' in scene_data['scene_entities']:
+                scene_data['map_list'] = scene_data['scene_entities'].pop('map_list')
         return scene_data
 
     # Try local json
@@ -742,8 +751,11 @@ async def get_scene(scene_id: str):
             try:
                 with open(filepath, "r", encoding="utf-8") as f:
                     scene_data = json.load(f)
-                    if scene_data.get('scene_entities') and 'layers' in scene_data['scene_entities']:
-                        scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+                    if scene_data.get('scene_entities'):
+                        if 'layers' in scene_data['scene_entities']:
+                            scene_data['layers'] = scene_data['scene_entities'].pop('layers')
+                        if 'map_list' in scene_data['scene_entities']:
+                            scene_data['map_list'] = scene_data['scene_entities'].pop('map_list')
                     return scene_data
             except Exception as e:
                 print(f"Error reading local scene {scene_id}.json: {e}")
@@ -771,8 +783,11 @@ async def create_scene(request: Request):
                         created_data = res.data[0]
                         # Merge back any dropped fields into the returned object so they stay in memory
                         created_data.update(dropped_fields)
-                        if 'layers' in created_data.get('scene_entities', {}):
-                            created_data['layers'] = created_data['scene_entities'].pop('layers')
+                        if created_data.get('scene_entities'):
+                            if 'layers' in created_data['scene_entities']:
+                                created_data['layers'] = created_data['scene_entities'].pop('layers')
+                            if 'map_list' in created_data['scene_entities']:
+                                created_data['map_list'] = created_data['scene_entities'].pop('map_list')
                         in_memory_scenes[created_data['id']] = created_data
                         return {"success": True, "scene": created_data}
                     break
@@ -826,8 +841,11 @@ async def update_scene(scene_id: int, request: Request):
                     if res.data and len(res.data) > 0:
                         updated_data = res.data[0]
                         updated_data.update(dropped_fields)
-                        if 'layers' in updated_data.get('scene_entities', {}):
-                            updated_data['layers'] = updated_data['scene_entities'].pop('layers')
+                        if updated_data.get('scene_entities'):
+                            if 'layers' in updated_data['scene_entities']:
+                                updated_data['layers'] = updated_data['scene_entities'].pop('layers')
+                            if 'map_list' in updated_data['scene_entities']:
+                                updated_data['map_list'] = updated_data['scene_entities'].pop('map_list')
                         in_memory_scenes[scene_id] = updated_data
                         return {"success": True, "scene": updated_data}
                     break

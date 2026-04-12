@@ -399,7 +399,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
     if (currentSceneId) {
       fetch(`/api/scene/${currentSceneId}`)
         .then(res => res.json())
-        .then(data => {
+        .then(async (data) => {
           let updatedData = { ...data };
           if (!updatedData.layers || updatedData.layers.length === 0) {
             const newLayerId = 'layer-' + Date.now();
@@ -413,6 +413,37 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           setSceneData(updatedData);
           if (updatedData.layers.length > 0) {
             setActiveLayerId(updatedData.layers[0].id);
+          }
+
+          // Fetch full map data for all maps referenced in this scene
+          const currentList = getParsedMapList(updatedData.map_list);
+          const usedMapIds = [...new Set(currentList.map((m: any) => m.map_id))];
+          if (usedMapIds.length > 0) {
+            try {
+              const fullMaps = await Promise.all(
+                usedMapIds.map(async (mapId: string) => {
+                  const res = await fetch(`/api/map?id=${mapId}`);
+                  if (res.ok) return res.json();
+                  return null;
+                })
+              );
+              const validMaps = fullMaps.filter(Boolean);
+              // Merge full map data into mapsList: replace shallow entries with full data
+              setMapsList(prev => {
+                const merged = [...prev];
+                for (const fullMap of validMaps) {
+                  const idx = merged.findIndex(m => m.id === fullMap.id);
+                  if (idx !== -1) {
+                    merged[idx] = fullMap;
+                  } else {
+                    merged.push(fullMap);
+                  }
+                }
+                return merged;
+              });
+            } catch (err) {
+              console.error('[RpgSceneEditor] Error fetching full map data:', err);
+            }
           }
         });
     }
