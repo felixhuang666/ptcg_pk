@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { io, Socket } from 'socket.io-client';
-import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles, Maximize, Minimize, Info } from 'lucide-react';
+import { Map, Edit3, Settings, ArrowLeft, MessageSquare, RefreshCw, PanelLeft, PanelRight, Save, Grid, Hand, Pencil, Undo2, Redo2, FilePlus, Sparkles, Maximize, Minimize, Info, HardDrive } from 'lucide-react';
 
 interface RpgModeProps {
   onBack: () => void;
@@ -1832,6 +1832,38 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                 <button onClick={handleSaveMap} className="bg-amber-600 hover:bg-amber-500 text-white p-1 rounded transition-colors ml-2 shadow-lg group relative" title="Save Map">
                   <Save className="w-4 h-4" />
                   <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Save Map</span>
+                </button>
+
+                <button onClick={async () => {
+                  try {
+                    const scene = (window as any).__PHASER_MAIN_SCENE__;
+                    if (!scene || !scene.mapData) {
+                      alert('No map data available to save.');
+                      return;
+                    }
+
+                    const res = await fetch('/api/save_local', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        scene: null,
+                        maps: [scene.mapData],
+                        game_obj_templates: []
+                      })
+                    });
+
+                    const result = await res.json();
+                    if (result.success) {
+                      alert(`Successfully saved map to local assets!`);
+                    } else {
+                      alert(`Failed to save: ${result.error}`);
+                    }
+                  } catch (e: any) {
+                    alert(`Error saving map to local assets: ${e.message}`);
+                  }
+                }} className="bg-teal-600 hover:bg-teal-500 text-white p-1 rounded transition-colors ml-1 shadow-lg group relative" title="Save Map to Local Asset">
+                  <HardDrive className="w-4 h-4" />
+                  <span className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-slate-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] pointer-events-none border border-slate-700">Save Map to Local</span>
                 </button>
 
                 <button onClick={async () => {
