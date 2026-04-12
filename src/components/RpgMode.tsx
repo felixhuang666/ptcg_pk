@@ -954,18 +954,64 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
               const isCollidable = tpl.collision?.enabled;
               
               let sprite;
-              if (isCollidable) {
+              let isPhysics = isCollidable;
+
+              const controller = obj.properties?.controller || tpl.default_controller;
+              if (controller === 'EncounterMonsterController' || controller === 'TeleportController') {
+                 isPhysics = true;
+              }
+
+              if (isPhysics) {
                   sprite = this.physics.add.sprite(px, py, key);
                   const body = sprite.body as Phaser.Physics.Arcade.Body;
                   body.setImmovable(true);
-                  if (this.player) {
-                      this.physics.add.collider(this.player, sprite);
-                  }
-                  if (tpl.collision.width && tpl.collision.height) {
+                  if (tpl.collision?.width && tpl.collision?.height) {
                       body.setSize(tpl.collision.width, tpl.collision.height);
+                  }
+
+                  if (this.player) {
+                      if (isCollidable) {
+                          this.physics.add.collider(this.player, sprite);
+                      }
+
+                      if (controller === 'EncounterMonsterController') {
+                          this.physics.add.overlap(this.player, sprite, () => {
+                              if (this.isEditor) return;
+                              // Basic implementation for battle encounter
+                              console.log('Encounter Triggered!', obj.properties?.battle_scene_id);
+                              alert(`Battle Encounter!\nScene: ${obj.properties?.battle_scene_id || 'Unknown'}\nFormation: ${obj.properties?.enemy_formation_id || 'Unknown'}`);
+                              // In a real implementation, this would pause the scene and load the battle scene
+                              sprite.destroy(); // Remove so it doesn't keep triggering
+                          });
+                      } else if (controller === 'TeleportController') {
+                          this.physics.add.overlap(this.player, sprite, () => {
+                              if (this.isEditor) return;
+                              console.log('Teleport Triggered!', obj.properties?.target_scene_id);
+                              alert(`Teleporting to Scene: ${obj.properties?.target_scene_id || 'Unknown'} at (${obj.properties?.target_x || 0}, ${obj.properties?.target_y || 0})`);
+                          });
+                      }
                   }
               } else {
                   sprite = this.add.sprite(px, py, key);
+              }
+
+              // Non-physics interactions (StaticNpc, Chest)
+              if (!this.isEditor && (controller === 'StaticNpcController' || controller === 'ChestController')) {
+                  sprite.setInteractive();
+                  sprite.on('pointerdown', () => {
+                      const dx = Math.abs(this.player!.x - sprite.x);
+                      const dy = Math.abs(this.player!.y - sprite.y);
+                      if (dx <= 64 && dy <= 64) {
+                          if (controller === 'StaticNpcController') {
+                              alert(`NPC Dialog:\n${obj.properties?.dialog_id || 'Hello there!'}`);
+                          } else if (controller === 'ChestController') {
+                              alert(`Opened Chest!\nObtained: ${obj.properties?.drop_item || 'Nothing'}`);
+                              sprite.setAlpha(0.5); // Simple visual change for opened chest
+                          }
+                      } else {
+                          console.log('Too far to interact.');
+                      }
+                  });
               }
               
               sprite.setOrigin(0, 0); // Align with grid
