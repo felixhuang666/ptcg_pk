@@ -141,12 +141,18 @@ class SceneEditorPhaser extends Phaser.Scene {
         const startGridY = map.offset_position?.y || 0;
         const pxX = startGridX * 32;
         const pxY = startGridY * 32;
-        const pxW = (map.map_size?.width || 20) * 32;
-        const pxH = (map.map_size?.height || 20) * 32;
-
-        const mapGroup = this.add.container(0, 0);
 
         const fullMapData = mapsList.find(m => m.id === map.map_id);
+
+        // Use actual map dimensions from full map data when available, fallback to scene's map_size
+        const actualWidth = (fullMapData?.map_data?.width) || (map.map_size?.width || 20);
+        const actualHeight = (fullMapData?.map_data?.height) || (map.map_size?.height || 20);
+        const pxW = actualWidth * 32;
+        const pxH = actualHeight * 32;
+
+        // Track all tilemap layers for this map (needed for drag since tilemap layers ignore container transforms)
+        const mapLayers: Phaser.Tilemaps.TilemapLayer[] = [];
+
         if (fullMapData && fullMapData.map_data && fullMapData.map_data.layers) {
           const mapData = fullMapData.map_data;
           const tilemap = this.make.tilemap({ width: mapData.width || 20, height: mapData.height || 20, tileWidth: 32, tileHeight: 32 });
@@ -175,7 +181,8 @@ class SceneEditorPhaser extends Phaser.Scene {
 
           const createLayer = (name: string, depth: number) => {
             if (tilesetInstances.length === 0) return null;
-            const l = tilemap.createBlankLayer(name, tilesetInstances, 0, 0);
+            // Position tilemap layers directly at the map's pixel offset
+            const l = tilemap.createBlankLayer(name, tilesetInstances, pxX, pxY);
             if (!l) {
                 console.error(`[SceneEditorPhaser] Failed to create blank layer ${name}`);
                 return null;
@@ -210,10 +217,9 @@ class SceneEditorPhaser extends Phaser.Scene {
           layersToRender.forEach(ld => {
             const l = createLayer(ld.name, ld.depth);
             if (l) {
-               mapGroup.add(l);
+               mapLayers.push(l);
             }
           });
-          mapGroup.setPosition(pxX, pxY);
         }
 
         const rect = this.add.rectangle(pxX + pxW/2, pxY + pxH/2, pxW, pxH, 0x00ff00, 0.0);
@@ -237,7 +243,8 @@ class SceneEditorPhaser extends Phaser.Scene {
           text.y = dragY - pxH/2 + 5;
           const newLeftX = dragX - pxW/2;
           const newTopY = dragY - pxH/2;
-          mapGroup.setPosition(newLeftX, newTopY);
+          // Move each tilemap layer directly (they don't respond to container transforms)
+          mapLayers.forEach(l => l.setPosition(newLeftX, newTopY));
         });
 
         rect.on('dragend', () => {
@@ -246,18 +253,20 @@ class SceneEditorPhaser extends Phaser.Scene {
           const snappedGridX = Math.round(newLeftX / 32);
           const snappedGridY = Math.round(newTopY / 32);
 
-          rect.x = snappedGridX * 32 + pxW/2;
-          rect.y = snappedGridY * 32 + pxH/2;
-          text.x = snappedGridX * 32 + 5;
-          text.y = snappedGridY * 32 + 5;
-          mapGroup.setPosition(snappedGridX * 32, snappedGridY * 32);
+          const snappedPxX = snappedGridX * 32;
+          const snappedPxY = snappedGridY * 32;
+          rect.x = snappedPxX + pxW/2;
+          rect.y = snappedPxY + pxH/2;
+          text.x = snappedPxX + 5;
+          text.y = snappedPxY + 5;
+          mapLayers.forEach(l => l.setPosition(snappedPxX, snappedPxY));
 
           if (this.onUpdateMapOffset && (snappedGridX !== startGridX || snappedGridY !== startGridY)) {
             this.onUpdateMapOffset(map.instance_id, snappedGridX, snappedGridY);
           }
         });
 
-        this.mapsContainer.add([mapGroup, rect, text]);
+        this.mapsContainer.add([rect, text, ...mapLayers]);
       });
     };
 
@@ -448,6 +457,47 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
         });
     }
   }, [currentSceneId]);
+
+  // Auto-fetch full map data for any newly added maps that aren't yet enriched
+  useEffect(() => {
+    if (!sceneData) return;
+    const currentList = getParsedMapList(sceneData.map_list);
+    const missingMapIds = [...new Set(
+      currentList
+        .map((m: any) => m.map_id)
+        .filter((mapId: string) => !mapsList.find(m => m.id === mapId && m.map_data))
+    )];
+    if (missingMapIds.length === 0) return;
+
+    (async () => {
+      try {
+        const fullMaps = await Promise.all(
+          missingMapIds.map(async (mapId: string) => {
+            const res = await fetch(`/api/map?id=${mapId}`);
+            if (res.ok) return res.json();
+            return null;
+          })
+        );
+        const validMaps = fullMaps.filter(Boolean);
+        if (validMaps.length > 0) {
+          setMapsList(prev => {
+            const merged = [...prev];
+            for (const fullMap of validMaps) {
+              const idx = merged.findIndex(m => m.id === fullMap.id);
+              if (idx !== -1) {
+                merged[idx] = fullMap;
+              } else {
+                merged.push(fullMap);
+              }
+            }
+            return merged;
+          });
+        }
+      } catch (err) {
+        console.error('[RpgSceneEditor] Error fetching missing map data:', err);
+      }
+    })();
+  }, [sceneData?.map_list]);
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-900 text-white overflow-hidden">
@@ -913,6 +963,19 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   <div>
                     <label className="block text-slate-400 text-xs mb-1">Map ID</label>
                     <input type="text" readOnly value={selectedItem.map_id} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Map Size</label>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-slate-500 text-xs mb-0.5">W</label>
+                        <input type="number" readOnly value={mapsList.find(m => m.id === selectedItem.map_id)?.map_data?.width || selectedItem.map_size?.width || 20} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-slate-300" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-slate-500 text-xs mb-0.5">H</label>
+                        <input type="number" readOnly value={mapsList.find(m => m.id === selectedItem.map_id)?.map_data?.height || selectedItem.map_size?.height || 20} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-slate-300" />
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-slate-400 text-xs mb-1">Offset X</label>
