@@ -1262,6 +1262,50 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                     </div>
                   </div>
                   <div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-slate-500 text-xs mb-0.5">Override Width</label>
+                        <input
+                          type="number"
+                          placeholder="Default"
+                          value={selectedItem.container_override?.width || ''}
+                          onChange={(e) => {
+                            const newW = e.target.value ? Number(e.target.value) : undefined;
+                            const currentOverride = selectedItem.container_override || {};
+                            const newOverride = { ...currentOverride, width: newW };
+                            if (newW === undefined) delete newOverride.width;
+                            setSelectedItem({ ...selectedItem, container_override: Object.keys(newOverride).length > 0 ? newOverride : undefined });
+                            if (sceneData && sceneData.scene_entities?.game_objects) {
+                              const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, container_override: Object.keys(newOverride).length > 0 ? newOverride : undefined } : obj);
+                              setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                            }
+                          }}
+                          className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-slate-500 text-xs mb-0.5">Override Height</label>
+                        <input
+                          type="number"
+                          placeholder="Default"
+                          value={selectedItem.container_override?.height || ''}
+                          onChange={(e) => {
+                            const newH = e.target.value ? Number(e.target.value) : undefined;
+                            const currentOverride = selectedItem.container_override || {};
+                            const newOverride = { ...currentOverride, height: newH };
+                            if (newH === undefined) delete newOverride.height;
+                            setSelectedItem({ ...selectedItem, container_override: Object.keys(newOverride).length > 0 ? newOverride : undefined });
+                            if (sceneData && sceneData.scene_entities?.game_objects) {
+                              const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, container_override: Object.keys(newOverride).length > 0 ? newOverride : undefined } : obj);
+                              setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                            }
+                          }}
+                          className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
                     <label className="block text-slate-400 text-xs mb-1">State Override</label>
                     <input
                       type="text"
@@ -1278,25 +1322,98 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                       className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1"
                     />
                   </div>
-                  <div>
-                    <label className="block text-slate-400 text-xs mb-1">Properties (JSON)</label>
-                    <textarea
-                      rows={5}
-                      value={JSON.stringify(selectedItem.properties || {}, null, 2)}
-                      onChange={(e) => {
-                        try {
-                          const parsed = JSON.parse(e.target.value);
-                          setSelectedItem({ ...selectedItem, properties: parsed });
-                          if (sceneData && sceneData.scene_entities?.game_objects) {
-                            const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, properties: parsed } : obj);
-                            setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                  <div className="bg-slate-800 p-2 rounded border border-slate-600">
+                    <label className="block text-orange-300 text-xs mb-2 font-bold uppercase">Controller Properties</label>
+                    {(() => {
+                      const tpl = gameObjectTemplates.find((t: any) => t.id === selectedItem.template_id);
+                      const controller = selectedItem.properties?.controller || tpl?.default_controller;
+
+                      const updateProperty = (key: string, val: any) => {
+                         const currentProps = selectedItem.properties || {};
+                         const newProps = { ...currentProps, [key]: val };
+                         setSelectedItem({ ...selectedItem, properties: newProps });
+                         if (sceneData && sceneData.scene_entities?.game_objects) {
+                           const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, properties: newProps } : obj);
+                           setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                         }
+                      };
+
+                      if (controller === 'EncounterMonsterController') {
+                         return (
+                           <div className="space-y-2">
+                             <div>
+                                <label className="block text-slate-400 text-xs mb-1">Battle Scene ID</label>
+                                <input type="text" value={selectedItem.properties?.battle_scene_id || ''} onChange={(e) => updateProperty('battle_scene_id', e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm" />
+                             </div>
+                             <div>
+                                <label className="block text-slate-400 text-xs mb-1">Enemy Formation ID</label>
+                                <input type="text" value={selectedItem.properties?.enemy_formation_id || ''} onChange={(e) => updateProperty('enemy_formation_id', e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm" />
+                             </div>
+                           </div>
+                         );
+                      } else if (controller === 'TeleportController') {
+                         return (
+                           <div className="space-y-2">
+                             <div>
+                                <label className="block text-slate-400 text-xs mb-1">Target Scene ID</label>
+                                <input type="text" value={selectedItem.properties?.target_scene_id || ''} onChange={(e) => updateProperty('target_scene_id', e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm" />
+                             </div>
+                             <div className="flex gap-2">
+                               <div className="flex-1">
+                                 <label className="block text-slate-400 text-xs mb-1">Target X</label>
+                                 <input type="number" value={selectedItem.properties?.target_x || ''} onChange={(e) => updateProperty('target_x', Number(e.target.value))} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm" />
+                               </div>
+                               <div className="flex-1">
+                                 <label className="block text-slate-400 text-xs mb-1">Target Y</label>
+                                 <input type="number" value={selectedItem.properties?.target_y || ''} onChange={(e) => updateProperty('target_y', Number(e.target.value))} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm" />
+                               </div>
+                             </div>
+                           </div>
+                         );
+                      } else if (controller === 'StaticNpcController') {
+                         return (
+                           <div className="space-y-2">
+                             <div>
+                                <label className="block text-slate-400 text-xs mb-1">Dialog ID</label>
+                                <input type="text" value={selectedItem.properties?.dialog_id || ''} onChange={(e) => updateProperty('dialog_id', e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm" />
+                             </div>
+                           </div>
+                         );
+                      } else if (controller === 'ChestController') {
+                         return (
+                           <div className="space-y-2">
+                             <div>
+                                <label className="block text-slate-400 text-xs mb-1">Drop Item ID</label>
+                                <input type="text" value={selectedItem.properties?.drop_item || ''} onChange={(e) => updateProperty('drop_item', e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm" />
+                             </div>
+                           </div>
+                         );
+                      } else {
+                         return (
+                            <div className="text-xs text-slate-500 mb-2">Unknown or generic controller ({controller || 'None'}). Use raw JSON.</div>
+                         );
+                      }
+                    })()}
+                    <div className="mt-4">
+                      <label className="block text-slate-400 text-xs mb-1">Raw Properties (JSON)</label>
+                      <textarea
+                        rows={3}
+                        value={JSON.stringify(selectedItem.properties || {}, null, 2)}
+                        onChange={(e) => {
+                          try {
+                            const parsed = JSON.parse(e.target.value);
+                            setSelectedItem({ ...selectedItem, properties: parsed });
+                            if (sceneData && sceneData.scene_entities?.game_objects) {
+                              const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, properties: parsed } : obj);
+                              setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                            }
+                          } catch (err) {
+                            // Allow typing invalid json momentarily
                           }
-                        } catch (err) {
-                          // Allow typing invalid json momentarily
-                        }
-                      }}
-                      className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 font-mono text-xs"
-                    />
+                        }}
+                        className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 font-mono text-xs"
+                      />
+                    </div>
                   </div>
                   <button
                     onClick={() => {
