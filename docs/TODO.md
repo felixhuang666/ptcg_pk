@@ -6,19 +6,16 @@ This document tracks conflicting designs, implementation differences, or general
 *   **Conflict / Missing Implementation**: `docs/rpg_map_layer_design.md` mentions a planned feature: "Enhance the editor UI to allow hiding/showing individual layers during the editing process." However, this is not fully implemented in the UI yet.
 *   **Resolution**: (Resolved) Layer visibility toggles (eye icons) have been added to the Map Editor's top bar.
 
-## 2. RPG Scene Editor - Phaser Rendering
-*   **Difference**: `docs/rpg_scene_design.md` specifies that "The global grid... When a map is placed... local tiles are rendered at those global coordinates." Currently, the implementation of `RpgSceneEditor.tsx` renders a green bounding box (`rect = this.add.rectangle(...)`) to represent the map chunks instead of actually rendering the static map layers.
-*   **Resolution**: (Resolved) The spec has been updated to mention bounding box representations.
 
-## 3. Top Header Navigation Buttons
+## 2. Top Header Navigation Buttons
 *   **Design Note**: `docs/rpg_mode_design.md` describes a "Header Navigation" containing only a few actions (`Back`, `Refresh`, `Settings`, `Fullscreen`). However, the implementation adds multiple robust navigation methods (`Map` toggles, `Scene` toggles, etc.), which we've now documented in `docs/ui_header_navigation_design.md`.
 *   **Resolution**: `docs/rpg_mode_design.md` should be considered an overview, while `docs/ui_header_navigation_design.md` provides the specific details for the headers.
 
-## 4. Tile Index Logic Inconsistencies
+## 3. Tile Index Logic Inconsistencies
 *   **Conflict**: Documented in `docs/design_conflict.md` and `docs/design_todo.md`, the frontend `RpgMapEditor.tsx` sometimes handles tiles as 0-based and sometimes 1-based, relying on index checks like `val !== 0 && val !== -1`.
 *   **Action Needed**: This still remains to be formally fixed in both map procedural generation on the backend and tile map usage on the frontend.
 
-## 5. RPG Scene Editor UI Inconsistencies
+## 4. RPG Scene Editor UI Inconsistencies
 *   **Conflict / Missing Implementation**: `docs/rpg_scene_design.md` specifies several features and UI elements that are currently missing in `RpgSceneEditor.tsx`:
     *   **Layer Visibility Toggles**: Missing toggles for static map layers vs. dynamic entity layers in the Top Bar.
     *   **Mode Switch**: Missing `[ Scene Composition | Map Paint | Preview ]` in the Top Bar.
@@ -28,7 +25,7 @@ This document tracks conflicting designs, implementation differences, or general
     *   **Preview & Debugging Modes**: The interactive Scene Preview (Inspector Mode) and Game Preview functionalities are missing.
     *   **Advanced Physics Integration**: The UI for configuring Matter/Arcade physics properties directly from the inspector is missing.
 
-## 6. RPG Scene Editor Missing Features
+## 5. RPG Scene Editor Missing Features
 *   **Conflict / Missing Implementation**: `docs/rpg_scene_design.md` specifies several features that are currently missing in `RpgSceneEditor.tsx`:
     *   **Prefabs**: Dragging and dropping predefined "Prefabs" (e.g., Chest, Signpost, Switch).
     *   **Path Tool**: A "Path Tool" for NPC patrol paths.
