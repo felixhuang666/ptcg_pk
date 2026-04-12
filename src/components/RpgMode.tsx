@@ -79,6 +79,9 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
       private initialZoom: number = 1;
       private fogGraphics: Phaser.GameObjects.Graphics | null = null;
       public currentMapId: string = 'main_200';
+      public sceneData: any = null;
+      public gameObjectTemplates: any[] = [];
+      public gameObjectSprites: Record<string, Phaser.GameObjects.Sprite | Phaser.GameObjects.Container> = {};
 
       constructor() {
         super('MainScene');
@@ -214,13 +217,57 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
         this.cursors = this.input.keyboard!.createCursorKeys();
 
         try {
-          const res = await fetch(`/api/map?id=${this.currentMapId}`);
+          const tplRes = await fetch('/api/game_obj_templates');
+          if (tplRes.ok) this.gameObjectTemplates = await tplRes.json();
+
+          let targetMapId = this.currentMapId;
+          // check if it's a scene
+          const sceneRes = await fetch(`/api/scene/${this.currentMapId}`);
+          if (sceneRes.ok) {
+             const sceneData = await sceneRes.json();
+             this.sceneData = sceneData;
+             const parsedList = typeof sceneData.map_list === 'string' ? JSON.parse(sceneData.map_list) : (sceneData.map_list || []);
+             if (parsedList.length > 0) {
+                 targetMapId = parsedList[0].map_id;
+             }
+          }
+
+          const res = await fetch(`/api/map?id=${targetMapId}`);
           if (!res.ok) throw new Error('Failed to fetch map');
           const data = await res.json();
           this.mapData = data.map_data ? data.map_data : data;
           this.upgradeMapData(this.mapData);
+          
+          await new Promise<void>((resolve) => {
+            if (!this.sceneData || !this.sceneData.scene_entities || !this.sceneData.scene_entities.game_objects) {
+                resolve();
+                return;
+            }
+            let needsLoad = false;
+            this.sceneData.scene_entities.game_objects.forEach((obj: any) => {
+                const tpl = this.gameObjectTemplates.find(t => t.id === obj.template_id);
+                if (tpl && tpl.sprite_sheets) {
+                    tpl.sprite_sheets.forEach((sheet: any) => {
+                        const key = `spr_${sheet.sprite_sheet_name}`;
+                        if (!this.textures.exists(key)) {
+                            this.load.spritesheet(key, `/assets/players/${sheet.sprite_sheet_name}.png`, {
+                                frameWidth: sheet.frame_width,
+                                frameHeight: sheet.frame_height
+                            });
+                            needsLoad = true;
+                        }
+                    });
+                }
+            });
+            if (needsLoad) {
+                this.load.once('complete', () => resolve());
+                this.load.start();
+            } else {
+                resolve();
+            }
+          });
         } catch (err) {
-          console.error('Failed to load map', err);
+          console.error('Failed to load map or scene', err);
           this.mapData = { width: 200, height: 200, tiles: Array(200 * 200).fill(0) };
           this.upgradeMapData(this.mapData);
         }
@@ -812,6 +859,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
           this.objectCollidesLayer = createLayer('objectCollides', 3, true);
           this.objectEventLayer = createLayer('objectEvent', 4, false);
           this.topLayer = createLayer('topLayer', 10, false);
+          this.renderGameObjects();
         };
 
         if (this.fogGraphics) {
@@ -873,6 +921,75 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
         if (!this.isEditor && this.player) {
           this.cameras.main.startFollow(this.player, true, 0.05, 0.05);
         }
+      }
+
+
+      renderGameObjects() {
+        if (!this.sceneData || !this.sceneData.scene_entities || !this.sceneData.scene_entities.game_objects) return;
+
+        // Clear existing objects
+        Object.values(this.gameObjectSprites).forEach(sprite => sprite.destroy());
+        this.gameObjectSprites = {};
+
+        this.sceneData.scene_entities.game_objects.forEach((obj: any) => {
+          const tpl = this.gameObjectTemplates.find(t => t.id === obj.template_id);
+          if (!tpl) return;
+
+          const px = (obj.position?.x || 0) * 32;
+          const py = (obj.position?.y || 0) * 32;
+
+          let targetState = obj.default_state_override;
+          if (!targetState && tpl.sprite_sheets && tpl.sprite_sheets.length > 0) {
+             targetState = tpl.sprite_sheets[0].state;
+          }
+
+          let sheetMeta = tpl.sprite_sheets?.find((s:any) => s.state === targetState);
+          if (!sheetMeta && tpl.sprite_sheets && tpl.sprite_sheets.length > 0) {
+             sheetMeta = tpl.sprite_sheets[0];
+          }
+
+          if (sheetMeta) {
+              const key = `spr_${sheetMeta.sprite_sheet_name}`;
+              
+              const isCollidable = tpl.collision?.enabled;
+              
+              let sprite;
+              if (isCollidable) {
+                  sprite = this.physics.add.sprite(px, py, key);
+                  const body = sprite.body as Phaser.Physics.Arcade.Body;
+                  body.setImmovable(true);
+                  if (this.player) {
+                      this.physics.add.collider(this.player, sprite);
+                  }
+                  if (tpl.collision.width && tpl.collision.height) {
+                      body.setSize(tpl.collision.width, tpl.collision.height);
+                  }
+              } else {
+                  sprite = this.add.sprite(px, py, key);
+              }
+              
+              sprite.setOrigin(0, 0); // Align with grid
+              sprite.setDepth(5); // Adjust depth so player can be behind or front
+              
+              if (obj.zoom) {
+                  sprite.setScale(obj.zoom);
+              }
+
+              // Create animation on the fly if needed
+              const animKey = `${key}_${targetState}`;
+              if (!this.anims.exists(animKey)) {
+                  this.anims.create({
+                      key: animKey,
+                      frames: this.anims.generateFrameNumbers(key, { start: 0, end: (sheetMeta.frame_count || 1) - 1 }),
+                      frameRate: sheetMeta.frame_rate || 8,
+                      repeat: -1
+                  });
+              }
+              
+              sprite.play(animKey);
+              this.gameObjectSprites[obj.instance_id || Math.random().toString()] = sprite;
+          }
+        });
       }
 
       setupEditorUI() {

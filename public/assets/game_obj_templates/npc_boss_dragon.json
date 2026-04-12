@@ -1,0 +1,36 @@
+{
+    "id": "npc_boss_dragon",
+    "name": "Fire Dragon",
+    "category": "npc",
+    "container_width": 32,
+    "container_height": 32,
+    "sprite_sheets": [
+        {
+            "state": "map_idle",
+            "sprite_sheet_name": "dragon_small_idle",
+            "frame_width": 32,
+            "frame_height": 32,
+            "frame_rate": 8
+        },
+        {
+            "state": "battle_idle",
+            "sprite_sheet_name": "dragon_huge_idle",
+            "frame_width": 256,
+            "frame_height": 256,
+            "frame_rate": 10
+        },
+        {
+            "state": "battle_atk",
+            "sprite_sheet_name": "dragon_huge_attack",
+            "frame_width": 256,
+            "frame_height": 256,
+            "frame_rate": 15
+        }
+    ],
+    "collision": {
+        "enabled": true,
+        "width": 32,
+        "height": 32
+    },
+    "default_controller": "EncounterMonsterController"
+}

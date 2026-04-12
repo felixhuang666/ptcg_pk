@@ -7,6 +7,7 @@ class SceneEditorPhaser extends Phaser.Scene {
   private mapsContainer!: Phaser.GameObjects.Container;
   private onSelect!: (item: any) => void;
   private onUpdateMapOffset!: (instanceId: string, newX: number, newY: number) => void;
+  private onUpdateGameObjectOffset!: (instanceId: string, newX: number, newY: number) => void;
 
   constructor() {
     super({ key: 'SceneEditorPhaser' });
@@ -15,6 +16,7 @@ class SceneEditorPhaser extends Phaser.Scene {
   init(data: any) {
     this.onSelect = data.onSelect;
     this.onUpdateMapOffset = data.onUpdateMapOffset;
+    this.onUpdateGameObjectOffset = data.onUpdateGameObjectOffset;
     (window as any).__PHASER_SCENE_EDITOR__ = this;
   }
 
@@ -65,7 +67,7 @@ class SceneEditorPhaser extends Phaser.Scene {
 
   private mapTilemaps: Phaser.Tilemaps.Tilemap[] = [];
 
-  updateSceneData(sceneData: any, mapsList: any[] = []) {
+  updateSceneData(sceneData: any, mapsList: any[] = [], gameObjectTemplates: any[] = []) {
     if (!this.mapsContainer) return;
 
     this.mapTilemaps.forEach(tm => tm.destroy());
@@ -270,8 +272,74 @@ class SceneEditorPhaser extends Phaser.Scene {
       });
     };
 
+    const renderAllGameObjects = () => {
+      const gameObjects = sceneData?.scene_entities?.game_objects || [];
+      gameObjects.forEach((obj: any) => {
+        const startGridX = obj.position?.x || 0;
+        const startGridY = obj.position?.y || 0;
+        const pxX = startGridX * 32;
+        const pxY = startGridY * 32;
+
+        let pxW = 32;
+        let pxH = 32;
+
+        if (obj.container_override) {
+          pxW = obj.container_override.width || 32;
+          pxH = obj.container_override.height || 32;
+        } else {
+          const tpl = gameObjectTemplates.find(t => t.id === obj.template_id);
+          if (tpl) {
+             pxW = tpl.container_width || 32;
+             pxH = tpl.container_height || 32;
+          }
+        }
+
+        const rect = this.add.rectangle(pxX + pxW/2, pxY + pxH/2, pxW, pxH, 0xff8800, 0.2);
+        rect.setStrokeStyle(2, 0xff8800);
+        rect.setInteractive({ draggable: true });
+        rect.setDepth(200);
+
+        const labelText = this.add.text(pxX + 5, pxY + 5, obj.template_id, { color: '#ffffff', fontSize: '12px', wordWrap: { width: pxW - 10 } });
+        labelText.setDepth(200);
+
+        rect.on('pointerdown', (pointer: any) => {
+          if (pointer.leftButtonDown()) {
+            this.onSelect({ type: 'game_object', ...obj });
+          }
+        });
+
+        rect.on('drag', (pointer: any, dragX: number, dragY: number) => {
+          rect.x = dragX;
+          rect.y = dragY;
+          labelText.x = dragX - pxW/2 + 5;
+          labelText.y = dragY - pxH/2 + 5;
+        });
+
+        rect.on('dragend', () => {
+          const newLeftX = rect.x - pxW/2;
+          const newTopY = rect.y - pxH/2;
+          const snappedGridX = Math.round(newLeftX / 32);
+          const snappedGridY = Math.round(newTopY / 32);
+
+          const snappedPxX = snappedGridX * 32;
+          const snappedPxY = snappedGridY * 32;
+          rect.x = snappedPxX + pxW/2;
+          rect.y = snappedPxY + pxH/2;
+          labelText.x = snappedPxX + 5;
+          labelText.y = snappedPxY + 5;
+
+          if (this.onUpdateGameObjectOffset && (snappedGridX !== startGridX || snappedGridY !== startGridY)) {
+            this.onUpdateGameObjectOffset(obj.id, snappedGridX, snappedGridY);
+          }
+        });
+
+        this.mapsContainer.add([rect, labelText]);
+      });
+    };
+
     if (filesToLoad === 0) {
       renderAllMaps();
+      renderAllGameObjects();
     } else {
       let loadedCount = 0;
       tilesetsToLoad.forEach(t => {
@@ -279,6 +347,7 @@ class SceneEditorPhaser extends Phaser.Scene {
           loadedCount++;
           if (loadedCount >= filesToLoad) {
             renderAllMaps();
+            renderAllGameObjects();
           }
         });
       });
@@ -286,7 +355,10 @@ class SceneEditorPhaser extends Phaser.Scene {
       this.load.once('loaderror', (fileObj: any) => {
          console.error(`[SceneEditorPhaser] Load error for ${fileObj?.key}`);
          loadedCount++;
-         if (loadedCount >= filesToLoad) renderAllMaps();
+         if (loadedCount >= filesToLoad) {
+            renderAllMaps();
+            renderAllGameObjects();
+         }
       });
 
       this.load.start();
@@ -294,44 +366,47 @@ class SceneEditorPhaser extends Phaser.Scene {
   }
 }
 
-function PhaserGameComponent({ sceneData, mapsList, onSelect, onUpdateMapOffset }: { sceneData: any, mapsList: any[], onSelect: (item: any) => void, onUpdateMapOffset: (instanceId: string, newX: number, newY: number) => void }) {
+function PhaserGameComponent({ sceneData, mapsList, gameObjectTemplates, onSelect, onUpdateMapOffset, onUpdateGameObjectOffset }: { sceneData: any, mapsList: any[], gameObjectTemplates: any[], onSelect: (item: any) => void, onUpdateMapOffset: (instanceId: string, newX: number, newY: number) => void, onUpdateGameObjectOffset: (instanceId: string, newX: number, newY: number) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current || gameRef.current) return;
+    if (!gameRef.current && containerRef.current) {
+      const config: Phaser.Types.Core.GameConfig = {
+        type: Phaser.AUTO,
+        parent: containerRef.current,
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#1a1a1a',
+        scene: [SceneEditorPhaser]
+      };
+      gameRef.current = new Phaser.Game(config);
 
-    const config: Phaser.Types.Core.GameConfig = {
-      type: Phaser.AUTO,
-      parent: containerRef.current,
-      width: '100%',
-      height: '100%',
-      scene: [SceneEditorPhaser],
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-      },
-    };
-
-    gameRef.current = new Phaser.Game(config);
-
-    gameRef.current.events.on('ready', () => {
-      const scene = gameRef.current?.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
-      if (scene) {
-        scene.init({ onSelect, onUpdateMapOffset });
-        if (sceneData) {
-          scene.updateSceneData(sceneData, mapsList);
+      gameRef.current.events.on('ready', () => {
+        const scene = gameRef.current?.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
+        if (scene) {
+          scene.init({ onSelect, onUpdateMapOffset, onUpdateGameObjectOffset });
+          scene.updateSceneData(sceneData, mapsList, gameObjectTemplates);
         }
-      }
-    });
+      });
+    }
 
     return () => {
       if (gameRef.current) {
         gameRef.current.destroy(true);
         gameRef.current = null;
       }
-      (window as any).__PHASER_SCENE_EDITOR__ = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
+      if (scene) {
+        scene.updateSceneData(sceneData, mapsList, gameObjectTemplates);
+      }
+    }
+  }, [sceneData, mapsList, gameObjectTemplates]);
 
   // Update callbacks internally in the scene if they change
   useEffect(() => {
@@ -370,6 +445,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   const [mapsList, setMapsList] = useState<any[]>([]);
+  const [gameObjectTemplates, setGameObjectTemplates] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [mode, setMode] = useState<'SCENE' | 'MAP'>('SCENE');
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
@@ -401,6 +477,19 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
       .then(res => res.json())
       .then(data => {
         setMapsList(data);
+      });
+
+    // Load game object templates for palette
+    fetch('/api/game_obj_templates')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch templates');
+        return res.json();
+      })
+      .then(data => {
+        setGameObjectTemplates(data);
+      })
+      .catch(err => {
+        console.error('Error fetching game_obj_templates:', err);
       });
   }, []);
 
@@ -854,6 +943,28 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   ))}
                 </div>
                 </div>
+                <div>
+                  <h3 className="text-sm text-slate-400 mb-2 mt-4">Game Objects</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {gameObjectTemplates.map(t => (
+                    <div
+                      key={t.id}
+                      className="bg-slate-800 p-2 rounded cursor-grab active:cursor-grabbing text-xs text-center border border-slate-600 hover:border-orange-400 text-orange-200"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('application/json', JSON.stringify({ 
+                          type: 'game_object', 
+                          template_id: t.id, 
+                          container_width: t.container_width || 32, 
+                          container_height: t.container_height || 32 
+                        }));
+                      }}
+                    >
+                      {t.name}
+                    </div>
+                  ))}
+                </div>
+                </div>
               </div>
             )}
           </div>
@@ -904,6 +1015,44 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   ...sceneData,
                   map_list: [...currentList, newMapEntry]
                 });
+              } else if (data.type === 'game_object' && sceneData) {
+                const phaserScene = (window as any).__PHASER_SCENE_EDITOR__;
+                let worldX = 0, worldY = 0;
+                if (phaserScene && phaserScene.cameras && phaserScene.cameras.main) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  const worldPoint = phaserScene.cameras.main.getWorldPoint(x, y);
+                  worldX = Math.round(worldPoint.x / 32);
+                  worldY = Math.round(worldPoint.y / 32);
+                }
+
+                if (!activeLayerId) {
+                  alert("Please select a layer first!");
+                  return;
+                }
+
+                const newObjEntry = {
+                  id: 'inst-' + Math.random().toString(36).substring(2, 9),
+                  template_id: data.template_id,
+                  layer_id: activeLayerId,
+                  position: { x: worldX, y: worldY },
+                  zoom: 1.0,
+                  container_override: { width: data.container_width, height: data.container_height },
+                  default_state_override: null,
+                  properties: {}
+                };
+
+                const currentEntities = sceneData.scene_entities || { npcs: [], items: [], events: [], layers: [] };
+                const currentObjects = currentEntities.game_objects || [];
+
+                setSceneData({
+                  ...sceneData,
+                  scene_entities: {
+                    ...currentEntities,
+                    game_objects: [...currentObjects, newObjEntry]
+                  }
+                });
               }
             } catch (err) {
               console.error(err);
@@ -913,6 +1062,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           <PhaserGameComponent
             sceneData={sceneData}
             mapsList={mapsList}
+            gameObjectTemplates={gameObjectTemplates}
             onSelect={(item) => setSelectedItem(item)}
             onUpdateMapOffset={(instanceId, newX, newY) => {
               if (sceneData) {
@@ -926,6 +1076,27 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
 
                 if (selectedItem && selectedItem.instance_id === instanceId) {
                   setSelectedItem({ ...selectedItem, offset_position: { x: newX, y: newY } });
+                }
+              }
+            }}
+            onUpdateGameObjectOffset={(instanceId, newX, newY) => {
+              if (sceneData && sceneData.scene_entities && sceneData.scene_entities.game_objects) {
+                const newObjList = sceneData.scene_entities.game_objects.map((obj: any) =>
+                  (obj.id === instanceId)
+                    ? { ...obj, position: { x: newX, y: newY } }
+                    : obj
+                );
+                
+                setSceneData({
+                  ...sceneData,
+                  scene_entities: {
+                    ...sceneData.scene_entities,
+                    game_objects: newObjList
+                  }
+                });
+
+                if (selectedItem && selectedItem.id === instanceId) {
+                  setSelectedItem({ ...selectedItem, position: { x: newX, y: newY } });
                 }
               }
             }}
@@ -1024,6 +1195,120 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                     className="w-full bg-red-600 hover:bg-red-500 text-white rounded px-2 py-1 font-bold mt-4"
                   >
                     Remove Map
+                  </button>
+                </div>
+              )}
+              {selectedItem && selectedItem.type === 'game_object' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Layer</label>
+                    <select
+                      value={selectedItem.layer_id || ''}
+                      onChange={(e) => {
+                        const newLayerId = e.target.value;
+                        setSelectedItem({ ...selectedItem, layer_id: newLayerId });
+                        if (sceneData && sceneData.scene_entities && sceneData.scene_entities.game_objects) {
+                          const newObjList = sceneData.scene_entities.game_objects.map((obj: any) =>
+                            obj.id === selectedItem.id ? { ...obj, layer_id: newLayerId } : obj
+                          );
+                          setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                        }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white"
+                    >
+                      {(sceneData?.layers || []).map((l: any) => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Template ID</label>
+                    <input type="text" readOnly value={selectedItem.template_id} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-slate-500 text-xs mb-0.5">X</label>
+                        <input
+                          type="number"
+                          value={selectedItem.position?.x || 0}
+                          onChange={(e) => {
+                            const newX = Number(e.target.value);
+                            setSelectedItem({ ...selectedItem, position: { ...selectedItem.position, x: newX } });
+                            if (sceneData && sceneData.scene_entities?.game_objects) {
+                              const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, position: { ...obj.position, x: newX } } : obj);
+                              setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                            }
+                          }}
+                          className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-slate-500 text-xs mb-0.5">Y</label>
+                        <input
+                          type="number"
+                          value={selectedItem.position?.y || 0}
+                          onChange={(e) => {
+                            const newY = Number(e.target.value);
+                            setSelectedItem({ ...selectedItem, position: { ...selectedItem.position, y: newY } });
+                            if (sceneData && sceneData.scene_entities?.game_objects) {
+                              const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, position: { ...obj.position, y: newY } } : obj);
+                              setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                            }
+                          }}
+                          className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">State Override</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. battle_idle"
+                      value={selectedItem.default_state_override || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedItem({ ...selectedItem, default_state_override: val });
+                        if (sceneData && sceneData.scene_entities?.game_objects) {
+                          const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, default_state_override: val } : obj);
+                          setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                        }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Properties (JSON)</label>
+                    <textarea
+                      rows={5}
+                      value={JSON.stringify(selectedItem.properties || {}, null, 2)}
+                      onChange={(e) => {
+                        try {
+                          const parsed = JSON.parse(e.target.value);
+                          setSelectedItem({ ...selectedItem, properties: parsed });
+                          if (sceneData && sceneData.scene_entities?.game_objects) {
+                            const newObjList = sceneData.scene_entities.game_objects.map((obj: any) => obj.id === selectedItem.id ? { ...obj, properties: parsed } : obj);
+                            setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                          }
+                        } catch (err) {
+                          // Allow typing invalid json momentarily
+                        }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 font-mono text-xs"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (sceneData && sceneData.scene_entities?.game_objects) {
+                        const newObjList = sceneData.scene_entities.game_objects.filter((obj: any) => obj.id !== selectedItem.id);
+                        setSceneData({ ...sceneData, scene_entities: { ...sceneData.scene_entities, game_objects: newObjList } });
+                        setSelectedItem(null);
+                      }
+                    }}
+                    className="w-full bg-red-600 hover:bg-red-500 text-white rounded px-2 py-1 font-bold mt-4"
+                  >
+                    Remove Object
                   </button>
                 </div>
               )}

@@ -1,0 +1,33 @@
+{
+    "id": "obj_treasure_chest",
+    "name": "Treasure Chest",
+    "category": "environment",
+    "container_width": 32,
+    "container_height": 32,
+    "sprite_sheets": [
+        {
+            "state": "closed",
+            "sprite_sheet_name": "chest_closed",
+            "frame_width": 32,
+            "frame_height": 32,
+            "frame_rate": 1
+        },
+        {
+            "state": "opened",
+            "sprite_sheet_name": "chest_opened",
+            "frame_width": 32,
+            "frame_height": 32,
+            "frame_rate": 1
+        }
+    ],
+    "collision": {
+        "enabled": true,
+        "width": 32,
+        "height": 32
+    },
+    "default_controller": "ChestController",
+    "properties": {
+        "item_id": "gold_coin",
+        "amount": 100
+    }
+}

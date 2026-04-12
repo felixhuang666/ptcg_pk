@@ -299,6 +299,28 @@ in_memory_maps = {
         }
     }
 }
+@app.get("/api/game_obj_templates")
+async def list_game_obj_templates():
+    templates = []
+    seen = set()
+
+    # Try local json
+    paths = ["dist/assets/game_obj_templates", "public/assets/game_obj_templates"]
+    for p in paths:
+        if os.path.exists(p):
+            for filename in os.listdir(p):
+                if filename.endswith(".json") and filename not in seen:
+                    filepath = os.path.join(p, filename)
+                    try:
+                        with open(filepath, "r", encoding="utf-8") as f:
+                            template_data = json.load(f)
+                            templates.append(template_data)
+                            seen.add(filename)
+                    except Exception as e:
+                        print(f"Error reading local template {filename}: {e}")
+
+    return templates
+
 
 @app.get("/api/maps")
 async def list_maps():
