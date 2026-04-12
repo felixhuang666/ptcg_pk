@@ -1,0 +1,31 @@
+{
+  "id": 1,
+  "created_at": "2026-04-06T03:32:35.493129+00:00",
+  "name": "aaa",
+  "map_list": [
+    {
+      "map_id": "main_200",
+      "layer_id": "layer-1775446355963",
+      "map_size": {
+        "width": 20,
+        "height": 20
+      },
+      "instance_id": "inst-ryp3218",
+      "offset_position": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "scene_entities": {
+    "npcs": [],
+    "items": [],
+    "events": [],
+    "layers": [
+      {
+        "id": "layer-1775446355963",
+        "name": "Base Layer"
+      }
+    ]
+  }
+}
