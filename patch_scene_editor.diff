@@ -1,0 +1,260 @@
+--- src/components/RpgSceneEditor.tsx
++++ src/components/RpgSceneEditor.tsx
+@@ -63,8 +63,14 @@
+     });
+   }
+
+-  updateSceneData(sceneData: any) {
++  private mapTilemaps: Phaser.Tilemaps.Tilemap[] = [];
++
++  updateSceneData(sceneData: any, mapsList: any[] = []) {
+     if (!this.mapsContainer) return;
++
++    this.mapTilemaps.forEach(tm => tm.destroy());
++    this.mapTilemaps = [];
++
+     this.mapsContainer.removeAll(true);
+
+     if (!sceneData || !sceneData.map_list) return;
+@@ -86,56 +92,136 @@
+       return idxA - idxB;
+     });
+
++    // Gather all required tilesets to preload
++    const tilesetsToLoad: any[] = [];
+     mapList.forEach((map: any) => {
+-      const startGridX = map.offset_position?.x || 0;
+-      const startGridY = map.offset_position?.y || 0;
+-      const pxX = startGridX * 32;
+-      const pxY = startGridY * 32;
+-      const pxW = (map.map_size?.width || 20) * 32;
+-      const pxH = (map.map_size?.height || 20) * 32;
++      const fullMapData = mapsList.find(m => m.id === map.map_id);
++      if (fullMapData && fullMapData.map_data) {
++        const tilesetsMeta = fullMapData.map_data.map_meta?.tilesets || [
++          {
++            firstgid: 1,
++            name: 'main_20x10',
++            image_source: 'main_20x10.png',
++            tilewidth: 32,
++            tileheight: 32
++          }
++        ];
++        tilesetsMeta.forEach((tsMeta: any) => {
++          let src = tsMeta.image_source;
++          if (!src.endsWith('.png') && !src.endsWith('.jpg') && !src.endsWith('.jpeg')) src += '.png';
++          const key = `tileset_${tsMeta.name}`;
++          if (!tilesetsToLoad.find(t => t.key === key)) {
++            tilesetsToLoad.push({ key, src, tsMeta });
++          }
++        });
++      }
++    });
+
+-      const rect = this.add.rectangle(pxX + pxW/2, pxY + pxH/2, pxW, pxH, 0x00ff00, 0.2);
+-      rect.setStrokeStyle(2, 0x00ff00);
+-      rect.setInteractive({ draggable: true });
++    let loadedCount = 0;
++    const totalToLoad = tilesetsToLoad.filter(t => !this.textures.exists(t.key)).length;
+
+-      const text = this.add.text(pxX + 5, pxY + 5, map.map_id, { color: '#ffffff', fontSize: '16px' });
++    const renderAllMaps = () => {
++      mapList.forEach((map: any) => {
++        const startGridX = map.offset_position?.x || 0;
++        const startGridY = map.offset_position?.y || 0;
++        const pxX = startGridX * 32;
++        const pxY = startGridY * 32;
++        const pxW = (map.map_size?.width || 20) * 32;
++        const pxH = (map.map_size?.height || 20) * 32;
+
+-      rect.on('pointerdown', (pointer: any) => {
+-        if (pointer.leftButtonDown()) {
+-          this.onSelect({ type: 'map', ...map });
++        const mapGroup = this.add.container(0, 0);
++
++        const fullMapData = mapsList.find(m => m.id === map.map_id);
++        if (fullMapData && fullMapData.map_data && fullMapData.map_data.layers) {
++          const mapData = fullMapData.map_data;
++          const tilemap = this.make.tilemap({ width: mapData.width || 20, height: mapData.height || 20, tileWidth: 32, tileHeight: 32 });
++          this.mapTilemaps.push(tilemap);
++
++          const tilesetsMeta = mapData.map_meta?.tilesets || [
++            {
++              firstgid: 1,
++              name: 'main_20x10',
++              image_source: 'main_20x10.png',
++              tilewidth: 32,
++              tileheight: 32
++            }
++          ];
++
++          const tilesetInstances: Phaser.Tilemaps.Tileset[] = [];
++          tilesetsMeta.forEach((tsMeta: any) => {
++            const key = `tileset_${tsMeta.name}`;
++            const ts = tilemap.addTilesetImage(tsMeta.name, key, tsMeta.tilewidth || 32, tsMeta.tileheight || 32, tsMeta.margin || 0, tsMeta.spacing || 0, tsMeta.firstgid);
++            if (ts) tilesetInstances.push(ts);
++          });
++
++          const createLayer = (name: string, depth: number) => {
++            const l = tilemap.createBlankLayer(name, tilesetInstances, 0, 0);
++            if (!l) return null;
++            l.setDepth(depth);
++            const data = mapData.layers[name];
++            if (data) {
++              for (let y = 0; y < mapData.height; y++) {
++                for (let x = 0; x < mapData.width; x++) {
++                  const val = data[y * mapData.width + x];
++                  if (val !== undefined && val !== 0 && val !== -1) {
++                    l.putTileAt(val, x, y);
++                  }
++                }
++              }
++            }
++            return l;
++          };
++
++          const layersToRender = [
++            { name: 'base', depth: 0 },
++            { name: 'decorations', depth: 1 },
++            { name: 'obstacles', depth: 2 },
++            { name: 'objectCollides', depth: 3 },
++            { name: 'objectEvent', depth: 4 },
++            { name: 'topLayer', depth: 10 }
++          ];
++
++          layersToRender.forEach(ld => {
++            const l = createLayer(ld.name, ld.depth);
++            if (l) mapGroup.add(l);
++          });
++          mapGroup.setPosition(pxX, pxY);
+         }
+-      });
+
+-      rect.on('drag', (pointer: any, dragX: number, dragY: number) => {
+-        rect.x = dragX;
+-        rect.y = dragY;
+-        text.x = dragX - pxW/2 + 5;
+-        text.y = dragY - pxH/2 + 5;
+-      });
++        const rect = this.add.rectangle(pxX + pxW/2, pxY + pxH/2, pxW, pxH, 0x00ff00, 0.0);
++        rect.setStrokeStyle(2, 0x00ff00);
++        rect.setInteractive({ draggable: true });
+
+-      rect.on('dragend', () => {
+-        // Calculate new top-left corner
+-        const newLeftX = rect.x - pxW/2;
+-        const newTopY = rect.y - pxH/2;
++        const text = this.add.text(pxX + 5, pxY + 5, map.map_id, { color: '#ffffff', fontSize: '16px' });
+
+-        // Snap to grid
+-        const snappedGridX = Math.round(newLeftX / 32);
+-        const snappedGridY = Math.round(newTopY / 32);
++        rect.on('pointerdown', (pointer: any) => {
++          if (pointer.leftButtonDown()) {
++            this.onSelect({ type: 'map', ...map });
++          }
++        });
+
+-        // Visually snap
+-        rect.x = snappedGridX * 32 + pxW/2;
+-        rect.y = snappedGridY * 32 + pxH/2;
+-        text.x = snappedGridX * 32 + 5;
+-        text.y = snappedGridY * 32 + 5;
++        rect.on('drag', (pointer: any, dragX: number, dragY: number) => {
++          rect.x = dragX;
++          rect.y = dragY;
++          text.x = dragX - pxW/2 + 5;
++          text.y = dragY - pxH/2 + 5;
++          const newLeftX = dragX - pxW/2;
++          const newTopY = dragY - pxH/2;
++          mapGroup.setPosition(newLeftX, newTopY);
++        });
+
+-        // Notify React to update sceneData
+-        if (this.onUpdateMapOffset && (snappedGridX !== startGridX || snappedGridY !== startGridY)) {
+-          this.onUpdateMapOffset(map.instance_id, snappedGridX, snappedGridY);
+-        }
+-      });
++        rect.on('dragend', () => {
++          const newLeftX = rect.x - pxW/2;
++          const newTopY = rect.y - pxH/2;
++          const snappedGridX = Math.round(newLeftX / 32);
++          const snappedGridY = Math.round(newTopY / 32);
+
+-      this.mapsContainer.add([rect, text]);
+-    });
++          rect.x = snappedGridX * 32 + pxW/2;
++          rect.y = snappedGridY * 32 + pxH/2;
++          text.x = snappedGridX * 32 + 5;
++          text.y = snappedGridY * 32 + 5;
++          mapGroup.setPosition(snappedGridX * 32, snappedGridY * 32);
++
++          if (this.onUpdateMapOffset && (snappedGridX !== startGridX || snappedGridY !== startGridY)) {
++            this.onUpdateMapOffset(map.instance_id, snappedGridX, snappedGridY);
++          }
++        });
++
++        this.mapsContainer.add([mapGroup, rect, text]);
++      });
++    };
++
++    if (totalToLoad === 0) {
++      renderAllMaps();
++    } else {
++      tilesetsToLoad.forEach(t => {
++        if (!this.textures.exists(t.key)) {
++          const imgUrl = `/assets/map_tileset/${t.src}`;
++          this.load.image(t.key, imgUrl);
++          this.load.once(`filecomplete-image-${t.key}`, () => {
++            loadedCount++;
++            if (loadedCount >= totalToLoad) {
++              renderAllMaps();
++            }
++          });
++        } else {
++          loadedCount++;
++          if (loadedCount >= totalToLoad) {
++            renderAllMaps();
++          }
++        }
++      });
++      this.load.start();
++    }
+   }
+ }
+
+-function PhaserGameComponent({ sceneData, onSelect, onUpdateMapOffset }: { sceneData: any, onSelect: (item: any) => void, onUpdateMapOffset: (instanceId: string, newX: number, newY: number) => void }) {
++function PhaserGameComponent({ sceneData, mapsList, onSelect, onUpdateMapOffset }: { sceneData: any, mapsList: any[], onSelect: (item: any) => void, onUpdateMapOffset: (instanceId: string, newX: number, newY: number) => void }) {
+   const containerRef = useRef<HTMLDivElement>(null);
+   const gameRef = useRef<Phaser.Game | null>(null);
+
+@@ -162,7 +248,7 @@
+       if (scene) {
+         scene.init({ onSelect, onUpdateMapOffset });
+         if (sceneData) {
+-          scene.updateSceneData(sceneData);
++          scene.updateSceneData(sceneData, mapsList);
+         }
+       }
+     });
+@@ -182,10 +268,10 @@
+     if (gameRef.current) {
+       const scene = gameRef.current.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
+       if (scene && scene.updateSceneData) {
+-        scene.updateSceneData(sceneData);
++        scene.updateSceneData(sceneData, mapsList);
+       }
+     }
+-  }, [sceneData]);
++  }, [sceneData, mapsList]);
+
+   return <div ref={containerRef} className="w-full h-full" />;
+ }
+@@ -530,6 +616,7 @@
+         >
+           <PhaserGameComponent
+             sceneData={sceneData}
++            mapsList={mapsList}
+             onSelect={(item) => setSelectedItem(item)}
+             onUpdateMapOffset={(instanceId, newX, newY) => {
+               if (sceneData) {
