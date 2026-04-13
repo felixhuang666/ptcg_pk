@@ -1011,6 +1011,8 @@ async def save_local(request: Request):
     maps = data.get("maps", [])
     game_obj_templates = data.get("game_obj_templates", [])
 
+    print(">>save_local", data)
+
     import re
     def get_safe_id(id_val):
         safe_id = os.path.basename(str(id_val))

@@ -121,6 +121,7 @@ stop-frontend:
 stop-backend:
 	-ps -eo pid,cmd | grep 'port 5001' | grep -v grep && echo "  Killing old backend process ..."
 	-lsof -t -i :5001 && lsof -t -i :5001 | xargs -i kill {} 2>/dev/null || true
+	-lsof -t -i :5001 && lsof -t -i :5001 | xargs -i kill -9 {} 2>/dev/null || true
 	sleep 1
 
 start-frontend-dev: stop-frontend
