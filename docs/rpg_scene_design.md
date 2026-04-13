@@ -60,7 +60,7 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
 ## 3. Combining Map Editor and Scene Editor
 The Scene Editor seamlessly integrates map editing capabilities.
 * **Scope Toggle**: The user can switch between "Scene Composition Mode" (placing entire maps, NPCs, and events) and "Map Edit Mode" (painting tiles on a specific map instance).
-* **Global Grid**: The editor renders a massive global grid. When a map is placed at `offset_position`, a green bounding box is rendered using `this.add.rectangle(...)` to represent the map chunks instead of actually rendering the static map layers.
+* **Global Grid**: The editor renders a massive global grid. When a map is placed at `offset_position`, the local tiles are actually rendered at those global coordinates.
 * **In-Place Editing**: Double-clicking a map in the scene view enters "Map Edit Mode" for that specific map, locking the camera to its boundaries and activating the tile brush tools.
 
 ## 4. Layer Integration
@@ -101,7 +101,7 @@ The Scene Editor includes specialized tools for placing and configuring Non-Play
 
 - **Center (Canvas & Console)**:
   * An infinite-pan/zoom Phaser canvas displaying the global scene with coordinate rulers for precise placement.
-  * Shows bounding boxes around individual maps.
+  * Shows the rendered maps within the scene.
   * Renders pathfinding lines for NPC patrol routes.
   * Bottom toggleable **Console** for debugging and viewing errors.
 
