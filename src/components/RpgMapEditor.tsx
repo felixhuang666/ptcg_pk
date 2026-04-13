@@ -1890,7 +1890,11 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         scene: null,
-                        maps: [scene.mapData],
+                        maps: [{
+                          id: currentMapId,
+                          name: currentMapName,
+                          map_data: scene.mapData
+                        }],
                         game_obj_templates: []
                       })
                     });
