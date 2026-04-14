@@ -4,27 +4,120 @@
   "name": "aaa",
   "map_list": [
     {
-      "map_id": "main_200",
+      "map_id": "flow_local_1",
       "layer_id": "layer-1775446355963",
       "map_size": {
         "width": 20,
         "height": 20
       },
-      "instance_id": "inst-ryp3218",
+      "instance_id": "inst-bc4myfb",
       "offset_position": {
         "x": 0,
         "y": 0
       }
+    },
+    {
+      "map_id": "flow_local_2",
+      "layer_id": "layer-1775446355963",
+      "map_size": {
+        "width": 20,
+        "height": 20
+      },
+      "instance_id": "inst-l2g2dxg",
+      "offset_position": {
+        "x": 20,
+        "y": 0
+      }
+    },
+    {
+      "instance_id": "inst-bos3auf",
+      "map_id": "flow_local_3",
+      "map_size": {
+        "width": 20,
+        "height": 20
+      },
+      "offset_position": {
+        "x": 0,
+        "y": 20
+      },
+      "layer_id": "layer-1775446355963"
+    },
+    {
+      "instance_id": "inst-yg5kybt",
+      "map_id": "flow_local_4",
+      "map_size": {
+        "width": 20,
+        "height": 20
+      },
+      "offset_position": {
+        "x": 20,
+        "y": 20
+      },
+      "layer_id": "layer-1775446355963"
     }
   ],
   "scene_entities": {
     "npcs": [],
     "items": [],
     "events": [],
+    "game_objects": [
+      {
+        "id": "inst-hlgydam",
+        "zoom": 1,
+        "layer_id": "layer-1775446355963",
+        "position": {
+          "x": 9,
+          "y": 18
+        },
+        "properties": {},
+        "template_id": "obj_treasure_chest",
+        "container_override": {
+          "width": 32,
+          "height": 32
+        },
+        "default_state_override": null
+      },
+      {
+        "id": "inst-9yrscvl",
+        "zoom": 1,
+        "layer_id": "layer-1775446355963",
+        "position": {
+          "x": 8,
+          "y": 19
+        },
+        "properties": {},
+        "template_id": "npc_boss_dragon",
+        "container_override": {
+          "width": 32,
+          "height": 32
+        },
+        "default_state_override": null
+      },
+      {
+        "id": "inst-zfl47a6",
+        "zoom": 1,
+        "layer_id": "layer-1775446355963",
+        "position": {
+          "x": 13,
+          "y": 19
+        },
+        "properties": {},
+        "template_id": "npc_boss_dragon",
+        "container_override": {
+          "width": 32,
+          "height": 32
+        },
+        "default_state_override": null
+      }
+    ],
     "layers": [
       {
         "id": "layer-1775446355963",
         "name": "Base Layer"
+      },
+      {
+        "id": "layer-1775995825376",
+        "name": "obj layer"
       }
     ]
   }
