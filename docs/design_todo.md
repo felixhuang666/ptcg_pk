@@ -24,3 +24,9 @@ This document tracks actionable technical debt and planned features identified d
 *   **Action Items**:
     *   Implement robust fallback image generation or a default "missing texture" tileset.
     *   Ensure the active tileset metadata is deeply merged with safe defaults before rendering.
+
+## 5. RPG Map Editor - Eraser Cursor / Behavior
+*   **Description**: Improve the UX when the eraser is active. Currently, there's no visual feedback on the map canvas that the eraser tool is selected, and dragging to erase works but could be clearer.
+*   **Action Items**:
+    *   Update the mouse cursor to an eraser icon when the eraser tool is active.
+    *   Highlight the tile grid being hovered over with a distinct color (e.g., red) when the eraser is active.

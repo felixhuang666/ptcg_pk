@@ -20,3 +20,7 @@ This document tracks identified conflicts between original design specifications
 ## 4. RPG Scene Editor Feature Scope
 *   **Conflict**: `docs/rpg_scene_design.md` describes a comprehensive, engine-like tool featuring a scripting editor, node-based dialog trees, advanced physics integration, and interactive preview modes. The actual implementation in `src/components/RpgSceneEditor.tsx` is significantly simpler, primarily focusing on grid-based map chunk placement and basic entity positioning.
 *   **Resolution**: These aspirational features have been logged in `docs/TODO.md`. The design document currently overstates the capabilities of the editor. Future development phases will need to systematically implement these advanced features or the design spec must be scaled down to reflect MVP status.
+
+## 5. RPG Map Editor - Info Overlay
+*   **Conflict / Missing Implementation**: `docs/rpg_map_editor_design.md` mentions an 'Info Toggle' in the top bar to show/hide coordinate info text.
+*   **Resolution**: Resolved. An info toggle button has been added to the Map Editor UI.
