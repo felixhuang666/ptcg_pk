@@ -32,3 +32,7 @@ This document tracks conflicting designs, implementation differences, or general
     *   **Dialog Trees**: Node-based or JSON-based dialog editor in the Property Editor.
     *   **Scripting & Logic Integration**: Integrated text/script editor for defining custom logic (e.g., Scene Lifecycle Hooks, Custom Object Logic).
     *   **Physics Integration**: One-click conversion of Sprites/Images into physical Matter/Arcade bodies.
+
+## 6. Sprite Sheet Editor - Image Scale Reset
+*   **Conflict**: The `rpg_sprite_sheet_editor_design.md` states: 'When a scaling action is performed (or undone/redone), the view automatically resets the zoom to 100% and resets the pan coordinates to (0,0) to ensure the newly sized image remains visible.' Currently, zooming and panning resets are not implemented for scaling actions.
+*   **Resolution**: Needs implementation in `SpriteSheetEditor.tsx` inside the `useEffect` handling the scaling action or via a dedicated UI flow.
