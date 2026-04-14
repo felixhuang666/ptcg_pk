@@ -690,6 +690,8 @@ async def get_scenes():
             client = await create_async_client(supabase_url, supabase_key)
             res = await client.table('game_scene').select('id, name').execute()
             if res.data is not None:
+                for s in res.data:
+                    s["source_type"] = "DB"
                 scenes.extend(res.data)
     except Exception as e:
         print(f"Supabase warning (fetching scenes): {e}")
@@ -698,7 +700,7 @@ async def get_scenes():
 
     for k, v in in_memory_scenes.items():
         if str(k) not in existing_ids:
-            scenes.append({"id": k, "name": v.get("name", f"Scene {k}")})
+            scenes.append({"id": k, "name": v.get("name", f"Scene {k}"), "source_type": "memory"})
             existing_ids.add(str(k))
 
     paths = ["dist/assets/game_scene", "public/assets/game_scene"]
@@ -711,7 +713,7 @@ async def get_scenes():
                         try:
                             with open(os.path.join(p, filename), "r", encoding="utf-8") as f:
                                 scene_data = json.load(f)
-                                scenes.append({"id": scene_id, "name": scene_data.get("name", f"Scene {scene_id}")})
+                                scenes.append({"id": scene_id, "name": scene_data.get("name", f"Scene {scene_id}"), "source_type": "local-asset"})
                                 existing_ids.add(str(scene_id))
                         except Exception as e:
                             print(f"Error reading local scene {filename}: {e}")

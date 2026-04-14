@@ -775,10 +775,15 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                 {scenes.map(s => (
                   <div key={s.id} className="flex gap-1 mb-1">
                     <button
-                      className={`flex-1 text-left px-2 py-1 rounded text-sm ${s.id === currentSceneId ? 'bg-blue-600' : 'hover:bg-slate-700'}`}
+                      className={`flex-1 text-left px-2 py-1 rounded text-sm flex justify-between items-center ${s.id === currentSceneId ? 'bg-blue-600' : 'hover:bg-slate-700'}`}
                       onClick={() => setCurrentSceneId(s.id)}
                     >
-                      {s.name}
+                      <span>{s.name}</span>
+                      {s.source_type && (
+                        <span className="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded opacity-80">
+                          {s.source_type}
+                        </span>
+                      )}
                     </button>
                     <button
                       className="p-1 text-red-400 hover:bg-slate-700 rounded"
