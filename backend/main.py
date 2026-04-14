@@ -1048,8 +1048,10 @@ async def save_local(request: Request):
                 for m in maps:
                     if "id" in m:
                         safe_id = get_safe_id(m["id"])
-                        with open(os.path.join(maps_dir, f"{safe_id}.json"), "w", encoding="utf-8") as f:
+                        map_file_path = os.path.join(maps_dir, f"{safe_id}.json")
+                        with open(map_file_path, "w", encoding="utf-8") as f:
                             json.dump(m, f, ensure_ascii=False, indent=2)
+                        print(f"DEBUG: Saved map_data locally to {map_file_path}")
 
                         # Save map_meta if present
                         map_data = m.get("map_data", {})
@@ -1060,6 +1062,7 @@ async def save_local(request: Request):
                                 meta_json_path = os.path.join(map_meta_dir, f"{safe_id}.json")
                                 with open(meta_json_path, "w", encoding="utf-8") as f:
                                     json.dump(map_data["map_meta"], f, ensure_ascii=False, indent=2)
+                                print(f"DEBUG: Saved map_meta locally to {meta_json_path}")
                             except Exception as meta_e:
                                 print(f"Error saving map_meta for {m['id']} in save_local: {meta_e}")
 
