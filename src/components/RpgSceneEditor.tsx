@@ -943,7 +943,12 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                         e.dataTransfer.setData('application/json', JSON.stringify({ type: 'map', map_id: m.id, map_size: { width: m.map_data?.width || 20, height: m.map_data?.height || 20 } }));
                       }}
                     >
-                      {m.name}
+                      <div>{m.name}</div>
+                      {m.source_type && (
+                        <div className="text-[9px] text-slate-300 bg-slate-800 px-1 rounded mt-1 opacity-80 inline-block">
+                          {m.source_type}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1447,7 +1452,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
               {mapsList.map(m => (
                 <button
                   key={m.id}
-                  className="bg-slate-700 hover:bg-indigo-600 p-3 rounded text-left flex flex-col gap-1 transition-colors"
+                  className="bg-slate-700 hover:bg-indigo-600 p-3 rounded text-left flex flex-col gap-1 transition-colors relative"
                   onClick={() => {
                     if (sceneData) {
                       const newMapEntry = {
@@ -1466,7 +1471,14 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                     setShowAddMapModal(null);
                   }}
                 >
-                  <span className="font-bold">{m.name}</span>
+                  <div className="flex justify-between items-start w-full">
+                    <span className="font-bold">{m.name}</span>
+                    {m.source_type && (
+                      <span className="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded opacity-80">
+                        {m.source_type}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-slate-400">{m.id}</span>
                 </button>
               ))}

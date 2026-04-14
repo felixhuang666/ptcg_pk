@@ -335,12 +335,14 @@ async def list_maps():
             try:
                 res = await client.table('maps').select('id, name').execute()
                 if res.data is not None:
+                    for m in res.data:
+                        m["source_type"] = "DB"
                     maps.extend(res.data)
             except Exception as inner_e:
                 if 'PGRST204' in str(inner_e):
                     res = await client.table('maps').select('id').execute()
                     if res.data is not None:
-                        maps.extend([{"id": m["id"], "name": "Unknown"} for m in res.data])
+                        maps.extend([{"id": m["id"], "name": "Unknown", "source_type": "DB"} for m in res.data])
                 else:
                     raise inner_e
     except Exception as e:
@@ -350,7 +352,7 @@ async def list_maps():
     existing_ids = {m["id"] for m in maps}
     for k, v in in_memory_maps.items():
         if k not in existing_ids:
-            maps.append({"id": k, "name": v.get("name", k)})
+            maps.append({"id": k, "name": v.get("name", k), "source_type": "memory"})
             existing_ids.add(k)
 
     # 3. Add local json from dist/assets/maps and public/assets/maps
@@ -364,7 +366,7 @@ async def list_maps():
                         try:
                             with open(os.path.join(p, filename), "r", encoding="utf-8") as f:
                                 map_data = json.load(f)
-                                maps.append({"id": map_id, "name": map_data.get("name", map_id)})
+                                maps.append({"id": map_id, "name": map_data.get("name", map_id), "source_type": "local-asset"})
                                 existing_ids.add(map_id)
                         except Exception as e:
                             print(f"Error reading local map {filename}: {e}")
