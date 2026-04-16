@@ -8,6 +8,9 @@
 - **私人對戰**：透過房號與好友進行對戰。
 - **挑戰 BOSS**：挑戰勝率前十名的玩家隊伍。
 - **自訂隊伍**：自由搭配怪獸與 4 顆召喚師骰子（每顆上限 10 點）。
+- **RPG Mode**: A real-time multiplayer map exploration mode with synced players, NPCs, and chat.
+- **Map Editor**: A fully-featured visual map editor with 6 layers, dynamic tilesets, and procedural generation.
+- **Scene Editor**: A comprehensive tool to compose entire game worlds, stitch maps together, and place interactive game objects and NPCs.
 
 ## 本地安裝與執行
 

@@ -59,3 +59,10 @@ The RPG Map Editor features a specialized, highly interactive interface for map 
 
 ## 6. State Persistence
 - **View Persistence**: The application remembers the last active game mode (e.g., "RPG_MODE") across sessions using browser cookies (`last_view`). This ensures players returning to the game can seamlessly continue their experience without having to navigate through the main menu again.
+
+## 7. Design Export Capabilities
+To bridge the gap between engineering and UI/UX design, the application supports programmatic generation of design files from the React UI.
+
+*   **Technology Stack**: Uses Puppeteer alongside `@builder.io/html-to-figma`.
+*   **Workflow**: A headless browser serializes the DOM of targeted React components into a structured JSON representation.
+*   **Supported Formats**: This JSON can be imported directly into Figma or mapped into custom schemas (such as Pencil `.pen` formats) for further design iteration without manually recreating UI elements.

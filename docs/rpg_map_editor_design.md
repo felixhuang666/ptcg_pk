@@ -36,6 +36,8 @@ Maps have evolved from a simple 2-layer structure to a comprehensive 6-layer arc
 - `topLayer`: Visual elements drawn above the player with dynamic transparency.
 
 ## 5. External Data Interaction
-- **Database (Supabase/Local Storage)**: Maps are stored server-side. The `/api/map` endpoint is responsible for persisting the map layout JSON objects to the underlying database.
-- **Map Retrieval**: React effect hooks fetch the list of available maps on component mount. Selecting a map triggers a re-fetch of the specific map data layout.
-- **Save Operations**: Emits updated map JSON payloads directly to the server, overriding the existing `id`.
+- **Dual-Source Strategy**: Maps are managed using a dual-source strategy to support environments without a database.
+  - **Database**: The primary storage is the `game_map` table in Supabase (accessed via `GET /api/maps`, `POST /api/map`).
+  - **Local Fallback**: If the database is unavailable, the backend reads JSON files directly from `dist/assets/` and `public/assets/`.
+- **Save Operations**: The frontend can save maps to the database (`POST /api/map`) or export them directly to local project folders (`POST /api/save_local`).
+- **Map Meta Extraction**: When maps are persisted to local assets using `POST /api/save_local`, the backend explicitly extracts `map_meta` (which contains tileset definitions) from `map_data` and saves it as a separate JSON file in a sibling `map_meta/` directory alongside the `maps/` directory.
