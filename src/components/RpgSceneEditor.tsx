@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive, Wand2 } from 'lucide-react';
 import Phaser from 'phaser';
+import GameObjectTemplateCreator from './GameObjectTemplateCreator';
 
 class SceneEditorPhaser extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
@@ -451,6 +452,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null);
   const [showAddMapModal, setShowAddMapModal] = useState<string | null>(null);
+  const [showTemplateCreator, setShowTemplateCreator] = useState(false);
 
   const [isScenesExpanded, setIsScenesExpanded] = useState(true);
   const [isLayersExpanded, setIsLayersExpanded] = useState(true);
@@ -706,6 +708,14 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
             title="Export Scene"
           >
             <Download className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={() => setShowTemplateCreator(true)}
+            className="p-2 bg-orange-600 text-white rounded-lg hover:bg-orange-500 transition-colors flex items-center justify-center group relative"
+            title="Create Template"
+          >
+            <Wand2 className="w-5 h-5" />
           </button>
 
           <label
@@ -1443,6 +1453,19 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </div>
+
+      {showTemplateCreator && (
+        <GameObjectTemplateCreator
+          onBack={() => setShowTemplateCreator(false)}
+          onSave={() => {
+             // reload templates
+             fetch('/api/game_obj_templates')
+              .then(res => res.json())
+              .then(data => setGameObjectTemplates(data))
+              .catch(err => console.error(err));
+          }}
+        />
+      )}
 
       {showAddMapModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
