@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive, Wand2 } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive, Wand2, RefreshCw } from 'lucide-react';
 import Phaser from 'phaser';
 import GameObjectTemplateCreator from './GameObjectTemplateCreator';
 
@@ -682,6 +682,55 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
             title="Save to Local Asset"
           >
             <HardDrive className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={async () => {
+              if (!currentSceneId) {
+                alert('No scene selected to reload');
+                return;
+              }
+              if (confirm('Reload this scene from local asset? Any unsaved changes will be lost.')) {
+                try {
+                  // Re-fetch scene specifically via API which reads from dist/public assets fallback
+                  const res = await fetch(`/api/scene/${currentSceneId}`);
+                  const data = await res.json();
+                  let updatedData = { ...data };
+                  if (!updatedData.layers || updatedData.layers.length === 0) {
+                    const newLayerId = 'layer-' + Date.now();
+                    updatedData.layers = [{ id: newLayerId, name: 'Base Layer' }];
+                    const currentList = getParsedMapList(updatedData.map_list);
+                    updatedData.map_list = currentList.map((m: any) => ({
+                      ...m,
+                      layer_id: m.layer_id || newLayerId,
+                      instance_id: m.instance_id || 'inst-' + Math.random().toString(36).substr(2, 9)
+                    }));
+                  } else {
+                    const currentList = getParsedMapList(updatedData.map_list);
+                    updatedData.map_list = currentList.map((m: any) => ({
+                      ...m,
+                      instance_id: m.instance_id || 'inst-' + Math.random().toString(36).substr(2, 9)
+                    }));
+                  }
+
+                  if (!updatedData.scene_entities) updatedData.scene_entities = { npcs: [], items: [], events: [], game_objects: [] };
+                  if (!updatedData.scene_entities.game_objects) updatedData.scene_entities.game_objects = [];
+                  updatedData.scene_entities.game_objects = updatedData.scene_entities.game_objects.map((obj: any) => ({
+                      ...obj,
+                      id: obj.id || 'go-' + Math.random().toString(36).substr(2, 9)
+                  }));
+
+                  setSceneData(updatedData);
+                  alert('Scene reloaded from local asset');
+                } catch(e: any) {
+                  alert('Error reloading from local asset: ' + e.message);
+                }
+              }
+            }}
+            className="p-2 bg-slate-700 text-slate-300 hover:text-white rounded-lg hover:bg-slate-600 transition-colors flex items-center justify-center group relative"
+            title="Reload from Local Asset"
+          >
+            <RefreshCw className="w-5 h-5" />
           </button>
 
           <button
