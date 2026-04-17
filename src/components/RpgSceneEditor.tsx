@@ -414,19 +414,10 @@ function PhaserGameComponent({ sceneData, mapsList, gameObjectTemplates, onSelec
     if (gameRef.current) {
       const scene = gameRef.current.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
       if (scene) {
-        scene.init({ onSelect, onUpdateMapOffset });
+        scene.init({ onSelect, onUpdateMapOffset, onUpdateGameObjectOffset });
       }
     }
-  }, [onSelect, onUpdateMapOffset]);
-
-  useEffect(() => {
-    if (gameRef.current) {
-      const scene = gameRef.current.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
-      if (scene && scene.updateSceneData) {
-        scene.updateSceneData(sceneData, mapsList);
-      }
-    }
-  }, [sceneData, mapsList]);
+  }, [onSelect, onUpdateMapOffset, onUpdateGameObjectOffset]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
