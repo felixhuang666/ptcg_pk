@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import GameObjectTemplateCreator from "./GameObjectTemplateCreator";
+import { Bot, ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
 import Phaser from 'phaser';
 
 class SceneEditorPhaser extends Phaser.Scene {
@@ -451,6 +452,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null);
   const [showAddMapModal, setShowAddMapModal] = useState<string | null>(null);
+  const [showTemplateCreator, setShowTemplateCreator] = useState(false);
 
   const [isScenesExpanded, setIsScenesExpanded] = useState(true);
   const [isLayersExpanded, setIsLayersExpanded] = useState(true);
@@ -689,6 +691,20 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
             title="Save to Local Asset"
           >
             <HardDrive className="w-5 h-5" />
+          </button>
+
+          <button
+
+            onClick={() => setShowTemplateCreator(true)}
+
+            className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors flex items-center justify-center group relative"
+
+            title="Create Template via AI"
+
+          >
+
+            <Bot className="w-5 h-5" />
+
           </button>
 
           <button
@@ -1443,6 +1459,60 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </div>
+
+      {showTemplateCreator && (
+
+        <GameObjectTemplateCreator
+
+          onBack={() => setShowTemplateCreator(false)}
+
+          onSave={async (template) => {
+
+            try {
+
+               const res = await fetch("/api/save_local", {
+
+                 method: "POST",
+
+                 headers: { "Content-Type": "application/json" },
+
+                 body: JSON.stringify({
+
+                   scene: null,
+
+                   maps: [],
+
+                   game_obj_templates: [template]
+
+                 })
+
+               });
+
+               const result = await res.json();
+
+               if (result.success) {
+
+                 setGameObjectTemplates([...gameObjectTemplates, template]);
+
+                 setShowTemplateCreator(false);
+
+               } else {
+
+                 alert("Failed to save template: " + result.error);
+
+               }
+
+            } catch (err: any) {
+
+               alert("Error saving template: " + err.message);
+
+            }
+
+          }}
+
+        />
+
+      )}
 
       {showAddMapModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">

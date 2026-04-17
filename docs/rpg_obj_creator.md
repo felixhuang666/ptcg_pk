@@ -144,3 +144,8 @@ rpg_obj_creator.md  ──生成──▶  game_obj_templates/
 - **AI 生成圖片**：使用 DALL-E/Midjourney API 直接生成 Sprite
 - **AI 生成對話**：自動產生 NPC 對話樹
 - **範本市場**：分享/匯入其他玩家的 Template
+## 9. Implementation Status (20260417-1620)
+- ✅ Prompt 解析器: Implemented via Google Gemini AI (`backend/gemini_utils.py`).
+- ✅ 預覽系統: Implemented via `GameObjectTemplateCreator` component with JSON preview and Property parsing.
+- ✅ 輸出: Automatically saves via `/api/save_local` to `public/assets/game_obj_templates/`.
+- ✅ 編輯器整合: Integrated into `RpgSceneEditor` with a Bot icon in the header toolbar.

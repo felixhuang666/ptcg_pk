@@ -1133,3 +1133,18 @@ async def serve_spa(full_path: str):
     if os.path.exists("dist/index.html"):
         return FileResponse("dist/index.html")
     return {"message": "Frontend not built yet. Please run `make build`."}
+
+@app.post("/api/game_obj_templates/generate")
+async def generate_game_obj_template(request: Request):
+    data = await request.json()
+    prompt = data.get("prompt")
+    if not prompt:
+        return {"success": False, "error": "Prompt is required"}
+
+    from backend.gemini_utils import generate_game_object_template
+
+    template = generate_game_object_template(prompt)
+    if template and "error" not in template:
+        return {"success": True, "template": template}
+    else:
+        return {"success": False, "error": template.get("error", "Failed to generate template") if template else "Failed to generate template"}
