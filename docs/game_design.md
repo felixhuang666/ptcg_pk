@@ -7,10 +7,10 @@
 
 ### 2.1 屬性相剋 (Elemental System)
 遊戲中有四種基本屬性，存在相剋關係，剋制時傷害會增加 25% (1.25倍)：
-* **水 (Water)** 剋 **火 (Fire)**
-* **火 (Fire)** 剋 **風 (Wind)**
-* **風 (Wind)** 剋 **地 (Earth)**
-* **地 (Earth)** 剋 **水 (Water)**
+* **水 (Water/水)** 剋 **火 (Fire/火)**
+* **火 (Fire/火)** 剋 **風 (Wind/風)**
+* **風 (Wind/風)** 剋 **地 (Earth/地)**
+* **地 (Earth/地)** 剋 **水 (Water/水)**
 
 ### 2.2 戰鬥數值 (Combat Stats)
 每隻怪獸擁有以下基礎數值：
@@ -28,29 +28,45 @@
 ### 2.3 骰子系統 (Dice System)
 * 每個隊伍配備 **4 顆骰子**。
 * 骰子有 6 個面，玩家可以自訂每個面的圖案。
-* 骰子面包含：攻擊 (Attack)、防禦 (Defense)、閃避 (Dodge)、水 (Water)、火 (Fire)、風 (Wind)、地 (Earth)，以及雙屬性面 (水風、地火)。
+* 骰子面包含：攻擊 (攻/ATTACK)、防禦 (防/DEFENSE)、閃避 (閃/DODGE)、水 (WATER)、火 (FIRE)、風 (WIND)、地 (EARTH)，以及雙屬性面 (地/火 EARTH_FIRE、水/風 WATER_WIND)。
 * **保底機制**: 每次擲骰時，系統會自動檢查結果是否至少能滿足該怪獸的一招技能條件。如果完全無法施放任何招式，系統會在背景自動重擲（最多 50 次），確保玩家不會完全卡手。
+
+**骰子消耗表 (DICE_COSTS)**:
+| 骰子面 | AP 消耗 |
+|--------|---------|
+| 攻 (ATTACK) | 5 |
+| 防 (DEFENSE) | 1 |
+| 閃 (DODGE) | 1 |
+| 地/火 (EARTH_FIRE) | 2 |
+| 水/風 (WATER_WIND) | 2 |
+| 地/火/水/風 (純元素) | 1 |
+| 空 (EMPTY) | 0 |
 
 ### 2.4 AP 系統與行動 (AP System & Actions)
 * 戰鬥採用即時制，雙方的 AP 會隨時間自動增加（每秒增加量 = SPD），上限為 100。
 * 施放技能需要消耗對應的 AP，且當前的骰子結果必須滿足該技能的條件。
 * 玩家可以選擇「放棄回合」：消耗 30 AP，重新擲骰。
 * 支援「自動戰鬥」模式，AI 會自動選擇可施放且 AP 消耗最高的技能。
-* **Game Tick**: AP 的增加速度可以透過管理者介面的 `Game Tick` 設定來調整 (1-100，預設 10)。數值越大，遊戲節奏越快。
+* **Game Tick**: AP 的增加速度可以透過管理者介面的 `Game Tick` 設定來調整 (1-100，預設 40)。
 
 ### 2.5 命中與傷害公式 (Accuracy & Damage Formulas)
-* 這些公式可以在管理者介面中動態設定：
-* **攻擊命中率公式** (預設): `attackerSpd / (defenderSpd * (1 + defenderDodgeBonus))`
+這些公式可以在管理者介面中動態設定：
+* **攻擊命中率公式** (預設): `(attackerSpd * 1.2) / (attackerSpd + defenderSpd * (1 + defenderDodgeBonus))`
   * 命中率最高為 100%。如果隨機數大於命中率，則攻擊會被閃避。
-* **傷害計算公式** (預設): `Math.floor((attackPower * attribBonus) - defenderDef)`
+* **傷害計算公式** (預設): `max(1, int((attackPower * attribBonus) - defenderDef))`
+  * 最低傷害為 1。
 
 ### 2.6 動態技能解析 (Dynamic Skill Parsing)
-* 技能效果透過解析 `description` 欄位動態生成，支援小數點運算。
-* 支援的語法包含：
-  * `ATK=X*STR` 或 `ATK=X` (設定攻擊力)
-  * `DEF*=X` 或 `DEF=X` (修改防禦力)
-  * `SPD*=X` 或 `SPD=DEX` (修改速度)
-  * `dodge-bonus+=X` 或 `dodge-bonus=X` (修改閃避加成)
+技能效果透過解析 `description` 欄位動態生成，支援小數點運算。
+支援的語法包含：
+* `ATK=X*STR` 或 `ATK=X` (設定攻擊力)
+* `DEF*=X` (修改防禦力)
+* `SPD*=X` 或 `SPD=DEX` (修改速度)
+* `dodge-bonus+=X` 或 `dodge-bonus=0` (修改閃避加成)
+
+### 2.7 技能後遺症 (Skill Aftermath)
+技能施展後，狀態變化：
+* **防禦力衰減**: 每次受到攻擊後，防禦力會減少 5% (`def_val *= 0.95`)
 
 ## 3. 管理者介面 (Admin Interface)
 * 允許即時修改怪獸與技能的各項數值。
@@ -70,11 +86,11 @@
 2. **線上對戰 (PvP - 隨機)**: 透過 Matchmaking 系統，隨機配對兩名正在尋找對手的玩家。
 3. **私人對戰 (PvP - 房號)**: 玩家輸入自訂的房號 (Room Code)，與輸入相同房號的玩家進行對戰。
 4. **挑戰 Boss (Boss Battle)**: 玩家可以選擇挑戰強大的 Boss 隊伍。
-5. **RPG 模式 (RPG Mode)**: 玩家可以在 6 層架構 (6-layer architecture) 的大型地圖上自由探索、與其他玩家即時互動，並觸發地圖事件。
+5. **RPG 模式 (RPG Mode)**: 玩家可以在 6 層架構的地圖上自由探索、與其他玩家即時互動，並觸發地圖事件。
 
 ## 6. RPG 地圖系統 (RPG Map System)
 RPG 模式引入了專屬的地圖探索機制：
-* **六層地圖架構 (6-Layer Architecture)**: 地圖由 `base` (基礎地形)、`decorations` (裝飾物)、`obstacles` (阻擋通行)、`objectCollides` (具碰撞的物件)、`objectEvent` (觸發事件) 以及 `topLayer` (動態半透明的頂部圖層) 所組成。
+* **六層地圖架構 (6-Layer Architecture)**: 地圖由 `base`、`decorations`、`obstacles`、`objectCollides`、`objectEvent` 以及 `topLayer` 所組成。
 * **動態圖塊集 (Dynamic Tilesets)**: 支援從後端即時載入圖塊集詮釋資料 (Metadata) 以呈現豐富的地圖視覺。
 
 ## 7. 網路架構 (Networking)
@@ -82,3 +98,8 @@ RPG 模式引入了專屬的地圖探索機制：
 * 伺服器 (Server) 負責維護所有遊戲房間的狀態 (GameState)，並根據 `Game Tick` 的頻率更新 AP 與處理自動戰鬥邏輯。
 * 所有的擲骰、技能結算、傷害計算皆在伺服器端進行，確保遊戲公平性。
 * 客戶端 (Client) 負責渲染畫面並發送玩家操作指令 (`executeSkill`, `giveUp`, `toggleAuto`)。
+
+## 8. 資料持久化 (Data Persistence)
+* 遊戲資料可從 Supabase 資料庫動態載入。
+* 若 Supabase 不可用，則使用本地預設資料 (`MONSTERS`, `SKILLS`, `SETTINGS`)。
+* 支援管理者透過 API 即時更新遊戲平衡參數。

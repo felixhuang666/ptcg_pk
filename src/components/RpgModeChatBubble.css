@@ -1,0 +1,34 @@
+/* Chat bubble styling for RPG mode */
+.bubble {
+  position: absolute;
+  background-color: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 18px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 100;
+  max-width: 200px;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.3;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  border: 1px solid #555;
+}
+
+.bubble.visible {
+  opacity: 1;
+}
+
+.bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0;
+  border-style: solid;
+  border-color: #333 transparent transparent;
+  pointer-events: none;
+}

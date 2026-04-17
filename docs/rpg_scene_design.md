@@ -45,6 +45,7 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
 
 ```json
 {
+  "layers": [...],
   "npcs": [
     { "id": "npc_1", "type": "merchant", "position": { "x": 15, "y": 20 } }
   ],
@@ -57,11 +58,31 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
 }
 ```
 
-## 3. Combining Map Editor and Scene Editor
-The Scene Editor seamlessly integrates map editing capabilities.
-* **Scope Toggle**: The user can switch between "Scene Composition Mode" (placing entire maps, NPCs, and events) and "Map Edit Mode" (painting tiles on a specific map instance).
-* **Global Grid**: The editor renders a massive global grid. When a map is placed at `offset_position`, the local tiles are actually rendered at those global coordinates.
-* **In-Place Editing**: Double-clicking a map in the scene view enters "Map Edit Mode" for that specific map, locking the camera to its boundaries and activating the tile brush tools.
+## 3. Current Implementation Status
+
+### 3.1 Implemented Features
+- Scene Editor canvas with Phaser rendering
+- Map placement and offset editing via drag-and-drop
+- Map layering support with z-ordering
+- Panel toggles (Left Palette, Right Inspector)
+- Scene save/load functionality
+- Export/Import scene JSON
+- Basic game object template support
+- Tileset integration for visual rendering
+
+### 3.2 Missing/Planned Features
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Layer Visibility Toggles | Not Implemented | Missing in Top Bar |
+| Mode Switch (Scene/Map/Preview) | Not Implemented | Only Scene Composition mode |
+| Outliner Tab | Not Implemented | No proper tabbed navigation |
+| Asset Manager Tab | Not Implemented | - |
+| NPC Patrol Paths | Not Implemented | Path Tool missing |
+| Dialog Tree Editor | Not Implemented | - |
+| Scripting Integration | Not Implemented | - |
+| Physics Configuration UI | Not Implemented | - |
+| Scene Preview Mode | Not Implemented | - |
+| Prefabs (Chest, Signpost, etc.) | Not Implemented | - |
 
 ## 4. Layer Integration
 The Scene Editor respects the 6-layer architecture of individual maps (`base`, `decorations`, `obstacles`, `objectCollides`, `objectEvent`, `topLayer`), but introduces a new paradigm for dynamic entities.
@@ -71,57 +92,36 @@ The Scene Editor respects the 6-layer architecture of individual maps (`base`, `
 * **Dynamic Scene Layer**: A virtual 7th layer managed by the Scene Editor. This layer contains Phaser Sprites and Objects (NPCs, Items) that have their own update loops and physics bodies.
 * **Depth Sorting (Z-Index)**: Dynamic scene objects are depth-sorted based on their global Y-coordinate to ensure they render correctly in front of or behind map features (like trees on the `objectCollides` layer). The map's `topLayer` always renders above everything else to maintain dynamic transparency.
 
-## 5. Game Objects & Interactions
-Game Objects and Items are entities that players can interact with.
-* **Design Model**: Objects are defined by a visual sprite, a collision bounds (if solid), and an interaction script.
-* **Interaction Types**:
-  * `On Collision`: Triggers when the player walks into the object (e.g., picking up an item).
-  * `On Action`: Triggers when the player faces the object and presses the action key (e.g., reading a sign, opening a chest).
-* **Editor Integration**: The editor allows dragging and dropping predefined "Prefabs" (e.g., Chest, Signpost, Switch) onto the scene. The Property Panel allows configuring state variables (e.g., `chest_contents: "gold_key"`).
-
-## 6. NPC Editor & Behaviors
-The Scene Editor includes specialized tools for placing and configuring Non-Player Characters (NPCs).
-* **Placement**: Drag and drop NPC sprites onto the scene.
-* **Patrol Paths**: The editor provides a "Path Tool" allowing designers to click waypoints on the scene grid. The NPC will automatically pathfind between these nodes.
-* **Dialog Trees**: The Property Editor includes a node-based or JSON-based dialog editor.
-  * Interactions can trigger specific dialog branches based on player state (e.g., "Has Quest Item").
-* **Combat Triggers**: NPCs can be configured as enemies, triggering a transition to the ATB combat system upon interaction or line-of-sight.
-
-## 7. UI Design
+## 5. UI Design (Current Implementation)
 
 - **Top Bar (Global Controls)**:
-  * Save, Load, New, Export.
-  * **Mode Switch**: `[ Scene Composition | Map Paint | Preview ]`
-  * **Layer Visibility Toggles**: Toggle visibility of static map layers vs. dynamic entity layers.
+  * New Scene, Save Scene
+  * Export/Import
+  * Panel toggles (Left/Right sidebars)
+  * Fullscreen toggle
 
-- **Left Sidebar (Palette, Outliner & Assets)**:
-  * **Outliner Tab**: A tree list showing the hierarchy of the scene (Maps -> Entities -> NPCs/Events).
-  * **Palette Tab**: Contains draggable assets organized by category (Maps, NPCs, Items, Triggers, Tilesets, Particles).
-  * **Asset Manager Tab**: Comprehensive visual asset management (Images, Spritesheets, Fonts, Audio, Video, JSON/TXT) with file explorer.
+- **Left Sidebar**:
+  * Scene list (dropdown)
+  * Map palette for adding maps to scene
+  * Game Object templates
 
-- **Center (Canvas & Console)**:
-  * An infinite-pan/zoom Phaser canvas displaying the global scene with coordinate rulers for precise placement.
-  * Shows the rendered maps within the scene.
-  * Renders pathfinding lines for NPC patrol routes.
-  * Bottom toggleable **Console** for debugging and viewing errors.
+- **Center (Canvas)**:
+  * Phaser canvas with infinite pan/zoom
+  * Grid overlay
+  * Drag-and-drop map placement
+  * Layer z-ordering
 
 - **Right Sidebar (Property Inspector)**:
-  * Context-sensitive panel.
-  * **If Map selected**: Edit `offset_position`, switch to Map Edit mode, or configure global map properties (background color, physics bounds).
-  * **If NPC/Object selected**: Edit name, sprite, physics properties (collision shapes, categories, density, restitution, gravity), opacity, angle, depth, and patrol waypoints. Open Dialog Editor.
-  * **If Event selected**: Define trigger conditions (e.g., Area of Effect size) and actions (e.g., Load Scene X, Give Item Y).
+  * Context-sensitive panel
+  * Map properties: offset position
+  * Game Object properties: position, properties
 
-## 8. Scripting & Logic Integration
-The Scene Editor provides an integrated text/script editor with syntax highlighting for defining custom logic:
-* **Scene Lifecycle Hooks**: Attach custom JS/TS scripts to main Phaser scene functions: `Init()`, `Preload()`, `Create()`, and `Update(time, delta)`.
-* **Custom Object Logic**: Write custom behavior scripts for specific entities, handling collisions, tween animations, or key events.
-* **Code Templates**: Built-in snippets for common tasks like adding events, setting up tweens, or collision handling.
+## 6. Backend API Endpoints
 
-## 9. Preview & Debugging Modes
-To facilitate rapid iteration, the editor offers two robust preview modes:
-* **Scene Preview (Inspector Mode)**: Launches the current scene in an interactive mode where the game can be paused. Allows real-time interaction with objects and tweaking of parameters in the inspector while running. Automatically activates Physics Debug visualizations.
-* **Game Preview**: Launches the full game experience as a player would see it, starting from the selected scene, with standard gameplay UI and no interactive inspector capabilities.
-
-## 10. Advanced Object Properties & Asset Management
-* **Physics Integration**: One-click conversion of Sprites/Images into physical Matter/Arcade bodies directly in the inspector, with fine-grained control over physical properties.
-* **Visual Asset Variety**: Beyond simple sprites, the editor supports adding and configuring Particles (lifespan, frequency, speed), Text, TileSprites, and Video objects directly onto the scene.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/scenes` | List all scenes |
+| GET | `/api/scene/{id}` | Get scene by ID |
+| POST | `/api/scene` | Create new scene |
+| PUT | `/api/scene/{id}` | Update scene |
+| DELETE | `/api/scene/{id}` | Delete scene |

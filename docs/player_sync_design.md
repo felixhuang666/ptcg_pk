@@ -37,3 +37,23 @@ Stores permanent NPC data.
 4. **Broadcast:** Server forwards `player_moved` to other clients.
 5. **Update UI:** Other clients update the specific player's sprite position and play the associated animation. The name tag position is also updated.
 6. **Chatting:** Client emits `chat_message`. Server forwards it to all. Clients append to their chat UI.
+
+## Sync Protocol Reference
+
+| Event | Direction | Payload | Description |
+|-------|-----------|---------|-------------|
+| `rpg_connect` | C→S | `{ name, sprite, x, y }` | Player joins RPG mode |
+| `current_players` | S→C | `Player[]` | All currently connected players |
+| `current_npcs` | S→C | `NPC[]` | All NPCs on current map |
+| `player_joined` | S→C | `Player` | New player notification |
+| `player_moved` | Bidirectional | `{ id, x, y, anim, frame }` | Position/animation update |
+| `player_left` | S→C | `{ id }` | Player disconnected |
+| `chat_message` | Bidirectional | `{ sender, message, timestamp }` | Chat message |
+| `npc_created` | S→C | `NPC` | New NPC added |
+| `npc_updated` | S→C | `NPC` | NPC data changed |
+| `npc_deleted` | S→C | `{ id }` | NPC removed |
+
+## Interpolation & Prediction
+- Client-side interpolation is used for smooth movement of other players.
+- Position updates are batched and sent at regular intervals to reduce network traffic.
+- Name tags and sprites are synchronized together to prevent visual desync.
