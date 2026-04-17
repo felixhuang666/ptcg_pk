@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import uuid
 import httpx
@@ -321,6 +322,49 @@ async def list_game_obj_templates():
 
     return templates
 
+
+
+@app.post("/api/game_obj_templates")
+async def save_game_obj_template(request: Request):
+    try:
+        data = await request.json()
+        template_id = data.get("id")
+        if not template_id:
+            raise HTTPException(status_code=400, detail="Template ID is required")
+
+        # Sanitize filename
+        safe_id = re.sub(r'[^a-zA-Z0-9_-]', '', template_id)
+        filename = f"{safe_id}.json"
+
+        # Save to both dist and public assets
+        paths = ["dist/assets/game_obj_templates", "public/assets/game_obj_templates"]
+        saved = False
+
+        for p in paths:
+            if not os.path.exists(p):
+                try:
+                    os.makedirs(p, exist_ok=True)
+                except Exception as e:
+                    print(f"Warning: could not create dir {p}: {e}")
+
+            if os.path.exists(p):
+                filepath = os.path.join(p, filename)
+                try:
+                    with open(filepath, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=2, ensure_ascii=False)
+                    saved = True
+                except Exception as e:
+                    print(f"Error saving template to {filepath}: {e}")
+
+        if not saved:
+            raise HTTPException(status_code=500, detail="Failed to save template to any local path")
+
+        return {"status": "success", "id": template_id}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"Error in save_game_obj_template: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/maps")
 async def list_maps():

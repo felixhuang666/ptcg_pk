@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
 import Phaser from 'phaser';
+import GameObjectTemplateCreator from './GameObjectTemplateCreator';
+
 
 class SceneEditorPhaser extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
@@ -455,6 +457,8 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [isScenesExpanded, setIsScenesExpanded] = useState(true);
   const [isLayersExpanded, setIsLayersExpanded] = useState(true);
   const [isPaletteExpanded, setIsPaletteExpanded] = useState(true);
+  const [showTemplateCreator, setShowTemplateCreator] = useState(false);
+
 
   const loadScenes = (newSceneId?: number) => {
     fetch('/api/scenes')
@@ -954,7 +958,15 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                 </div>
                 </div>
                 <div>
-                  <h3 className="text-sm text-slate-400 mb-2 mt-4">Game Objects</h3>
+                  <h3 className="text-sm text-slate-400 mb-2 mt-4 flex justify-between items-center">
+                    <span>Game Objects</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowTemplateCreator(true); }}
+                      className="text-xs bg-purple-600 hover:bg-purple-500 text-white px-2 py-0.5 rounded flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Create Template
+                    </button>
+                  </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {gameObjectTemplates.map(t => (
                     <div
@@ -1494,6 +1506,20 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           </div>
         </div>
       )}
-    </div>
+
+      {showTemplateCreator && (
+        <GameObjectTemplateCreator
+          onClose={() => setShowTemplateCreator(false)}
+          onSave={(template) => {
+            setShowTemplateCreator(false);
+            // reload templates
+            fetch('/api/game_obj_templates')
+              .then(res => res.json())
+              .then(data => setGameObjectTemplates(data))
+              .catch(err => console.error(err));
+          }}
+        />
+      )}
+</div>
   );
 }
