@@ -62,8 +62,6 @@ To satisfy the requirement of saving directly to `public/assets/map_tileset/`, a
 - Tile size presets (32x32, 64x64, etc.)
 - Canvas-based cropping interface
 - Save tileset to backend
-
-### Missing Features
 - Manual crop mode (free movement)
 - Hotkey support (c, d, t)
 - Offset/gap settings
@@ -72,6 +70,9 @@ To satisfy the requirement of saving directly to `public/assets/map_tileset/`, a
 - Image scaling inputs
 - Drag-and-drop reordering
 - Color picker/transparency
+
+### Missing Features
+- None. All advanced features (v1.1) have been implemented.
 
 ## 5. Conflict Analysis
 * No significant conflicts with existing components. The existing `/api/map/tilesets` endpoint reads JSON files from the `map_tileset` directory, which correctly aligns with the load functionality.
