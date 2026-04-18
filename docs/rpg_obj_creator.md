@@ -100,18 +100,18 @@
 ## 6. 實作需求
 
 ### 6.1 Prompt 解析器
-- 支援自然語言關鍵字識別
-- 驗證輸入的檔案是否存在於 `public/assets/`
-- 提供自動完成建議
+- [x] 支援自然語言關鍵字識別 (初步實作)
+- [ ] 驗證輸入的檔案是否存在於 `public/assets/`
+- [ ] 提供自動完成建議
 
 ### 6.2 預覽系統
-- 即時渲染精靈圖動畫
-- 顯示碰撞體覆蓋範圍
-- 驗證輸出 JSON 格式
+- [ ] 即時渲染精靈圖動畫
+- [ ] 顯示碰撞體覆蓋範圍
+- [x] 驗證輸出 JSON 格式 (以唯讀模式顯示生成的 JSON)
 
 ### 6.3 輸出
-- 生成 Template JSON 到 `public/assets/game_obj_templates/`
-- 可選：直接加入到當前 Scene
+- [x] 生成 Template JSON 到 `public/assets/game_obj_templates/`
+- [ ] 可選：直接加入到當前 Scene
 
 ## 7. 與現有系統整合
 
@@ -129,10 +129,10 @@ rpg_obj_creator.md  ──生成──▶  game_obj_templates/
 ```
 
 ### 7.1 編輯器整合
-- **左側選單**：新增 "Game Object Templates" Tab
-- **右側 Inspector**：新增 Template 詳細設定面板
-- **JSON 預覽**：即時更新並可複製
-- **自動載入**：Template 生成後自動加入 Editor 的 Palette
+- **上方選單**：新增 "Create Template" 按鈕來開啟 Creator UI。
+- **右側 Inspector**：在 Editor 中已有 Template 屬性面板，Creator 中也提供對應的 Property 編輯。
+- **JSON 預覽**：即時更新。
+- **自動載入**：Template 生成後自動觸發 Reload 並加入 Editor 的 Palette。
 
 ### 7.2 編輯功能
 - **複製/修改**：已有 Template 的快速複製修改功能

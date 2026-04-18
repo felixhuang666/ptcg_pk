@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive, Wand2, RefreshCw, Copy } from 'lucide-react';
 import Phaser from 'phaser';
+import GameObjectTemplateCreator from './GameObjectTemplateCreator';
 
 class SceneEditorPhaser extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
@@ -413,19 +414,10 @@ function PhaserGameComponent({ sceneData, mapsList, gameObjectTemplates, onSelec
     if (gameRef.current) {
       const scene = gameRef.current.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
       if (scene) {
-        scene.init({ onSelect, onUpdateMapOffset });
+        scene.init({ onSelect, onUpdateMapOffset, onUpdateGameObjectOffset });
       }
     }
-  }, [onSelect, onUpdateMapOffset]);
-
-  useEffect(() => {
-    if (gameRef.current) {
-      const scene = gameRef.current.scene.getScene('SceneEditorPhaser') as SceneEditorPhaser;
-      if (scene && scene.updateSceneData) {
-        scene.updateSceneData(sceneData, mapsList);
-      }
-    }
-  }, [sceneData, mapsList]);
+  }, [onSelect, onUpdateMapOffset, onUpdateGameObjectOffset]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
@@ -451,6 +443,7 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null);
   const [showAddMapModal, setShowAddMapModal] = useState<string | null>(null);
+  const [showTemplateCreator, setShowTemplateCreator] = useState(false);
 
   const [isScenesExpanded, setIsScenesExpanded] = useState(true);
   const [isLayersExpanded, setIsLayersExpanded] = useState(true);
@@ -663,7 +656,14 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   }
                 }
 
-                // Note: game_obj_templates can be handled similarly if needed
+                // First save to DB if possible to keep in sync
+                if (currentSceneId) {
+                  await fetch(`/api/scene/${currentSceneId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sceneData)
+                  });
+                }
 
                 const res = await fetch('/api/save_local', {
                   method: 'POST',
@@ -677,18 +677,100 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
 
                 const result = await res.json();
                 if (result.success) {
-                  alert(`Successfully saved to local assets!\nMaps saved: ${result.data.saved_maps}`);
+                  alert(`Successfully saved to local assets and current scene!\nMaps saved: ${result.data.saved_maps}`);
                 } else {
-                  alert(`Failed to save: ${result.error}`);
+                  alert(`Failed to save to local assets: ${result.error}`);
                 }
               } catch (e: any) {
-                alert(`Error saving to local assets: ${e.message}`);
+                alert(`Error saving: ${e.message}`);
               }
             }}
             className="p-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors flex items-center justify-center group relative"
             title="Save to Local Asset"
           >
             <HardDrive className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={() => {
+              if (!sceneData) return;
+              const newName = prompt("Enter new scene name for duplicate:", `${sceneData.name} (Copy)`);
+              if (newName) {
+                const duplicatedData = {
+                  ...sceneData,
+                  id: undefined,
+                  name: newName
+                };
+                fetch('/api/scene', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(duplicatedData)
+                })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success && data.scene && data.scene.id) {
+                    loadScenes(data.scene.id);
+                    alert('Scene duplicated successfully!');
+                  } else {
+                    loadScenes();
+                  }
+                })
+                .catch(e => alert(`Error duplicating scene: ${e.message}`));
+              }
+            }}
+            className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors flex items-center justify-center group relative"
+            title="Duplicate Scene"
+          >
+            <Copy className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={async () => {
+              if (!currentSceneId) {
+                alert('No scene selected to reload');
+                return;
+              }
+              if (confirm('Reload this scene from local asset? Any unsaved changes will be lost.')) {
+                try {
+                  // Re-fetch scene specifically via API which reads from dist/public assets fallback
+                  const res = await fetch(`/api/scene/${currentSceneId}`);
+                  const data = await res.json();
+                  let updatedData = { ...data };
+                  if (!updatedData.layers || updatedData.layers.length === 0) {
+                    const newLayerId = 'layer-' + Date.now();
+                    updatedData.layers = [{ id: newLayerId, name: 'Base Layer' }];
+                    const currentList = getParsedMapList(updatedData.map_list);
+                    updatedData.map_list = currentList.map((m: any) => ({
+                      ...m,
+                      layer_id: m.layer_id || newLayerId,
+                      instance_id: m.instance_id || 'inst-' + Math.random().toString(36).substr(2, 9)
+                    }));
+                  } else {
+                    const currentList = getParsedMapList(updatedData.map_list);
+                    updatedData.map_list = currentList.map((m: any) => ({
+                      ...m,
+                      instance_id: m.instance_id || 'inst-' + Math.random().toString(36).substr(2, 9)
+                    }));
+                  }
+
+                  if (!updatedData.scene_entities) updatedData.scene_entities = { npcs: [], items: [], events: [], game_objects: [] };
+                  if (!updatedData.scene_entities.game_objects) updatedData.scene_entities.game_objects = [];
+                  updatedData.scene_entities.game_objects = updatedData.scene_entities.game_objects.map((obj: any) => ({
+                      ...obj,
+                      id: obj.id || 'go-' + Math.random().toString(36).substr(2, 9)
+                  }));
+
+                  setSceneData(updatedData);
+                  alert('Scene reloaded from local asset');
+                } catch(e: any) {
+                  alert('Error reloading from local asset: ' + e.message);
+                }
+              }
+            }}
+            className="p-2 bg-slate-700 text-slate-300 hover:text-white rounded-lg hover:bg-slate-600 transition-colors flex items-center justify-center group relative"
+            title="Reload from Local Asset"
+          >
+            <RefreshCw className="w-5 h-5" />
           </button>
 
           <button
@@ -706,6 +788,14 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
             title="Export Scene"
           >
             <Download className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={() => setShowTemplateCreator(true)}
+            className="p-2 bg-orange-600 text-white rounded-lg hover:bg-orange-500 transition-colors flex items-center justify-center group relative"
+            title="Create Template"
+          >
+            <Wand2 className="w-5 h-5" />
           </button>
 
           <label
@@ -1443,6 +1533,19 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </div>
+
+      {showTemplateCreator && (
+        <GameObjectTemplateCreator
+          onBack={() => setShowTemplateCreator(false)}
+          onSave={() => {
+             // reload templates
+             fetch('/api/game_obj_templates')
+              .then(res => res.json())
+              .then(data => setGameObjectTemplates(data))
+              .catch(err => console.error(err));
+          }}
+        />
+      )}
 
       {showAddMapModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
