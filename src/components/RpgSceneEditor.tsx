@@ -1296,6 +1296,17 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   >
                     Remove Map
                   </button>
+                  <button
+                    onClick={() => {
+                      if (selectedItem && selectedItem.map_id) {
+                        window.open(`/?view=RPG_MAP_EDITOR&mapId=${selectedItem.map_id}`, '_blank');
+                      }
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded px-2 py-1 font-bold mt-2"
+                  >
+                    Edit Map
+                  </button>
+
                 </div>
               )}
               {selectedItem && selectedItem.type === 'game_object' && (
@@ -1527,6 +1538,17 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   >
                     Remove Object
                   </button>
+                  <button
+                    onClick={() => {
+                      if (selectedItem && selectedItem.template_id) {
+                        window.open(`/?view=GAME_OBJECT_EDITOR&templateId=${selectedItem.template_id}`, '_blank');
+                      }
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded px-2 py-1 font-bold mt-2"
+                  >
+                    Edit Template
+                  </button>
+
                 </div>
               )}
             </div>

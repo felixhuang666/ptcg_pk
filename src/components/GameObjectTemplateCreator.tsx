@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Save, Wand2 } from 'lucide-react';
 
 interface TemplateState {
@@ -22,6 +22,28 @@ interface TemplateData {
 }
 
 export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: () => void, onSave: () => void }) {
+  const [templateId, setTemplateId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      return searchParams.get('templateId');
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (templateId) {
+      fetch('/api/game_obj_templates')
+        .then(res => res.json())
+        .then(data => {
+          const tpl = data.find((t: any) => t.id === templateId);
+          if (tpl) {
+            setTemplate(tpl);
+          }
+        })
+        .catch(err => console.error(err));
+    }
+  }, [templateId]);
+
   const [prompt, setPrompt] = useState('建立一個 NPC 模板，名稱為「商人」，包含：\n- 精靈圖: merchant.png (frame: 64x64)\n- 動畫: idle (8帧), walk (12帧), talk (6帧)\n- 碰撞體: 矩形 32x48\n- 互動: 對話 (dialog_id)\n- 事件: 無');
   const [template, setTemplate] = useState<TemplateData | null>(null);
 
@@ -83,7 +105,7 @@ export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: 
   return (
     <div className="absolute inset-0 bg-slate-900 z-50 flex flex-col text-white">
       <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
-        <h2 className="text-xl font-bold">Game Object Template Creator</h2>
+        <h2 className="text-xl font-bold">{templateId ? "Game Object Template Editor" : "Game Object Template Creator"}</h2>
         <div className="flex gap-4">
           <button onClick={onBack} className="p-2 hover:bg-slate-700 rounded transition-colors text-slate-300 hover:text-white" title="Cancel">
             <X className="w-6 h-6" />
@@ -195,7 +217,7 @@ export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: 
              </div>
            ) : (
              <div className="flex-1 flex items-center justify-center text-slate-500">
-                Generate a template from a prompt to view properties.
+                {templateId ? "Loading template..." : "Generate a template from a prompt to view properties."}
              </div>
            )}
         </div>

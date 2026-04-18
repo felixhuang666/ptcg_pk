@@ -1178,7 +1178,14 @@ export default function RpgMapEditor({ onBack }: RpgModeProps) {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [mapsList, setMapsList] = useState<{ id: string, name: string }[]>([]);
-  const [currentMapId, setCurrentMapId] = useState<string>('main_200');
+  const [currentMapId, setCurrentMapId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const mapIdParam = searchParams.get('mapId');
+      if (mapIdParam) return mapIdParam;
+    }
+    return 'main_200';
+  });
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [selectedTile, setSelectedTile] = useState<number>(0);
   type MapLayer = 'base' | 'decorations' | 'obstacles' | 'objectCollides' | 'objectEvent' | 'topLayer';
