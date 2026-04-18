@@ -12,6 +12,7 @@ import RpgMode from './components/RpgMode';
 import RoleSetting from './components/RoleSetting';
 import RpgSceneEditor from './components/RpgSceneEditor';
 import RpgMapEditor from './components/RpgMapEditor';
+import GameObjectTemplateCreator from './components/GameObjectTemplateCreator';
 import SpriteSheetEditor from './components/SpriteSheetEditor';
 import { useAppStore } from './store/appStore';
 import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
@@ -22,7 +23,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR' | 'SPRITE_SHEET_EDITOR'>(() => {
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR' | 'SPRITE_SHEET_EDITOR' | 'GAME_OBJECT_EDITOR'>(() => {
     // Check URL parameters first
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
@@ -31,6 +32,7 @@ export default function App() {
       if (urlView === 'RPG_MAP_EDITOR') return 'RPG_MAP_EDITOR';
       if (urlView === 'RPG_MODE') return 'RPG_MODE';
       if (urlView === 'SPRITE_SHEET_EDITOR') return 'SPRITE_SHEET_EDITOR';
+      if (urlView === 'GAME_OBJECT_EDITOR') return 'GAME_OBJECT_EDITOR';
     }
 
     // Fallback to cookie
@@ -225,6 +227,10 @@ export default function App() {
 
   if (view === 'RPG_MAP_EDITOR') {
     return <RpgMapEditor onBack={() => setView('MENU')} />;
+  }
+
+  if (view === 'GAME_OBJECT_EDITOR') {
+    return <GameObjectTemplateCreator onBack={() => setView('MENU')} onSave={() => {}} />;
   }
 
   if (view === 'SPRITE_SHEET_EDITOR') {
