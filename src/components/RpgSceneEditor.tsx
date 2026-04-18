@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive, Wand2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Maximize, Minimize, Settings, PanelLeft, PanelRight, Download, Upload, ChevronDown, ChevronRight, HardDrive, Wand2, RefreshCw, Copy } from 'lucide-react';
 import Phaser from 'phaser';
 import GameObjectTemplateCreator from './GameObjectTemplateCreator';
 
@@ -656,7 +656,14 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
                   }
                 }
 
-                // Note: game_obj_templates can be handled similarly if needed
+                // First save to DB if possible to keep in sync
+                if (currentSceneId) {
+                  await fetch(`/api/scene/${currentSceneId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sceneData)
+                  });
+                }
 
                 const res = await fetch('/api/save_local', {
                   method: 'POST',
@@ -670,18 +677,51 @@ export default function RpgSceneEditor({ onBack }: { onBack: () => void }) {
 
                 const result = await res.json();
                 if (result.success) {
-                  alert(`Successfully saved to local assets!\nMaps saved: ${result.data.saved_maps}`);
+                  alert(`Successfully saved to local assets and current scene!\nMaps saved: ${result.data.saved_maps}`);
                 } else {
-                  alert(`Failed to save: ${result.error}`);
+                  alert(`Failed to save to local assets: ${result.error}`);
                 }
               } catch (e: any) {
-                alert(`Error saving to local assets: ${e.message}`);
+                alert(`Error saving: ${e.message}`);
               }
             }}
             className="p-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors flex items-center justify-center group relative"
             title="Save to Local Asset"
           >
             <HardDrive className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={() => {
+              if (!sceneData) return;
+              const newName = prompt("Enter new scene name for duplicate:", `${sceneData.name} (Copy)`);
+              if (newName) {
+                const duplicatedData = {
+                  ...sceneData,
+                  id: undefined,
+                  name: newName
+                };
+                fetch('/api/scene', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(duplicatedData)
+                })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success && data.scene && data.scene.id) {
+                    loadScenes(data.scene.id);
+                    alert('Scene duplicated successfully!');
+                  } else {
+                    loadScenes();
+                  }
+                })
+                .catch(e => alert(`Error duplicating scene: ${e.message}`));
+              }
+            }}
+            className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors flex items-center justify-center group relative"
+            title="Duplicate Scene"
+          >
+            <Copy className="w-5 h-5" />
           </button>
 
           <button

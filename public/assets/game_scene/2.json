@@ -1,0 +1,27 @@
+{
+  "name": "My Duplicated Scene",
+  "map_list": [
+    {
+      "instance_id": "inst_1",
+      "map_id": "main_200",
+      "layer_id": "layer1",
+      "offset_position": {
+        "x": 0,
+        "y": 0
+      },
+      "map_size": {
+        "width": 40,
+        "height": 40
+      }
+    }
+  ],
+  "scene_entities": {
+    "layers": [
+      {
+        "id": "layer-1776486751934",
+        "name": "Base Layer"
+      }
+    ]
+  },
+  "id": 2
+}
