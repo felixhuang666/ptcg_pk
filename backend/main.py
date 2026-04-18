@@ -664,6 +664,13 @@ async def update_npc(npc_id: str, request: Request):
 
 @app.delete("/api/npc/{npc_id}")
 async def delete_npc(npc_id: str):
+    success = False
+
+    from .socket_app import sio, rpg_npcs
+    if npc_id in rpg_npcs:
+        del rpg_npcs[npc_id]
+        success = True
+
     try:
         from supabase import create_async_client
         supabase_url = os.environ.get("SUPABASE_URL")
@@ -671,15 +678,30 @@ async def delete_npc(npc_id: str):
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
             await client.table('game_npcs').delete().eq('id', npc_id).execute()
+            success = True
     except Exception as e:
         print(f"Supabase warning (deleting npc): {e}")
-        return {"success": False, "error": str(e)}
 
-    from .socket_app import sio, rpg_npcs
-    if npc_id in rpg_npcs:
-        del rpg_npcs[npc_id]
-    await sio.emit("npc_deleted", {"id": npc_id})
-    return {"success": True}
+    # Delete local files
+    import re
+    import os
+    safe_id = os.path.basename(str(npc_id))
+    safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '', safe_id)
+
+    paths = ["dist/assets/game_npcs", "public/assets/game_npcs"]
+    for p in paths:
+        file_path = os.path.join(p, f"{safe_id}.json")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                success = True
+            except Exception as e:
+                print(f"Error deleting local npc file {file_path}: {e}")
+
+    if success:
+        await sio.emit("npc_deleted", {"id": npc_id})
+        return {"success": True}
+    return {"success": False, "error": "NPC not found"}
 
 @app.get("/api/scenes")
 async def get_scenes():
@@ -899,16 +921,25 @@ async def update_scene(scene_id: int, request: Request):
     return {"success": False, "error": "Scene not found"}
 
 @app.delete("/api/scene/{scene_id}")
-async def delete_scene(scene_id: int):
+async def delete_scene(scene_id: str):
     global in_memory_scenes
     success = False
+
+    scene_id_int = None
+    try:
+        scene_id_int = int(scene_id)
+    except ValueError:
+        pass
+
     try:
         from supabase import create_async_client
         supabase_url = os.environ.get("SUPABASE_URL")
         supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
-            await client.table('game_scene').delete().eq('id', scene_id).execute()
+            res = await client.table('game_scene').delete().eq('id', scene_id).execute()
+            if not res.data and scene_id_int is not None:
+                await client.table('game_scene').delete().eq('id', scene_id_int).execute()
             success = True
     except Exception as e:
         print(f"Supabase warning (deleting scene): {e}")
@@ -916,6 +947,24 @@ async def delete_scene(scene_id: int):
     if scene_id in in_memory_scenes:
         del in_memory_scenes[scene_id]
         success = True
+    elif scene_id_int is not None and scene_id_int in in_memory_scenes:
+        del in_memory_scenes[scene_id_int]
+        success = True
+
+    # local files
+    import re
+    safe_id = os.path.basename(str(scene_id))
+    safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '', safe_id)
+
+    paths = ["dist/assets/game_scene", "public/assets/game_scene"]
+    for p in paths:
+        file_path = os.path.join(p, f"{safe_id}.json")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                success = True
+            except Exception as e:
+                print(f"Error deleting local scene file {file_path}: {e}")
 
     if success:
         return {"success": True}
@@ -924,8 +973,11 @@ async def delete_scene(scene_id: int):
 @app.delete("/api/map/{map_id}")
 async def delete_map(map_id: str):
     global in_memory_maps
+    success = False
+
     if map_id in in_memory_maps:
         del in_memory_maps[map_id]
+        success = True
 
     try:
         from supabase import create_async_client
@@ -934,11 +986,28 @@ async def delete_map(map_id: str):
         if supabase_url and supabase_key:
             client = await create_async_client(supabase_url, supabase_key)
             await client.table('maps').delete().eq('id', map_id).execute()
+            success = True
     except Exception as e:
         print(f"Supabase warning (deleting map): {e}")
-        return {"success": False, "error": str(e)}
 
-    return {"success": True}
+    # Delete local files
+    import re
+    safe_id = os.path.basename(str(map_id))
+    safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '', safe_id)
+
+    paths = ["dist/assets/maps", "public/assets/maps"]
+    for p in paths:
+        file_path = os.path.join(p, f"{safe_id}.json")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                success = True
+            except Exception as e:
+                print(f"Error deleting local map file {file_path}: {e}")
+
+    if success:
+        return {"success": True}
+    return {"success": False, "error": "Map not found"}
 
 from pydantic import BaseModel
 import base64
