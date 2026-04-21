@@ -19,6 +19,7 @@ interface TemplateData {
   collision: { enabled: boolean; width: number; height: number; shape: string };
   interaction: { type: string; dialog_id?: string; drop_item?: string };
   default_controller: string;
+  default_image?: string;
 }
 
 export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: () => void, onSave: () => void }) {
@@ -47,6 +48,15 @@ export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: 
   const [prompt, setPrompt] = useState('建立一個 NPC 模板，名稱為「商人」，包含：\n- 精靈圖: merchant.png (frame: 64x64)\n- 動畫: idle (8帧), walk (12帧), talk (6帧)\n- 碰撞體: 矩形 32x48\n- 互動: 對話 (dialog_id)\n- 事件: 無');
   const [template, setTemplate] = useState<TemplateData | null>(null);
 
+  const [availableImages, setAvailableImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch('/api/game_obj_img')
+      .then(res => res.json())
+      .then(data => setAvailableImages(data || ['object_default.jpg']))
+      .catch(() => setAvailableImages(['object_default.jpg']));
+  }, []);
+
   const generateTemplate = () => {
     // Very basic keyword parser
     const tpl: TemplateData = {
@@ -62,7 +72,8 @@ export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: 
       ],
       collision: { enabled: true, width: 32, height: 48, shape: 'rectangle' },
       interaction: { type: 'dialog', dialog_id: 'merchant_dialog_01' },
-      default_controller: 'StaticNpcController'
+      default_controller: 'StaticNpcController',
+      default_image: 'object_default.jpg'
     };
 
     if (prompt.includes('怪物') || prompt.includes('monster')) {
@@ -166,6 +177,19 @@ export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: 
                   <div>
                     <label className="block text-slate-400 text-xs mb-1">Default Controller</label>
                     <input type="text" value={template.default_controller} onChange={e => setTemplate({...template, default_controller: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-xs mb-1">Default Image</label>
+                    <select
+                      value={template.default_image || ''}
+                      onChange={e => setTemplate({...template, default_image: e.target.value})}
+                      className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm"
+                    >
+                      <option value="">-- None --</option>
+                      {availableImages.map(img => (
+                        <option key={img} value={img}>{img}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
