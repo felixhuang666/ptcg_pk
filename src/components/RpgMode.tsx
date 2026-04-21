@@ -1353,6 +1353,9 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           return null;
         })
         .then(data => {
+          if (data && data.quest_id) {
+            setCurrentQuestId(data.quest_id);
+          }
           if (data && data.map_id) {
             setCurrentMapId(data.map_id);
             if (data.pos_x !== null && data.pos_x !== undefined) setInitialPosX(data.pos_x);
@@ -1550,6 +1553,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
       let lastSavedX = 0;
       let lastSavedY = 0;
       let lastSavedMapId = '';
+      let lastSavedQuestId = '';
 
       saveInterval = setInterval(() => {
         // Find the active MainScene using the global variable
@@ -1559,7 +1563,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
           const currentY = Math.round(scene.player.y);
           const currentMap = scene.currentMapId;
 
-          if (currentX !== lastSavedX || currentY !== lastSavedY || currentMap !== lastSavedMapId) {
+          if (currentX !== lastSavedX || currentY !== lastSavedY || currentMap !== lastSavedMapId || currentQuestId !== lastSavedQuestId) {
             // Location or map changed, save to backend
             fetch('/api/user/location', {
               method: 'POST',
@@ -1567,6 +1571,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
+                quest_id: currentQuestId,
                 map_id: currentMap,
                 pos_x: currentX,
                 pos_y: currentY
@@ -1578,6 +1583,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                   lastSavedX = currentX;
                   lastSavedY = currentY;
                   lastSavedMapId = currentMap;
+                  lastSavedQuestId = currentQuestId;
                 }
               })
               .catch(err => console.error('Failed to save location periodically', err));
