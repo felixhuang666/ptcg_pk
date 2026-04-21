@@ -251,6 +251,9 @@ async def root():
         return FileResponse("dist/index.html")
     return {"message": "Frontend not built yet. Please run `make build`."}
 
+quest_id_counter = 1
+in_memory_quests = {}
+
 in_memory_scenes = {
     1: {
         "id": 1,
@@ -1091,12 +1094,184 @@ async def list_game_obj_images():
     return images
 
 
+
+
+@app.get("/api/quests")
+async def get_quests():
+    quests = []
+    try:
+        if supabase_client:
+            res = await client.table('game_quest').select('id, name').execute()
+            if res.data:
+                quests.extend(res.data)
+    except Exception as e:
+        print(f"Supabase warning (fetching quests): {e}")
+
+    existing_ids = {str(q["id"]) for q in quests}
+
+    for k, v in in_memory_quests.items():
+        if str(k) not in existing_ids:
+            quests.append({"id": k, "name": v.get("name", f"Quest {k}"), "source_type": "memory"})
+            existing_ids.add(str(k))
+
+    paths = ["dist/assets/game_quest", "public/assets/game_quest"]
+    for p in paths:
+        if os.path.exists(p):
+            for filename in os.listdir(p):
+                if filename.endswith(".json"):
+                    quest_id = filename[:-5]
+                    if str(quest_id) not in existing_ids:
+                        try:
+                            with open(os.path.join(p, filename), "r", encoding="utf-8") as f:
+                                quest_data = json.load(f)
+                                quests.append({"id": quest_id, "name": quest_data.get("name", f"Quest {quest_id}"), "source_type": "local-asset"})
+                                existing_ids.add(str(quest_id))
+                        except Exception as e:
+                            print(f"Error reading local quest {filename}: {e}")
+
+    return quests
+
+@app.get("/api/quest/{quest_id}")
+async def get_quest(quest_id: str):
+    quest_id_int = None
+    if quest_id.isdigit():
+        quest_id_int = int(quest_id)
+
+    try:
+        if supabase_client:
+            res = await client.table('game_quest').select('*').eq('id', quest_id).execute()
+            if not res.data and quest_id_int is not None:
+                 res = await client.table('game_quest').select('*').eq('id', quest_id_int).execute()
+            if res.data:
+                quest_data = res.data[0]
+                return quest_data
+    except Exception as e:
+        print(f"Supabase warning (fetching quest): {e}")
+
+    if quest_id in in_memory_quests:
+        return in_memory_quests[quest_id].copy()
+    elif quest_id_int is not None and quest_id_int in in_memory_quests:
+        return in_memory_quests[quest_id_int].copy()
+
+    paths = ["dist/assets/game_quest", "public/assets/game_quest"]
+    for p in paths:
+        filepath = os.path.join(p, f"{quest_id}.json")
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    quest_data = json.load(f)
+                    return quest_data
+            except Exception as e:
+                print(f"Error reading local quest {quest_id}.json: {e}")
+
+    raise HTTPException(status_code=404, detail="Quest not found")
+
+@app.post("/api/quest")
+async def create_quest(request: Request):
+    global quest_id_counter, in_memory_quests
+    try:
+        quest_data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    try:
+        if supabase_client:
+            payload = quest_data.copy()
+            if 'id' in payload:
+                del payload['id']
+            res = await client.table('game_quest').insert(payload).execute()
+            if res.data:
+                created_data = res.data[0]
+                in_memory_quests[created_data['id']] = created_data
+                return {"success": True, "quest": created_data}
+    except Exception as e:
+        print(f"Supabase warning (creating quest): {e}")
+
+    quest_data['id'] = quest_id_counter
+    quest_id_counter += 1
+    in_memory_quests[quest_data['id']] = quest_data
+    return {"success": True, "quest": quest_data}
+
+@app.put("/api/quest/{quest_id}")
+async def update_quest(quest_id: int, request: Request):
+    global in_memory_quests
+    try:
+        quest_data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    if 'id' in quest_data:
+        del quest_data['id']
+    if 'created_at' in quest_data:
+        del quest_data['created_at']
+
+    try:
+        if supabase_client:
+            payload = quest_data.copy()
+            res = await client.table('game_quest').update(payload).eq('id', quest_id).execute()
+            if res.data:
+                updated_data = res.data[0]
+                in_memory_quests[quest_id] = updated_data
+                return {"success": True, "quest": updated_data}
+    except Exception as e:
+        print(f"Supabase warning (updating quest): {e}")
+
+    if quest_id in in_memory_quests:
+        in_memory_quests[quest_id].update(quest_data)
+        return {"success": True, "quest": in_memory_quests[quest_id]}
+
+    return {"success": False, "error": "Quest not found"}
+
+@app.delete("/api/quest/{quest_id}")
+async def delete_quest(quest_id: str):
+    global in_memory_quests
+    quest_id_int = None
+    if quest_id.isdigit():
+        quest_id_int = int(quest_id)
+
+    deleted_from_db = False
+    try:
+        if supabase_client:
+            res = await client.table('game_quest').delete().eq('id', quest_id).execute()
+            if not res.data and quest_id_int is not None:
+                await client.table('game_quest').delete().eq('id', quest_id_int).execute()
+            deleted_from_db = True
+    except Exception as e:
+        print(f"Supabase warning (deleting quest): {e}")
+
+    if quest_id in in_memory_quests:
+        del in_memory_quests[quest_id]
+        deleted_from_db = True
+    elif quest_id_int is not None and quest_id_int in in_memory_quests:
+        del in_memory_quests[quest_id_int]
+        deleted_from_db = True
+
+    # safe path deletion
+    safe_id = os.path.basename(str(quest_id))
+    paths = ["dist/assets/game_quest", "public/assets/game_quest"]
+    deleted_local = False
+    for p in paths:
+        file_path = os.path.join(p, f"{safe_id}.json")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                deleted_local = True
+            except Exception as e:
+                print(f"Error deleting local quest file {file_path}: {e}")
+
+    if deleted_from_db or deleted_local:
+        return {"success": True}
+
+    return {"success": False, "error": "Quest not found"}
+
 @app.post("/api/save_local")
+
 async def save_local(request: Request):
     data = await request.json()
     scene = data.get("scene")
     maps = data.get("maps", [])
     game_obj_templates = data.get("game_obj_templates", [])
+    quest = data.get("quest")
 
     print(">>save_local", data)
 
@@ -1105,7 +1280,7 @@ async def save_local(request: Request):
         safe_id = os.path.basename(str(id_val))
         return re.sub(r'[^a-zA-Z0-9_\-]', '', safe_id)
 
-    res_data = {"saved_scene": False, "saved_maps": 0, "saved_game_obj_templates": 0}
+    res_data = {"saved_scene": False, "saved_maps": 0, "saved_game_obj_templates": 0, "saved_quest": False}
 
     paths = ["dist/assets", "public/assets"]
 
@@ -1113,6 +1288,14 @@ async def save_local(request: Request):
         for p in paths:
             if not os.path.exists(p):
                 os.makedirs(p, exist_ok=True)
+
+            if quest and "id" in quest:
+                quest_dir = os.path.join(p, "game_quest")
+                os.makedirs(quest_dir, exist_ok=True)
+                safe_id = get_safe_id(quest["id"])
+                with open(os.path.join(quest_dir, f"{safe_id}.json"), "w", encoding="utf-8") as f:
+                    json.dump(quest, f, ensure_ascii=False, indent=2)
+                res_data["saved_quest"] = True
 
             if scene and "id" in scene:
                 scene_dir = os.path.join(p, "game_scene")

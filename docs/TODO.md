@@ -9,6 +9,7 @@ This document tracks the current state of implementation and known issues. See `
 | Map Layer Editor Toggle UI | Layer visibility toggles (eye icons) added to Map Editor top bar |
 | Top Header Navigation | Documented in `docs/ui_header_navigation_design.md` |
 | RPG Sprite Sheet Editor Features | All advanced features (Manual Crop, Hotkeys, Offset/Gap, Grid, Zoom, Scaling, Reordering, Color Picker) implemented |
+| Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
 
 ## 2. RPG Scene Editor - Missing Features
 

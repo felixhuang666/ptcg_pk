@@ -13,6 +13,7 @@ import RoleSetting from './components/RoleSetting';
 import RpgSceneEditor from './components/RpgSceneEditor';
 import RpgMapEditor from './components/RpgMapEditor';
 import GameObjectTemplateCreator from './components/GameObjectTemplateCreator';
+import QuestEditor from './components/QuestEditor';
 import SpriteSheetEditor from './components/SpriteSheetEditor';
 import { useAppStore } from './store/appStore';
 import { DICE_COSTS, MONSTERS, SKILLS } from './shared/gameData';
@@ -23,7 +24,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR' | 'SPRITE_SHEET_EDITOR' | 'GAME_OBJECT_EDITOR'>(() => {
+  const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR' | 'SPRITE_SHEET_EDITOR' | 'GAME_OBJECT_EDITOR' | 'QUEST_EDITOR'>(() => {
     // Check URL parameters first
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
@@ -31,6 +32,7 @@ export default function App() {
       if (urlView === 'RPG_SCENE_EDITOR') return 'RPG_SCENE_EDITOR';
       if (urlView === 'RPG_MAP_EDITOR') return 'RPG_MAP_EDITOR';
       if (urlView === 'RPG_MODE') return 'RPG_MODE';
+      if (urlView === 'QUEST_EDITOR') return 'QUEST_EDITOR';
       if (urlView === 'SPRITE_SHEET_EDITOR') return 'SPRITE_SHEET_EDITOR';
       if (urlView === 'GAME_OBJECT_EDITOR') return 'GAME_OBJECT_EDITOR';
     }
@@ -225,6 +227,10 @@ export default function App() {
     return <RpgSceneEditor onBack={() => setView('MENU')} />;
   }
 
+  if (view === 'QUEST_EDITOR') {
+    return <QuestEditor onBack={() => setView('MENU')} />;
+  }
+
   if (view === 'RPG_MAP_EDITOR') {
     return <RpgMapEditor onBack={() => setView('MENU')} />;
   }
@@ -262,10 +268,17 @@ export default function App() {
         </button>
         <button
           onClick={() => setView('RPG_SCENE_EDITOR')}
-          className="text-sm text-purple-400 hover:text-purple-300 font-bold mr-4 border border-purple-400 px-2 py-1 rounded"
+          className="text-sm text-purple-400 hover:text-purple-300 font-bold mr-2 border border-purple-400 px-2 py-1 rounded"
           title="RPG 場景編輯器"
         >
           場景編輯器
+        </button>
+        <button
+          onClick={() => setView('QUEST_EDITOR')}
+          className="text-sm text-amber-400 hover:text-amber-300 font-bold mr-4 border border-amber-400 px-2 py-1 rounded"
+          title="RPG 副本編輯器"
+        >
+          副本編輯器
         </button>
         <img src={user.picture} alt="Avatar" className="w-8 h-8 rounded-full" />
         <span className="text-sm font-medium">{user.name}</span>

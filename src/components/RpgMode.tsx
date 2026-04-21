@@ -1334,6 +1334,8 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [isFullscreenActive, setIsFullscreenActive] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  const [questsList, setQuestsList] = useState<any[]>([]);
+  const [currentQuestId, setCurrentQuestId] = useState<string>('');
   const [mapsList, setMapsList] = useState<{ id: string, name: string }[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
@@ -1387,6 +1389,16 @@ export default function RpgMode({ onBack }: RpgModeProps) {
         }
       })
       .catch(err => console.error('Failed to fetch maps', err));
+
+    fetch('/api/quests')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setQuestsList(data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch quests', err));
+
   }, []);
 
   const handleMapChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -1394,6 +1406,25 @@ export default function RpgMode({ onBack }: RpgModeProps) {
     setCurrentMapId(newId);
     const mapObj = mapsList.find(m => m.id === newId);
     if (mapObj) setCurrentMapName(mapObj.name);
+  };
+
+  const handleQuestChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newQuestId = e.target.value;
+    setCurrentQuestId(newQuestId);
+
+    if (newQuestId) {
+      // Fetch the quest to find its default scene
+      fetch(`/api/quest/${newQuestId}`)
+        .then(res => res.json())
+        .then(data => {
+           if (data && data.quest_entities && data.quest_entities.default_scene_id) {
+             setCurrentMapId(data.quest_entities.default_scene_id.toString());
+           } else if (data && data.scene_list && data.scene_list.length > 0) {
+             setCurrentMapId(data.scene_list[0].toString());
+           }
+        })
+        .catch(err => console.error('Failed to load quest details', err));
+    }
   };
 
 
@@ -1782,17 +1813,32 @@ export default function RpgMode({ onBack }: RpgModeProps) {
 
           <div className="flex-1 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 overflow-hidden relative min-h-0 flex flex-col">
             <div className="w-full bg-slate-900 border-b border-slate-700 p-2 flex items-center justify-between gap-2 overflow-x-auto shrink-0 z-[5000] relative">
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-white text-sm whitespace-nowrap">Map:</span>
-                <select
-                  value={currentMapId}
-                  onChange={handleMapChange}
-                  className="bg-slate-800 border border-slate-600 text-white text-sm rounded px-2 py-1 outline-none"
-                >
-                  {mapsList.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-white text-sm whitespace-nowrap">Quest:</span>
+                  <select
+                    value={currentQuestId}
+                    onChange={handleQuestChange}
+                    className="bg-slate-800 border border-amber-600/50 text-white text-sm rounded px-2 py-1 outline-none"
+                  >
+                    <option value="">-- No Quest --</option>
+                    {questsList.map(q => (
+                      <option key={q.id} value={q.id}>{q.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-white text-sm whitespace-nowrap text-slate-400">Map (Scene):</span>
+                  <select
+                    value={currentMapId}
+                    onChange={handleMapChange}
+                    className="bg-slate-800 border border-slate-600 text-white text-sm rounded px-2 py-1 outline-none"
+                  >
+                    {mapsList.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
