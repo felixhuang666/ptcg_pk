@@ -162,7 +162,7 @@ async def get_user_location(request: Request):
     except Exception as e:
         print(f"Supabase warning (fetching user location): {e}")
 
-    return {"id": session_id, "map_id": None, "pos_x": None, "pos_y": None}
+    return {"id": session_id, "quest_id": None, "map_id": None, "pos_x": None, "pos_y": None}
 
 @app.post("/api/user/location")
 async def update_user_location(request: Request):
@@ -171,6 +171,7 @@ async def update_user_location(request: Request):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     data = await request.json()
+    quest_id = data.get("quest_id")
     map_id = data.get("map_id")
     pos_x = data.get("pos_x")
     pos_y = data.get("pos_y")
@@ -195,6 +196,8 @@ async def update_user_location(request: Request):
                 'pos_x': pos_x,
                 'pos_y': pos_y
             }
+            if quest_id is not None:
+                payload['quest_id'] = quest_id
             await client.table('game_player_data').upsert(payload).execute()
             return {"success": True, "data": payload}
     except Exception as e:
