@@ -1296,6 +1296,11 @@ async def save_local(request: Request):
                 with open(os.path.join(quest_dir, f"{safe_id}.json"), "w", encoding="utf-8") as f:
                     json.dump(quest, f, ensure_ascii=False, indent=2)
                 res_data["saved_quest"] = True
+                # Keep memory synced
+                if quest["id"] in in_memory_quests:
+                    in_memory_quests[quest["id"]] = quest
+                elif str(quest["id"]).isdigit() and int(quest["id"]) in in_memory_quests:
+                    in_memory_quests[int(quest["id"])] = quest
 
             if scene and "id" in scene:
                 scene_dir = os.path.join(p, "game_scene")
