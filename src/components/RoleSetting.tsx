@@ -95,7 +95,7 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
     setShowCamera(false);
   };
 
-  const takeSnapshot = () => {
+  const takeAndUploadSnapshot = async () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -109,31 +109,30 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/png');
         setSnapshot(dataUrl);
+
+        setIsSaving(true);
+        try {
+          await fetch('/api/user/selfie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_base64: dataUrl })
+          });
+          setPicTimestamp(Date.now());
+          stopCamera();
+        } catch (e) {
+          console.error('Failed to save selfie', e);
+        } finally {
+          setIsSaving(false);
+        }
       }
     }
   };
 
-  const retakeSnapshot = () => {
-    setSnapshot(null);
-  };
-
-  const confirmSnapshot = async () => {
-    if (!snapshot) return;
-    setIsSaving(true);
-    try {
-      await fetch('/api/user/selfie', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_base64: snapshot })
-      });
-      setPicTimestamp(Date.now());
-      stopCamera();
-    } catch (e) {
-      console.error('Failed to save selfie', e);
-    } finally {
-      setIsSaving(false);
+  useEffect(() => {
+    if (showCamera && cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
     }
-  };
+  }, [showCamera, cameraStream]);
 
   useEffect(() => {
     return () => {
@@ -228,38 +227,20 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
               </div>
 
               <div className="flex gap-4 w-full">
-                {!snapshot ? (
-                  <>
-                    <button
-                      onClick={stopCamera}
-                      className="flex-1 py-3 bg-slate-600 hover:bg-slate-500 rounded-xl font-bold"
-                    >
-                      取消
-                    </button>
-                    <button
-                      onClick={takeSnapshot}
-                      className="flex-1 py-3 bg-pink-600 hover:bg-pink-500 rounded-xl font-bold"
-                    >
-                      拍照
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={retakeSnapshot}
-                      className="flex-1 py-3 bg-slate-600 hover:bg-slate-500 rounded-xl font-bold"
-                    >
-                      重拍
-                    </button>
-                    <button
-                      onClick={confirmSnapshot}
-                      disabled={isSaving}
-                      className="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 rounded-xl font-bold"
-                    >
-                      {isSaving ? '儲存中...' : '確認'}
-                    </button>
-                  </>
-                )}
+                <button
+                  onClick={stopCamera}
+                  disabled={isSaving}
+                  className="flex-1 py-3 bg-slate-600 hover:bg-slate-500 disabled:opacity-50 rounded-xl font-bold"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={takeAndUploadSnapshot}
+                  disabled={isSaving}
+                  className="flex-1 py-3 bg-pink-600 hover:bg-pink-500 disabled:opacity-50 rounded-xl font-bold flex items-center justify-center gap-2"
+                >
+                  {isSaving ? '上傳中...' : '拍照並上傳'}
+                </button>
               </div>
             </div>
           </div>
