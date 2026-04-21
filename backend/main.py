@@ -240,6 +240,54 @@ async def update_user_profile(request: Request):
 
     return {"success": True, "profile": user_data["profile"]}
 
+@app.post("/api/user/selfie")
+async def upload_selfie(request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    user_data = get_user_data(session_id)
+    if not user_data or "oauth_data" not in user_data:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    user_id = user_data["oauth_data"].get("id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
+    body = await request.json()
+    image_base64 = body.get("image_base64")
+    if not image_base64:
+        raise HTTPException(status_code=400, detail="Missing image data")
+
+    try:
+        if image_base64.startswith("data:image"):
+            image_base64 = image_base64.split(",")[1]
+
+        # Basic size limit (e.g. roughly 5MB of base64 data)
+        if len(image_base64) > 5 * 1024 * 1024 * 1.33:
+            raise HTTPException(status_code=400, detail="Image size too large")
+
+        image_data = base64.b64decode(image_base64)
+
+        filename = f"{user_id}.png"
+
+        # Save to both public and dist directories for dev/prod
+        public_path = os.path.join("public", "assets", "players_pic", filename)
+        dist_path = os.path.join("dist", "assets", "players_pic", filename)
+
+        os.makedirs(os.path.dirname(public_path), exist_ok=True)
+        os.makedirs(os.path.dirname(dist_path), exist_ok=True)
+
+        with open(public_path, "wb") as f:
+            f.write(image_data)
+
+        with open(dist_path, "wb") as f:
+            f.write(image_data)
+
+        return {"success": True, "filename": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/auth/logout")
 async def logout(response: Response):
     response.delete_cookie("session_id", samesite="lax")

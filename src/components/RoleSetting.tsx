@@ -10,14 +10,22 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
   const [loading, setLoading] = useState(true);
   const [nickname, setNickname] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [userId, setUserId] = useState<string>('');
+  const [picTimestamp, setPicTimestamp] = useState<number>(Date.now());
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [snapshot, setSnapshot] = useState<string | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    // Fetch user profile for nickname
+    // Fetch user profile for nickname and ID
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) {
           setNickname(data.profile?.nickname || data.user?.name || 'Player');
+          setUserId(data.user?.id || '');
         }
       })
       .catch(err => console.error('Failed to fetch profile:', err));
@@ -64,6 +72,75 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
     }
   };
 
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      setCameraStream(stream);
+      setShowCamera(true);
+      setSnapshot(null);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      alert('無法存取相機，請確認權限設定');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const takeSnapshot = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (context) {
+        // Mirror the canvas context so the saved image matches the video preview
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        setSnapshot(dataUrl);
+      }
+    }
+  };
+
+  const retakeSnapshot = () => {
+    setSnapshot(null);
+  };
+
+  const confirmSnapshot = async () => {
+    if (!snapshot) return;
+    setIsSaving(true);
+    try {
+      await fetch('/api/user/selfie', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: snapshot })
+      });
+      setPicTimestamp(Date.now());
+      stopCamera();
+    } catch (e) {
+      console.error('Failed to save selfie', e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [cameraStream]);
+
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8">
       <div className="max-w-2xl w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700">
@@ -79,26 +156,114 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
           </button>
         </div>
 
-        <div className="mb-8 p-6 bg-slate-900/50 rounded-2xl border border-slate-700">
-          <h2 className="text-2xl font-bold mb-4 text-white">玩家暱稱</h2>
-          <div className="flex gap-4">
-            <input
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl focus:outline-none focus:border-purple-500 text-lg text-white"
-              placeholder="輸入您的暱稱..."
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div className="p-6 bg-slate-900/50 rounded-2xl border border-slate-700">
+            <h2 className="text-2xl font-bold mb-4 text-white">玩家暱稱</h2>
+            <div className="flex flex-col gap-4">
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl focus:outline-none focus:border-purple-500 text-lg text-white"
+                placeholder="輸入您的暱稱..."
+              />
+              <button
+                onClick={handleSaveNickname}
+                disabled={isSaving || !nickname.trim()}
+                className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:bg-slate-700 rounded-xl font-bold text-lg transition-colors"
+              >
+                {isSaving ? '儲存中...' : '儲存'}
+              </button>
+            </div>
+            <p className="text-slate-400 text-sm mt-2">此暱稱將在 RPG 模式及戰鬥中顯示給其他玩家看。</p>
+          </div>
+
+          <div className="p-6 bg-slate-900/50 rounded-2xl border border-slate-700 flex flex-col items-center">
+            <h2 className="text-2xl font-bold mb-4 text-white w-full text-left">照片</h2>
+            <div className="mb-4 relative w-32 h-32 rounded-full overflow-hidden border-4 border-slate-600 bg-slate-800 flex items-center justify-center">
+              {userId ? (
+                <img
+                  src={`/assets/players_pic/${userId}.png?t=${picTimestamp}`}
+                  alt="Player Profile"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/players/character.png'; // Fallback
+                  }}
+                />
+              ) : (
+                <span className="text-slate-500 text-sm">無照片</span>
+              )}
+            </div>
             <button
-              onClick={handleSaveNickname}
-              disabled={isSaving || !nickname.trim()}
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:bg-slate-700 rounded-xl font-bold text-lg transition-colors"
+              onClick={startCamera}
+              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-lg transition-colors"
             >
-              {isSaving ? '儲存中...' : '儲存'}
+              拍照
             </button>
           </div>
-          <p className="text-slate-400 text-sm mt-2">此暱稱將在 RPG 模式及戰鬥中顯示給其他玩家看。</p>
         </div>
+
+        {showCamera && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 p-6 rounded-3xl max-w-md w-full flex flex-col items-center">
+              <h2 className="text-2xl font-bold mb-4 text-white">拍攝大頭貼</h2>
+
+              <div className="relative w-full aspect-square bg-black rounded-xl overflow-hidden mb-6 flex items-center justify-center">
+                {!snapshot ? (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover transform scale-x-[-1]"
+                    onPlay={() => {
+                      if (videoRef.current) {
+                        videoRef.current.style.transform = "scaleX(-1)";
+                      }
+                    }}
+                  ></video>
+                ) : (
+                  <img src={snapshot} alt="Snapshot" className="w-full h-full object-cover" />
+                )}
+                <canvas ref={canvasRef} className="hidden"></canvas>
+              </div>
+
+              <div className="flex gap-4 w-full">
+                {!snapshot ? (
+                  <>
+                    <button
+                      onClick={stopCamera}
+                      className="flex-1 py-3 bg-slate-600 hover:bg-slate-500 rounded-xl font-bold"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={takeSnapshot}
+                      className="flex-1 py-3 bg-pink-600 hover:bg-pink-500 rounded-xl font-bold"
+                    >
+                      拍照
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={retakeSnapshot}
+                      className="flex-1 py-3 bg-slate-600 hover:bg-slate-500 rounded-xl font-bold"
+                    >
+                      重拍
+                    </button>
+                    <button
+                      onClick={confirmSnapshot}
+                      disabled={isSaving}
+                      className="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 rounded-xl font-bold"
+                    >
+                      {isSaving ? '儲存中...' : '確認'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-10 animate-pulse text-slate-400">載入中...</div>
