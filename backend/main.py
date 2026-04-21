@@ -1077,6 +1077,20 @@ async def get_map_tilesets():
     return tilesets
 
 
+@app.get("/api/game_obj_img")
+async def list_game_obj_images():
+    images = []
+    base_dir = "dist/assets/game_obj_img" if os.path.exists("dist/assets/game_obj_img") else "public/assets/game_obj_img"
+    if os.path.exists(base_dir):
+        for filename in os.listdir(base_dir):
+            if filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg"):
+                images.append(filename)
+    if not images:
+        # Fallback default image if directory empty or non-existent
+        images = ["object_default.jpg"]
+    return images
+
+
 @app.post("/api/save_local")
 async def save_local(request: Request):
     data = await request.json()
