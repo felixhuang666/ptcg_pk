@@ -1404,6 +1404,30 @@ export default function RpgMode({ onBack }: RpgModeProps) {
 
   }, []);
 
+  useEffect(() => {
+    if (locationLoaded && questsList.length > 0) {
+      if (!currentQuestId || !questsList.find(q => q.id.toString() === currentQuestId.toString())) {
+        const firstQuest = questsList[0];
+        setCurrentQuestId(firstQuest.id.toString());
+
+        // Fetch it to set default map
+        // Only if we don't have a valid currentMapId yet
+        if (!currentMapId || currentMapId === 'main_200') {
+          fetch(`/api/quest/${firstQuest.id}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.quest_entities && data.quest_entities.default_scene_id) {
+                setCurrentMapId(data.quest_entities.default_scene_id.toString());
+              } else if (data && data.scene_list && data.scene_list.length > 0) {
+                setCurrentMapId(data.scene_list[0].toString());
+              }
+            })
+            .catch(err => console.error('Failed to load default quest details', err));
+        }
+      }
+    }
+  }, [locationLoaded, questsList, currentQuestId, currentMapId]);
+
   const handleMapChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newId = e.target.value;
     setCurrentMapId(newId);
