@@ -108,6 +108,38 @@
           "height": 32
         },
         "default_state_override": null
+      },
+      {
+        "id": "inst-16aosf4",
+        "template_id": "boss_single_eye_orc",
+        "layer_id": "layer-1775446355963",
+        "position": {
+          "x": 8,
+          "y": 11
+        },
+        "zoom": 1,
+        "container_override": {
+          "width": 64,
+          "height": 64
+        },
+        "default_state_override": null,
+        "properties": {}
+      },
+      {
+        "id": "inst-mijapoo",
+        "template_id": "boss_single_eye_orc",
+        "layer_id": "layer-1775446355963",
+        "position": {
+          "x": 16,
+          "y": 15
+        },
+        "zoom": 1,
+        "container_override": {
+          "width": 64,
+          "height": 64
+        },
+        "default_state_override": null,
+        "properties": {}
       }
     ],
     "layers": [
