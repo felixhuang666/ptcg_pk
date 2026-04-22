@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Wand2 } from 'lucide-react';
+import { X, Save, Wand2, Camera as CameraIcon } from 'lucide-react';
+import MonsterCameraCapture from './MonsterCameraCapture';
+
+
 
 interface TemplateState {
   state: string;
@@ -47,8 +50,9 @@ export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: 
 
   const [prompt, setPrompt] = useState('建立一個 NPC 模板，名稱為「商人」，包含：\n- 精靈圖: merchant.png (frame: 64x64)\n- 動畫: idle (8帧), walk (12帧), talk (6帧)\n- 碰撞體: 矩形 32x48\n- 互動: 對話 (dialog_id)\n- 事件: 無');
   const [template, setTemplate] = useState<TemplateData | null>(null);
-
+  const [showCamera, setShowCamera] = useState(false);
   const [availableImages, setAvailableImages] = useState<string[]>([]);
+
 
   useEffect(() => {
     fetch('/api/game_obj_img')
@@ -115,6 +119,34 @@ export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: 
 
   return (
     <div className="absolute inset-0 bg-slate-900 z-50 flex flex-col text-white">
+      {showCamera && (
+        <MonsterCameraCapture
+          onCancel={() => setShowCamera(false)}
+          onCaptureComplete={(filename) => {
+            setShowCamera(false);
+            if (template) {
+              setTemplate({ ...template, default_image: filename, category: 'monster' });
+            } else {
+              setTemplate({
+                id: 'monster_' + Date.now(),
+                name: 'Custom Monster',
+                category: 'monster',
+                container_width: 64,
+                container_height: 64,
+                sprite_sheets: [],
+                collision: { enabled: true, width: 32, height: 32, shape: 'rectangle' },
+                interaction: { type: 'none' },
+                default_controller: 'EncounterMonsterController',
+                default_image: filename
+              });
+            }
+            if (!availableImages.includes(filename)) {
+              setAvailableImages(prev => [...prev, filename]);
+            }
+          }}
+        />
+      )}
+
       <header className="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
         <h2 className="text-xl font-bold">{templateId ? "Game Object Template Editor" : "Game Object Template Creator"}</h2>
         <div className="flex gap-4">
@@ -140,6 +172,13 @@ export default function GameObjectTemplateCreator({ onBack, onSave }: { onBack: 
               className="mt-4 w-full bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold flex justify-center items-center gap-2 transition-colors"
             >
               <Wand2 className="w-5 h-5" /> Generate
+            </button>
+
+            <button
+              onClick={() => setShowCamera(true)}
+              className="mt-2 w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded font-bold flex justify-center items-center gap-2 transition-colors"
+            >
+              <CameraIcon className="w-5 h-5" /> Design Monster via Camera
             </button>
           </div>
 

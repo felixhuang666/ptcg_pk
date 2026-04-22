@@ -243,6 +243,47 @@ async def update_user_profile(request: Request):
 
     return {"success": True, "profile": user_data["profile"]}
 
+
+@app.post("/api/upload_monster_image")
+async def upload_monster_image(request: Request):
+    body = await request.json()
+    image_base64 = body.get("image_base64")
+    filename = body.get("filename")
+
+    if not image_base64:
+        raise HTTPException(status_code=400, detail="Missing image data")
+    if not filename:
+        raise HTTPException(status_code=400, detail="Missing filename")
+
+    # Basic sanitize
+    filename = re.sub(r'[^a-zA-Z0-9_.-]', '', filename)
+
+    try:
+        if image_base64.startswith("data:image"):
+            image_base64 = image_base64.split(",")[1]
+
+        if len(image_base64) > 5 * 1024 * 1024 * 1.33:
+            raise HTTPException(status_code=400, detail="Image size too large")
+
+        image_data = base64.b64decode(image_base64)
+
+        public_path = os.path.join("public", "assets", "images", filename)
+        dist_path = os.path.join("dist", "assets", "images", filename)
+
+        os.makedirs(os.path.dirname(public_path), exist_ok=True)
+        os.makedirs(os.path.dirname(dist_path), exist_ok=True)
+
+        with open(public_path, "wb") as f:
+            f.write(image_data)
+
+        with open(dist_path, "wb") as f:
+            f.write(image_data)
+
+        return {"success": True, "filename": filename}
+    except Exception as e:
+        print("Upload monster image error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/user/selfie")
 async def upload_selfie(request: Request):
     session_id = request.cookies.get("session_id")
