@@ -4,29 +4,7 @@
   "category": "npc",
   "container_width": 64,
   "container_height": 64,
-  "sprite_sheets": [
-    {
-      "state": "idle",
-      "sprite_sheet_name": "boss_single_eye_orc_idle",
-      "frame_width": 64,
-      "frame_height": 64,
-      "frame_rate": 8
-    },
-    {
-      "state": "walk",
-      "sprite_sheet_name": "boss_single_eye_orc_walk",
-      "frame_width": 64,
-      "frame_height": 64,
-      "frame_rate": 12
-    },
-    {
-      "state": "talk",
-      "sprite_sheet_name": "boss_single_eye_orc_talk",
-      "frame_width": 64,
-      "frame_height": 64,
-      "frame_rate": 6
-    }
-  ],
+  "sprite_sheets": [],
   "collision": {
     "enabled": true,
     "width": 32,

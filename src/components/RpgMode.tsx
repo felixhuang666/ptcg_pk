@@ -1036,7 +1036,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
                   });
               }
               
-              sprite.play(animKey);
+              if (this.textures.exists(key)) sprite.play(animKey);
               this.gameObjectSprites[obj.instance_id || Math.random().toString()] = sprite;
           }
         });
@@ -1148,7 +1148,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
 
         if (!this.player || !this.cursors) return;
 
-        if (this.topLayer && this.mapData) {
+        if (this.topLayer && this.topLayer.tilemap && this.topLayer.layer && this.mapData) {
           const tileSize = 32;
           const x = Math.floor(this.player.x / tileSize);
           const y = Math.floor(this.player.y / tileSize);
