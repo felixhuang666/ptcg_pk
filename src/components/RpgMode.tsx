@@ -1788,7 +1788,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                 </button>
                 <button
                   onClick={() => setMode('edit')}
-                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1 ${mode === 'edit' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-600'}`}
+                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1 ${mode as any === 'edit' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-600'}`}
                 >
                   <Edit3 className="w-4 h-4" /> 地圖編輯
                 </button>
