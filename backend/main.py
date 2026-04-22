@@ -1,3 +1,5 @@
+import re
+import base64
 import os
 import json
 import uuid
