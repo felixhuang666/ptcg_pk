@@ -131,6 +131,7 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
   useEffect(() => {
     if (showCamera && cameraStream && videoRef.current) {
       videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(err => console.error("Error playing video:", err));
     }
   }, [showCamera, cameraStream]);
 
@@ -213,6 +214,7 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
                     ref={videoRef}
                     autoPlay
                     playsInline
+                    muted
                     className="w-full h-full object-cover transform scale-x-[-1]"
                     onPlay={() => {
                       if (videoRef.current) {
