@@ -1341,6 +1341,8 @@ export default function RpgMode({ onBack }: RpgModeProps) {
   const [questsList, setQuestsList] = useState<any[]>([]);
   const [currentQuestId, setCurrentQuestId] = useState<string>('');
   const [mapsList, setMapsList] = useState<{ id: string, name: string }[]>([]);
+  const [allScenes, setAllScenes] = useState<{ id: string, name: string }[]>([]);
+  const [questScenes, setQuestScenes] = useState<{ id: string, name: string }[]>([]);
   const [currentMapId, setCurrentMapId] = useState<string>('main_200');
   const [currentMapName, setCurrentMapName] = useState<string>('World Map');
   const [tilesetsLoaded, setTilesetsLoaded] = useState(false);
@@ -1406,6 +1408,15 @@ export default function RpgMode({ onBack }: RpgModeProps) {
       })
       .catch(err => console.error('Failed to fetch quests', err));
 
+    fetch('/api/scenes')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAllScenes(data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch scenes', err));
+
   }, []);
 
   useEffect(() => {
@@ -1432,6 +1443,30 @@ export default function RpgMode({ onBack }: RpgModeProps) {
     }
   }, [locationLoaded, questsList, currentQuestId, currentMapId]);
 
+  useEffect(() => {
+    if (currentQuestId && allScenes.length > 0) {
+      fetch(`/api/quest/${currentQuestId}`)
+        .then(res => res.json())
+        .then(data => {
+           if (data && data.scene_list) {
+             const mappedScenes = data.scene_list.map((sceneId: string) => {
+               const sceneObj = allScenes.find(s => s.id.toString() === sceneId.toString());
+               return {
+                 id: sceneId.toString(),
+                 name: sceneObj ? sceneObj.name : `Scene ${sceneId}`
+               };
+             });
+             setQuestScenes(mappedScenes);
+           } else {
+             setQuestScenes([]);
+           }
+        })
+        .catch(err => console.error('Failed to load quest details', err));
+    } else if (!currentQuestId) {
+      setQuestScenes([]);
+    }
+  }, [currentQuestId, allScenes]);
+
   const handleMapChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newId = e.target.value;
     setCurrentMapId(newId);
@@ -1444,7 +1479,6 @@ export default function RpgMode({ onBack }: RpgModeProps) {
     setCurrentQuestId(newQuestId);
 
     if (newQuestId) {
-      // Fetch the quest to find its default scene
       fetch(`/api/quest/${newQuestId}`)
         .then(res => res.json())
         .then(data => {
@@ -1454,7 +1488,7 @@ export default function RpgMode({ onBack }: RpgModeProps) {
              setCurrentMapId(data.scene_list[0].toString());
            }
         })
-        .catch(err => console.error('Failed to load quest details', err));
+        .catch(err => console.error('Failed to load quest details for map selection', err));
     }
   };
 
@@ -1868,9 +1902,13 @@ export default function RpgMode({ onBack }: RpgModeProps) {
                     onChange={handleMapChange}
                     className="bg-slate-800 border border-slate-600 text-white text-sm rounded px-2 py-1 outline-none"
                   >
-                    {mapsList.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
+                    {questScenes.length > 0 ? (
+                      questScenes.map(m => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))
+                    ) : (
+                      <option value="">-- No Scenes in Quest --</option>
+                    )}
                   </select>
                 </div>
               </div>
