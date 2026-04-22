@@ -233,9 +233,13 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
           }
 
           const res = await fetch(`/api/map?id=${targetMapId}`);
-          if (!res.ok) throw new Error('Failed to fetch map');
-          const data = await res.json();
-          this.mapData = data.map_data ? data.map_data : data;
+          if (!res.ok) {
+            console.error('Failed to fetch map, falling back to empty map');
+            this.mapData = { width: 20, height: 20, layers: { base: Array(400).fill(20), decorations: Array(400).fill(0), obstacles: Array(400).fill(0), objectCollides: Array(400).fill(0), objectEvent: Array(400).fill(0), topLayer: Array(400).fill(0) } };
+          } else {
+            const data = await res.json();
+            this.mapData = data.map_data ? data.map_data : data;
+          }
           this.upgradeMapData(this.mapData);
           
           await new Promise<void>((resolve) => {
@@ -846,7 +850,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
             }
             if (collides) {
               l.setCollisionByExclusion([-1, 0]);
-              if (this.player) {
+              if (this.player && l.tilemap.tileWidth) {
                 this.physics.add.collider(this.player, l);
               }
             }
