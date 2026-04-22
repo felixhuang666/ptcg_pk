@@ -1,7 +1,10 @@
 {
-  "name": "test2",
-  "id": 1,
+  "name": "default",
   "scene_list": [
-    "999"
-  ]
+    "6"
+  ],
+  "quest_entities": {
+    "default_scene_id": "6"
+  },
+  "id": 1
 }

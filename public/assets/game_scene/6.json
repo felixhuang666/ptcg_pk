@@ -1,0 +1,49 @@
+{
+  "id": 6,
+  "created_at": "2026-04-22T02:41:12.025586+00:00",
+  "name": "default",
+  "map_list": [
+    {
+      "instance_id": "inst-9cag3vk",
+      "map_id": "main_200",
+      "map_size": {
+        "width": 20,
+        "height": 20
+      },
+      "offset_position": {
+        "x": 0,
+        "y": 0
+      },
+      "layer_id": "layer-1776825671506"
+    }
+  ],
+  "scene_entities": {
+    "npcs": [],
+    "items": [],
+    "events": [],
+    "game_objects": [
+      {
+        "id": "inst-ldf1ixw",
+        "template_id": "boss_single_eye_orc",
+        "layer_id": "layer-1776825671506",
+        "position": {
+          "x": 15,
+          "y": 6
+        },
+        "zoom": 1,
+        "container_override": {
+          "width": 64,
+          "height": 64
+        },
+        "default_state_override": null,
+        "properties": {}
+      }
+    ],
+    "layers": [
+      {
+        "id": "layer-1776825671506",
+        "name": "Base Layer"
+      }
+    ]
+  }
+}

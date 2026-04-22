@@ -1,13 +1,22 @@
 {
   "tilesets": [
     {
-      "firstgid": 1,
       "name": "main_20x10",
-      "image_source": "main_20x10.png",
       "columns": 20,
+      "firstgid": 1,
       "tilewidth": 32,
       "tileheight": 32,
-      "total_tiles": 200
+      "total_tiles": 200,
+      "image_source": "main_20x10.png"
+    },
+    {
+      "name": "new_tileset",
+      "columns": 8,
+      "firstgid": 201,
+      "tilewidth": 32,
+      "tileheight": 32,
+      "total_tiles": 8,
+      "image_source": "new_tileset.png"
     }
   ]
 }
