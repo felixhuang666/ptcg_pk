@@ -248,9 +248,12 @@ async def update_user_profile(request: Request):
 
 @app.post("/api/upload_monster_image")
 async def upload_monster_image(request: Request):
+    print("DEBUG: /api/upload_monster_image endpoint hit!")
     body = await request.json()
     image_base64 = body.get("image_base64")
     filename = body.get("filename")
+    print(f"DEBUG: upload_monster_image received filename: {filename}")
+
 
     if not image_base64:
         raise HTTPException(status_code=400, detail="Missing image data")
