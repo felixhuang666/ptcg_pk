@@ -12,6 +12,7 @@ import RpgMode from './components/RpgMode';
 import RoleSetting from './components/RoleSetting';
 import RpgSceneEditor from './components/RpgSceneEditor';
 import RpgMapEditor from './components/RpgMapEditor';
+import MonsterCameraCapture from './components/MonsterCameraCapture';
 import GameObjectTemplateCreator from './components/GameObjectTemplateCreator';
 import QuestEditor from './components/QuestEditor';
 import SpriteSheetEditor from './components/SpriteSheetEditor';
@@ -23,6 +24,7 @@ import { io } from 'socket.io-client';
 export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [showCameraTest, setShowCameraTest] = useState(false);
 
   const [view, setView] = useState<'MENU' | 'BATTLE_PVP' | 'BATTLE_PVE' | 'BATTLE_PRIVATE' | 'EDITOR' | 'BOSS_SELECT' | 'BATTLE_BOSS' | 'ADMIN' | 'RPG_MODE' | 'ROLE_SETTING' | 'RPG_SCENE_EDITOR' | 'RPG_MAP_EDITOR' | 'SPRITE_SHEET_EDITOR' | 'GAME_OBJECT_EDITOR' | 'QUEST_EDITOR'>(() => {
     // Check URL parameters first
@@ -251,7 +253,26 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8 relative">
+
+      {showCameraTest && (
+        <MonsterCameraCapture
+          onCaptureComplete={(filename) => {
+            alert('Upload success! Filename: ' + filename);
+            setShowCameraTest(false);
+          }}
+          onCancel={() => setShowCameraTest(false)}
+        />
+      )}
+
       <div className="absolute top-4 right-4 flex items-center gap-4 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
+
+        <button
+          onClick={() => setShowCameraTest(true)}
+          className="text-sm text-yellow-400 hover:text-yellow-300 font-bold mr-2 border border-yellow-400 px-2 py-1 rounded"
+          title="Test Camera"
+        >
+          測試相機
+        </button>
         <button
           onClick={() => setView('SPRITE_SHEET_EDITOR')}
           className="text-sm text-emerald-400 hover:text-emerald-300 font-bold mr-2 border border-emerald-400 px-2 py-1 rounded"
