@@ -82,6 +82,7 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
       private chatBubbles: Record<string, Phaser.GameObjects.Container> = {};
       private chatTimers: Record<string, Phaser.Time.TimerEvent> = {};
       public currentMapId: string = 'main_200';
+      private layerColliders: Phaser.Physics.Arcade.Collider[] = [];
 
       constructor() {
         super('MainScene');
@@ -796,6 +797,9 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
       renderMap() {
         if (!this.mapData || !this.mapData.layers) return;
 
+        this.layerColliders.forEach(c => c.destroy());
+        this.layerColliders = [];
+
         if (this.baseLayer) this.baseLayer.destroy();
         if (this.decorationsLayer) this.decorationsLayer.destroy();
         if (this.obstaclesLayer) this.obstaclesLayer.destroy();
@@ -827,7 +831,7 @@ function PhaserGame({ mode, currentMapId, mapName, onMapSaved, roleWalkSprite, r
             if (collides) {
               l.setCollisionByExclusion([-1, 0]);
               if (this.player) {
-                this.physics.add.collider(this.player, l);
+                this.layerColliders.push(this.physics.add.collider(this.player, l));
               }
             }
             return l;

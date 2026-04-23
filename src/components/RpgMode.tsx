@@ -82,6 +82,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
       public sceneData: any = null;
       public gameObjectTemplates: any[] = [];
       public gameObjectSprites: Record<string, Phaser.GameObjects.Sprite | Phaser.GameObjects.Container> = {};
+      private layerColliders: Phaser.Physics.Arcade.Collider[] = [];
 
       constructor() {
         super('MainScene');
@@ -820,6 +821,9 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
       renderMap() {
         if (!this.mapData || !this.mapData.layers) return;
 
+        this.layerColliders.forEach(c => c.destroy());
+        this.layerColliders = [];
+
         if (this.baseLayer) this.baseLayer.destroy();
         if (this.decorationsLayer) this.decorationsLayer.destroy();
         if (this.obstaclesLayer) this.obstaclesLayer.destroy();
@@ -851,7 +855,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
             if (collides) {
               l.setCollisionByExclusion([-1, 0]);
               if (this.player && l.tilemap.tileWidth) {
-                this.physics.add.collider(this.player, l);
+                this.layerColliders.push(this.physics.add.collider(this.player, l));
               }
             }
             return l;
