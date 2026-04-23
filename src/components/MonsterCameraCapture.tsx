@@ -40,6 +40,13 @@ export default function MonsterCameraCapture({ onCaptureComplete, onCancel }: Mo
         })
       });
 
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('Server error response:', errText);
+        alert('Upload failed (HTTP ' + res.status + '). Please try again or reduce camera resolution.');
+        return;
+      }
+
       const data = await res.json();
       if (data.success) {
         onCaptureComplete(filename);
@@ -67,7 +74,8 @@ export default function MonsterCameraCapture({ onCaptureComplete, onCancel }: Mo
           <Camera
             onTakePhotoAnimationDone={handleTakePhotoAnimationDone}
             idealFacingMode={facingMode}
-            isMaxResolution={true}
+            isMaxResolution={false}
+            imageCompression={0.8}
             isImageMirror={facingMode === FACING_MODES.USER}
           />
           <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex gap-4 bg-slate-900 bg-opacity-50 p-4 rounded-full">
