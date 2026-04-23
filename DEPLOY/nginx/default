@@ -1,0 +1,184 @@
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name felix9977.mooo.com;
+
+    ssl_certificate /etc/letsencrypt/live/felix9977.mooo.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/felix9977.mooo.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    client_max_body_size 3M;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+#RingMaster
+server {
+    listen 443 ssl;
+    server_name ringmaster.felix9977.mooo.com;
+    ssl_certificate /etc/letsencrypt/live/ringmaster.felix9977.mooo.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/ringmaster.felix9977.mooo.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:30080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+	proxy_set_header Host 192.168.1.1;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+}
+
+server {
+    listen 443 ssl;
+    server_name ringmaster.mooo.com;
+    ssl_certificate /etc/letsencrypt/live/ringmaster.mooo.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/ringmaster.mooo.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:30080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host 192.168.1.1;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+}
+
+#TEST
+server {
+    listen 180;
+    server_name felix9977.mooo.com;
+    root /var/www/html;
+    index index.html index.htm;
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+
+
+
+#ADSL
+server {
+    listen 14443 ssl;
+    server_name _;
+
+    ssl_certificate /etc/letsencrypt/live/felix9977.mooo.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/felix9977.mooo.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    location / {
+        proxy_pass https://192.168.1.1;
+
+        proxy_ssl_verify off;   # IMPORTANT (self-signed backend)
+	proxy_set_header Host 192.168.1.1;
+
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+#ADSL
+server {
+    listen 14080;
+    server_name _;
+
+    ssl_certificate /etc/letsencrypt/live/felix9977.mooo.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/felix9977.mooo.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    location / {
+        proxy_pass http://192.168.1.1;
+
+        proxy_ssl_verify off;   # IMPORTANT (self-signed backend)
+        proxy_set_header Host 192.168.1.1;
+
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+
+
+
+server {
+    listen 880;
+    server_name felix9977.mooo.com;
+    
+    location / {
+        proxy_pass http://127.0.0.1:8789;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    listen 4443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/felix9977.mooo.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/felix9977.mooo.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+# NEW: HTTPS 34080 -> localhost:30080 (WebSocket support)
+server {
+    listen 34080 ssl;
+    server_name felix9977.mooo.com;
+
+    ssl_certificate /etc/letsencrypt/live/felix9977.mooo.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/felix9977.mooo.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:30080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
