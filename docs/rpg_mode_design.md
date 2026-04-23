@@ -5,7 +5,7 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 
 ## 2. UI Design
 - **Map Viewport**: Central full-screen or maximized container powered by the Phaser game engine.
-- **Header Navigation**: Contains actions like 'Back', 'Refresh', 'Settings', 'Map/Scene Editor toggles, and a toggle for full-screen mode.
+- **Header Navigation**: Contains actions like 'Back', 'Refresh', 'Settings', 'Map/Scene Editor toggles, and a toggle for full-screen mode. It also includes a scene dropdown grouped by quest, allowing players to navigate between scenes linked to the active quest.
 - **Chat Interface**: Floating/collapsible window showing real-time messages and an input field for sending chat messages to the current map session.
 - **Controls**: On-screen buttons (e.g., Attack/Action modes) are overlayed on top of the map viewport. Supports touch inputs and virtual joystick on mobile devices.
 - **Status Overlay**: Lightweight overlay providing current coordinates, map name, and current zoom level.
