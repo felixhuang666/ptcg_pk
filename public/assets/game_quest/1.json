@@ -1,7 +1,8 @@
 {
   "name": "default",
   "scene_list": [
-    "6"
+    "6",
+    "100"
   ],
   "quest_entities": {
     "default_scene_id": "6"

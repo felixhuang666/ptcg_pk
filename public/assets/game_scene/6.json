@@ -4,15 +4,41 @@
   "name": "default",
   "map_list": [
     {
-      "instance_id": "inst-9cag3vk",
       "map_id": "main_200",
+      "layer_id": "layer-1776825671506",
+      "map_size": {
+        "width": 20,
+        "height": 20
+      },
+      "instance_id": "inst-9cag3vk",
+      "offset_position": {
+        "x": -22,
+        "y": 1
+      }
+    },
+    {
+      "instance_id": "inst-s8nb9x3",
+      "map_id": "flow_local_1",
       "map_size": {
         "width": 20,
         "height": 20
       },
       "offset_position": {
-        "x": 0,
-        "y": 0
+        "x": 18,
+        "y": 1
+      },
+      "layer_id": "layer-1776825671506"
+    },
+    {
+      "instance_id": "inst-w6k1u0d",
+      "map_id": "flow_local_2",
+      "map_size": {
+        "width": 20,
+        "height": 20
+      },
+      "offset_position": {
+        "x": 18,
+        "y": 21
       },
       "layer_id": "layer-1776825671506"
     }
@@ -24,19 +50,19 @@
     "game_objects": [
       {
         "id": "inst-ldf1ixw",
-        "template_id": "boss_single_eye_orc",
+        "zoom": 1,
         "layer_id": "layer-1776825671506",
         "position": {
           "x": 15,
           "y": 6
         },
-        "zoom": 1,
+        "properties": {},
+        "template_id": "boss_single_eye_orc",
         "container_override": {
           "width": 64,
           "height": 64
         },
-        "default_state_override": null,
-        "properties": {}
+        "default_state_override": null
       }
     ],
     "layers": [
