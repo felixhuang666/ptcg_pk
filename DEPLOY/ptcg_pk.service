@@ -1,0 +1,14 @@
+[Unit]
+Description=PTCG PK Game Server
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/ptcg_pk
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run dev
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
