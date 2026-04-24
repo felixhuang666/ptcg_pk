@@ -379,17 +379,25 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
             let needsLoad = false;
             this.sceneData.scene_entities.game_objects.forEach((obj: any) => {
                 const tpl = this.gameObjectTemplates.find(t => t.id === obj.template_id);
-                if (tpl && tpl.sprite_sheets) {
-                    tpl.sprite_sheets.forEach((sheet: any) => {
-                        const key = `spr_${sheet.sprite_sheet_name}`;
+                if (tpl) {
+                    if (tpl.sprite_sheets && tpl.sprite_sheets.length > 0) {
+                        tpl.sprite_sheets.forEach((sheet: any) => {
+                            const key = `spr_${sheet.sprite_sheet_name}`;
+                            if (!this.textures.exists(key)) {
+                                this.load.spritesheet(key, `/assets/players/${sheet.sprite_sheet_name}.png`, {
+                                    frameWidth: sheet.frame_width,
+                                    frameHeight: sheet.frame_height
+                                });
+                                needsLoad = true;
+                            }
+                        });
+                    } else if (tpl.default_image) {
+                        const key = `game_obj_img_${tpl.default_image}`;
                         if (!this.textures.exists(key)) {
-                            this.load.spritesheet(key, `/assets/players/${sheet.sprite_sheet_name}.png`, {
-                                frameWidth: sheet.frame_width,
-                                frameHeight: sheet.frame_height
-                            });
+                            this.load.image(key, `/assets/game_obj_img/${tpl.default_image}`);
                             needsLoad = true;
                         }
-                    });
+                    }
                 }
             });
             if (needsLoad) {
@@ -1098,9 +1106,9 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
              sheetMeta = tpl.sprite_sheets[0];
           }
 
-          if (sheetMeta) {
-              const key = `spr_${sheetMeta.sprite_sheet_name}`;
-              
+          const textureKey = sheetMeta ? `spr_${sheetMeta.sprite_sheet_name}` : (tpl.default_image ? `game_obj_img_${tpl.default_image}` : null);
+
+          if (textureKey) {
               const isCollidable = tpl.collision?.enabled;
               
               let sprite;
@@ -1112,7 +1120,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
               }
 
               if (isPhysics) {
-                  sprite = this.physics.add.sprite(px, py, key);
+                  sprite = this.physics.add.sprite(px, py, textureKey);
                   const body = sprite.body as Phaser.Physics.Arcade.Body;
                   body.setImmovable(true);
                   if (tpl.collision?.width && tpl.collision?.height) {
@@ -1142,7 +1150,7 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
                       }
                   }
               } else {
-                  sprite = this.add.sprite(px, py, key);
+                  sprite = this.add.sprite(px, py, textureKey);
               }
 
               // Non-physics interactions (StaticNpc, Chest)
@@ -1171,18 +1179,35 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
                   sprite.setScale(obj.zoom);
               }
 
-              // Create animation on the fly if needed
-              const animKey = `${key}_${targetState}`;
-              if (!this.anims.exists(animKey)) {
-                  this.anims.create({
-                      key: animKey,
-                      frames: this.anims.generateFrameNumbers(key, { start: 0, end: (sheetMeta.frame_count || 1) - 1 }),
-                      frameRate: sheetMeta.frame_rate || 8,
-                      repeat: -1
-                  });
+              if (!sheetMeta) {
+                  // For static image, set display size if container_override or container_width/height is present
+                  let pxW = 32;
+                  let pxH = 32;
+                  if (obj.container_override) {
+                      pxW = obj.container_override.width || 32;
+                      pxH = obj.container_override.height || 32;
+                  } else if (tpl.container_width && tpl.container_height) {
+                      pxW = tpl.container_width;
+                      pxH = tpl.container_height;
+                  }
+                  sprite.setDisplaySize(pxW, pxH);
               }
-              
-              if (this.textures.exists(key)) sprite.play(animKey);
+
+              if (sheetMeta) {
+                  // Create animation on the fly if needed
+                  const animKey = `${textureKey}_${targetState}`;
+                  if (!this.anims.exists(animKey)) {
+                      this.anims.create({
+                          key: animKey,
+                          frames: this.anims.generateFrameNumbers(textureKey, { start: 0, end: (sheetMeta.frame_count || 1) - 1 }),
+                          frameRate: sheetMeta.frame_rate || 8,
+                          repeat: -1
+                      });
+                  }
+
+                  if (this.textures.exists(textureKey)) sprite.play(animKey);
+              }
+
               this.gameObjectSprites[obj.instance_id || Math.random().toString()] = sprite;
           }
         });
