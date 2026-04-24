@@ -88,6 +88,133 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
         super('MainScene');
       }
 
+
+      private async loadAndMergeSceneMaps(sceneData: any): Promise<boolean> {
+        const sceneMapListRaw = sceneData.map_list || sceneData.scene_entities?.map_list;
+        const parsedList = typeof sceneMapListRaw === 'string' ? JSON.parse(sceneMapListRaw) : (sceneMapListRaw || []);
+
+        if (!parsedList || parsedList.length === 0) return false;
+
+        // Fetch all map data concurrently
+        const mapDataPromises = parsedList.map(async (m: any) => {
+            try {
+                const res = await fetch(`/api/map?id=${m.map_id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    return { instance: m, data: data.map_data ? data.map_data : data };
+                }
+            } catch (e) {
+                console.error('Failed to fetch map', m.map_id, e);
+            }
+            return null;
+        });
+
+        const fetchedMaps = (await Promise.all(mapDataPromises)).filter(m => m !== null);
+        if (fetchedMaps.length === 0) return false;
+
+        // Calculate bounding box
+        let minX = 0, minY = 0, maxX = 0, maxY = 0;
+        let first = true;
+
+        fetchedMaps.forEach((m: any) => {
+            const ox = m.instance.offset_position?.x || 0;
+            const oy = m.instance.offset_position?.y || 0;
+            const w = m.data.width || m.instance.map_size?.width || 20;
+            const h = m.data.height || m.instance.map_size?.height || 20;
+
+            if (first) {
+                minX = ox; minY = oy; maxX = ox + w; maxY = oy + h;
+                first = false;
+            } else {
+                if (ox < minX) minX = ox;
+                if (oy < minY) minY = oy;
+                if (ox + w > maxX) maxX = ox + w;
+                if (oy + h > maxY) maxY = oy + h;
+            }
+        });
+
+        const combinedWidth = maxX - minX;
+        const combinedHeight = maxY - minY;
+
+        // Ensure minimum size
+        const finalWidth = Math.max(20, combinedWidth);
+        const finalHeight = Math.max(20, combinedHeight);
+
+        const combinedLayers: Record<string, number[]> = {
+            base: Array(finalWidth * finalHeight).fill(0),
+            decorations: Array(finalWidth * finalHeight).fill(0),
+            obstacles: Array(finalWidth * finalHeight).fill(0),
+            objectCollides: Array(finalWidth * finalHeight).fill(0),
+            objectEvent: Array(finalWidth * finalHeight).fill(0),
+            topLayer: Array(finalWidth * finalHeight).fill(0)
+        };
+
+        const combinedTilesets: any[] = [];
+        const seenTilesets = new Set<string>();
+
+        // We will sort them by layer index later if possible, but for data merging,
+        // we just composite them.
+        const layerNames = ['base', 'decorations', 'obstacles', 'objectCollides', 'objectEvent', 'topLayer'];
+
+        fetchedMaps.forEach((m: any) => {
+            const ox = (m.instance.offset_position?.x || 0) - minX;
+            const oy = (m.instance.offset_position?.y || 0) - minY;
+            const w = m.data.width || 20;
+            const h = m.data.height || 20;
+
+            // Merge tilesets
+            const tilesetsMeta = m.data.map_meta?.tilesets || m.data.tilesets || [];
+            tilesetsMeta.forEach((ts: any) => {
+                if (!seenTilesets.has(ts.name)) {
+                    seenTilesets.add(ts.name);
+                    combinedTilesets.push(ts);
+                }
+            });
+
+            // Merge layers
+            if (m.data.layers) {
+                layerNames.forEach(ln => {
+                    const lData = m.data.layers[ln];
+                    if (lData) {
+                        for (let y = 0; y < h; y++) {
+                            for (let x = 0; x < w; x++) {
+                                const val = lData[y * w + x];
+                                if (val !== undefined && val !== 0 && val !== -1) {
+                                    const cx = ox + x;
+                                    const cy = oy + y;
+                                    if (cx >= 0 && cx < finalWidth && cy >= 0 && cy < finalHeight) {
+                                        combinedLayers[ln][cy * finalWidth + cx] = val;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        // Ensure default tileset if none
+        if (combinedTilesets.length === 0) {
+            combinedTilesets.push({
+                firstgid: 1,
+                name: 'main_20x10',
+                image_source: 'main_20x10.png',
+                tilewidth: 32,
+                tileheight: 32
+            });
+        }
+
+        this.mapData = {
+            width: finalWidth,
+            height: finalHeight,
+            layers: combinedLayers,
+            map_meta: { tilesets: combinedTilesets },
+            tilesets: combinedTilesets // for fallback
+        };
+
+        return true;
+      }
+
       private upgradeMapData(data: any) {
         if (!data.layers) {
           data.layers = {
@@ -222,26 +349,27 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
           if (tplRes.ok) this.gameObjectTemplates = await tplRes.json();
 
           let targetMapId = this.currentMapId;
+          let isSceneMapMerged = false;
+
           // check if it's a scene
           const sceneRes = await fetch(`/api/scene/${this.currentMapId}`);
           if (sceneRes.ok) {
              const sceneData = await sceneRes.json();
              this.sceneData = sceneData;
-             const parsedList = typeof sceneData.map_list === 'string' ? JSON.parse(sceneData.map_list) : (sceneData.map_list || []);
-             if (parsedList.length > 0) {
-                 targetMapId = parsedList[0].map_id;
-             }
+             isSceneMapMerged = await this.loadAndMergeSceneMaps(sceneData);
           }
 
-          const res = await fetch(`/api/map?id=${targetMapId}`);
-          if (!res.ok) {
-            console.error('Failed to fetch map, falling back to empty map');
-            this.mapData = { width: 20, height: 20, layers: { base: Array(400).fill(20), decorations: Array(400).fill(0), obstacles: Array(400).fill(0), objectCollides: Array(400).fill(0), objectEvent: Array(400).fill(0), topLayer: Array(400).fill(0) } };
-          } else {
-            const data = await res.json();
-            this.mapData = data.map_data ? data.map_data : data;
+          if (!isSceneMapMerged) {
+              const res = await fetch(`/api/map?id=${targetMapId}`);
+              if (!res.ok) {
+                console.error('Failed to fetch map, falling back to empty map');
+                this.mapData = { width: 20, height: 20, layers: { base: Array(400).fill(20), decorations: Array(400).fill(0), obstacles: Array(400).fill(0), objectCollides: Array(400).fill(0), objectEvent: Array(400).fill(0), topLayer: Array(400).fill(0) } };
+              } else {
+                const data = await res.json();
+                this.mapData = data.map_data ? data.map_data : data;
+              }
+              this.upgradeMapData(this.mapData);
           }
-          this.upgradeMapData(this.mapData);
           
           await new Promise<void>((resolve) => {
             if (!this.sceneData || !this.sceneData.scene_entities || !this.sceneData.scene_entities.game_objects) {
@@ -786,15 +914,29 @@ function PhaserGame({ mode, currentMapId, initialPosX, initialPosY, onMapSaved, 
       public async loadNewMap(id: string) {
         try {
           this.currentMapId = id;
-          const res = await fetch(`/api/map?id=${id}`);
-          if (res.ok) {
-            const data = await res.json();
-            this.mapData = data.map_data ? data.map_data : data;
-            this.upgradeMapData(this.mapData);
-            this.renderMap();
+          let isSceneMapMerged = false;
+
+          const sceneRes = await fetch(`/api/scene/${id}`);
+          if (sceneRes.ok) {
+             const sceneData = await sceneRes.json();
+             this.sceneData = sceneData;
+             isSceneMapMerged = await this.loadAndMergeSceneMaps(sceneData);
           }
+
+          if (!isSceneMapMerged) {
+              const res = await fetch(`/api/map?id=${id}`);
+              if (res.ok) {
+                const data = await res.json();
+                this.mapData = data.map_data ? data.map_data : data;
+                this.upgradeMapData(this.mapData);
+              } else {
+                 console.error('Failed to fetch map', id);
+                 return;
+              }
+          }
+          this.renderMap();
         } catch (err) {
-          console.error('Failed to load map', err);
+          console.error('Failed to load map or scene', err);
         }
       }
 
