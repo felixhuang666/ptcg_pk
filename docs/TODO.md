@@ -10,6 +10,8 @@ This document tracks the current state of implementation and known issues. See `
 | Top Header Navigation | Documented in `docs/ui_header_navigation_design.md` |
 | RPG Sprite Sheet Editor Features | All advanced features (Manual Crop, Hotkeys, Offset/Gap, Grid, Zoom, Scaling, Reordering, Color Picker) implemented |
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
+| Camera feature | Implement camera capture for custom monsters |
+| RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
 
 ## 2. RPG Scene Editor - Missing Features
 
