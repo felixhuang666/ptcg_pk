@@ -289,38 +289,32 @@ async def upload_monster_image(request: Request):
         print("Upload monster image error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/user/selfie")
-async def upload_selfie(request: Request):
-    session_id = request.cookies.get("session_id")
-    if not session_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    user_data = get_user_data(session_id)
-    if not user_data or "oauth_data" not in user_data:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    user_id = user_data["oauth_data"].get("id")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Invalid user ID")
-
+@app.post("/api/upload_player_image")
+async def upload_player_image(request: Request):
+    print("DEBUG: /api/upload_player_image endpoint hit!")
     body = await request.json()
     image_base64 = body.get("image_base64")
+    filename = body.get("filename")
+    print(f"DEBUG: upload_player_image received filename: {filename}")
+
     if not image_base64:
         raise HTTPException(status_code=400, detail="Missing image data")
+    if not filename:
+        raise HTTPException(status_code=400, detail="Missing filename")
+
+    # Basic sanitize
+    filename = re.sub(r'[^a-zA-Z0-9_.-]', '', filename)
 
     try:
         if image_base64.startswith("data:image"):
             image_base64 = image_base64.split(",")[1]
 
-        # Basic size limit (e.g. roughly 5MB of base64 data)
         if len(image_base64) > 5 * 1024 * 1024 * 1.33:
             raise HTTPException(status_code=400, detail="Image size too large")
 
         image_data = base64.b64decode(image_base64)
 
-        filename = f"{user_id}.png"
-
-        # Save to both public and dist directories for dev/prod
+        # players_pic folder
         public_path = os.path.join("public", "assets", "players_pic", filename)
         dist_path = os.path.join("dist", "assets", "players_pic", filename)
 
@@ -335,6 +329,7 @@ async def upload_selfie(request: Request):
 
         return {"success": True, "filename": filename}
     except Exception as e:
+        print("Upload player image error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/auth/logout")

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store/appStore';
+import PlayerCameraCapture from './PlayerCameraCapture';
 
 interface RoleSettingProps {
   onBack: () => void;
@@ -13,10 +14,6 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
   const [userId, setUserId] = useState<string>('');
   const [picTimestamp, setPicTimestamp] = useState<number>(Date.now());
   const [showCamera, setShowCamera] = useState(false);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const [snapshot, setSnapshot] = useState<string | null>(null);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     // Fetch user profile for nickname and ID
@@ -72,75 +69,6 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
     }
   };
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      setCameraStream(stream);
-      setShowCamera(true);
-      setSnapshot(null);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.error('Error accessing camera:', err);
-      alert('無法存取相機，請確認權限設定');
-    }
-  };
-
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-    }
-    setShowCamera(false);
-  };
-
-  const takeAndUploadSnapshot = async () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      if (context) {
-        // Mirror the canvas context so the saved image matches the video preview
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/png');
-        setSnapshot(dataUrl);
-
-        setIsSaving(true);
-        try {
-          await fetch('/api/user/selfie', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_base64: dataUrl })
-          });
-          setPicTimestamp(Date.now());
-          stopCamera();
-        } catch (e) {
-          console.error('Failed to save selfie', e);
-        } finally {
-          setIsSaving(false);
-        }
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (showCamera && cameraStream && videoRef.current) {
-      videoRef.current.srcObject = cameraStream;
-      videoRef.current.play().catch(err => console.error("Error playing video:", err));
-    }
-  }, [showCamera, cameraStream]);
-
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, [cameraStream]);
-
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8">
       <div className="max-w-2xl w-full bg-slate-800 rounded-3xl p-10 shadow-2xl border border-slate-700">
@@ -183,7 +111,7 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
             <div className="mb-4 relative w-32 h-32 rounded-full overflow-hidden border-4 border-slate-600 bg-slate-800 flex items-center justify-center">
               {userId ? (
                 <img
-                  src={`/assets/players_pic/${userId}.png?t=${picTimestamp}`}
+                  src={`/assets/players_pic/player_${userId}.png?t=${picTimestamp}`}
                   alt="Player Profile"
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -195,7 +123,7 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
               )}
             </div>
             <button
-              onClick={startCamera}
+              onClick={() => setShowCamera(true)}
               className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-lg transition-colors"
             >
               拍照
@@ -204,48 +132,14 @@ export default function RoleSetting({ onBack }: RoleSettingProps) {
         </div>
 
         {showCamera && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 p-6 rounded-3xl max-w-md w-full flex flex-col items-center">
-              <h2 className="text-2xl font-bold mb-4 text-white">拍攝大頭貼</h2>
-
-              <div className="relative w-full aspect-square bg-black rounded-xl overflow-hidden mb-6 flex items-center justify-center">
-                {!snapshot ? (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover transform scale-x-[-1]"
-                    onPlay={() => {
-                      if (videoRef.current) {
-                        videoRef.current.style.transform = "scaleX(-1)";
-                      }
-                    }}
-                  ></video>
-                ) : (
-                  <img src={snapshot} alt="Snapshot" className="w-full h-full object-cover" />
-                )}
-                <canvas ref={canvasRef} className="hidden"></canvas>
-              </div>
-
-              <div className="flex gap-4 w-full">
-                <button
-                  onClick={stopCamera}
-                  disabled={isSaving}
-                  className="flex-1 py-3 bg-slate-600 hover:bg-slate-500 disabled:opacity-50 rounded-xl font-bold"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={takeAndUploadSnapshot}
-                  disabled={isSaving}
-                  className="flex-1 py-3 bg-pink-600 hover:bg-pink-500 disabled:opacity-50 rounded-xl font-bold flex items-center justify-center gap-2"
-                >
-                  {isSaving ? '上傳中...' : '拍照並上傳'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <PlayerCameraCapture
+            userId={userId}
+            onCaptureComplete={() => {
+              setPicTimestamp(Date.now());
+              setShowCamera(false);
+            }}
+            onCancel={() => setShowCamera(false)}
+          />
         )}
 
         {loading ? (
