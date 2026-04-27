@@ -72,5 +72,5 @@ The RPG Map Editor features a specialized, highly interactive interface for map 
 - **Desktop (> 1024px)**: Full arena experience with side panels.
 
 ## 7. State Persistence
-- **View Persistence**: The application remembers the last active game mode (e.g., "RPG_MODE") across sessions using browser cookies (`last_view`). This ensures players returning to the game can seamlessly continue their experience without having to navigate through the main menu again.
+- **View Persistence**: The application remembers the last active game mode (e.g., "RPG_MODE") across sessions using browser cookies (`last_view`). This ensures players returning to the game can seamlessly continue their experience without having to navigate through the main menu again. The application also supports deep linking via URL query parameters (e.g., `/?view=SPRITE_SHEET_EDITOR` or `/?view=GAME_OBJECT_EDITOR&templateId=...`) to directly access specific views and editors.
 - **Zustand Persist**: Team configurations, monster selections, and dice setups are persisted to localStorage.
