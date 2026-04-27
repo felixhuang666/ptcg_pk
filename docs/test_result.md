@@ -1,29 +1,40 @@
 # Test Results
 
-## Frontend Tests
-### Vitest (React Components)
-- `tests/App.test.tsx` (1 test): **Passed**
-- Summary: 1/1 test suites passed, 1/1 tests passed.
+## Frontend Tests (Vitest)
+```
+✓ tests/App.test.tsx (1 test)
 
-### Playwright (E2E Tests)
-- `tests/real_frontend.spec.ts:3:1` › verify real frontend via dev login: **Passed**
-- `tests/test_rpg_scene_editor.spec.ts:5:1` › RPG Scene Editor - Import/Export Scene: **Passed**
-- `tests/verify_rpg.spec.ts:3:1` › verify RPG mode and Map Editor rendering: **Passed**
-- Summary: 3 passed tests.
+Test Files  1 passed (1)
+     Tests  1 passed (1)
+```
+
+## E2E Tests (Playwright)
+```
+Running 3 tests using 1 worker
+
+[1/3] [chromium] › tests/real_frontend.spec.ts:3:1 › verify real frontend via dev login
+[2/3] [chromium] › tests/test_rpg_scene_editor.spec.ts:5:1 › RPG Scene Editor - Import/Export Scene
+[3/3] [chromium] › tests/verify_rpg.spec.ts:3:1 › verify RPG mode and Map Editor rendering
+
+  3 passed
+```
 
 ## Backend Tests (Pytest)
-- `backend/tests/test_api_maps.py`: 4 tests, **Passed**
-- `backend/tests/test_api_maps_resize.py`: 1 test, **Passed**
-- `backend/tests/test_api_scenes.py`: 4 tests, **Passed**
-- `backend/tests/test_main.py`: 3 tests, **Passed**
-- `backend/tests/test_real_api.py`: 2 tests, **Passed**
-- `backend/tests/test_save_local.py`: 1 test, **Passed**
-- Summary: 15 passed tests in 3.28s.
+```
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.13.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 15 items
 
-## Changes Made
-- Updated `Makefile` to restrict Playwright to run with 1 worker (`npx playwright test --workers 1`) to prevent concurrent state conflict which could lead to flakiness (timeout) during the execution of `test_rpg_scene_editor.spec.ts`.
-- Run `make test` for backend and e2e test, which run correctly.
-- Add camera capture feature.
-- Fix camera max resolution 413 error and handling error.
-- Implement quest scene dropdown grouping for the RPG Mode.
-- Fix RPG mode rendering bug and missing sprite 404 issue.
+backend/tests/test_api_maps.py ....                                      [ 26%]
+backend/tests/test_api_maps_resize.py .                                  [ 33%]
+backend/tests/test_api_scenes.py ....                                    [ 60%]
+backend/tests/test_main.py ...                                           [ 80%]
+backend/tests/test_real_api.py ..                                        [ 93%]
+backend/tests/test_save_local.py .                                       [100%]
+
+============================== 15 passed in 3.38s ==============================
+```
