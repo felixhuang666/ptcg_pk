@@ -21,7 +21,7 @@ create table public.game_scene (
 ```
 
 ### 2.1 map_list
-The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world.
+The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world. Maps are associated with specific layers via `layer_id` and are dynamically sorted during rendering based on the index order defined in the `sceneData.layers` array. Note: For backwards compatibility, the code may also check `scene_entities.map_list`.
 
 ```json
 {
@@ -61,9 +61,9 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
 ## 3. Current Implementation Status
 
 ### 3.1 Implemented Features
-- Scene Editor canvas with Phaser rendering
+- Scene Editor canvas fully rendering maps using Phaser's tilemap system (loading map_data and tilesets) instead of placeholder bounding boxes
 - Map placement and offset editing via drag-and-drop
-- Map layering support with z-ordering
+- Map layering support with z-ordering based on `layer_id`
 - Panel toggles (Left Palette, Right Inspector)
 - Scene save/load functionality
 - Export/Import scene JSON
