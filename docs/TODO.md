@@ -12,6 +12,8 @@ This document tracks the current state of implementation and known issues. See `
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
 | Camera feature | Implement camera capture for custom monsters |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
+| Multi-map RPG Scene Rendering | Dynamically merge multi-map scenes in RPG mode |
+| Quest Player Restore | Restore last quest in RPG Mode |
 
 ## 2. RPG Scene Editor - Missing Features
 
