@@ -57,3 +57,24 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+
+## 6. Game Object Template & Controller - Missing Features
+
+### 6.1 Game Object Controller (from rpg_object_design.md)
+| Feature | Priority | Status | Description |
+|---------|----------|--------|-------------|
+| Controller 系統 | High | Not Implemented | 需要完整的控制器框架 |
+| 碰撞檢測 | High | Not Implemented | 與玩家互動觸發 |
+| 對話系統 | Medium | Not Implemented | NPC 對話框顯示 |
+| 傳送點邏輯 | Medium | Not Implemented | 場景切換 |
+| 寶箱系統 | Low | Not Implemented | 開啟/關閉狀態 |
+| 戰鬥觸發 | High | Not Implemented | 遇敵轉場 |
+
+### 6.2 Game Object Template Creator (from rpg_obj_creator.md)
+| Feature | Priority | Status | Description |
+|---------|----------|--------|-------------|
+| 驗證輸入檔案 | Medium | Not Implemented | 驗證輸入的檔案是否存在於 `public/assets/` |
+| 自動完成建議 | Low | Not Implemented | 提供自動完成建議 |
+| 渲染精靈圖動畫 | Medium | Not Implemented | 即時渲染精靈圖動畫 |
+| 碰撞體覆蓋範圍 | Medium | Not Implemented | 顯示碰撞體覆蓋範圍 |
+| 加入 Scene | Low | Not Implemented | 可選：直接加入到當前 Scene |
