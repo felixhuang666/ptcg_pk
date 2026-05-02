@@ -12,6 +12,11 @@ This document tracks the current state of implementation and known issues. See `
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
 | Camera feature | Implement camera capture for custom monsters |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
+| RPG Scene Map Rendering | Implemented multi-map scene merging and concurrent rendering in RPG Mode |
+| Player Profile Upload | Self-upload for player profile pictures (Role Setting) |
+| Game Object Default Image | Support default image fallback for game objects missing sprite sheets |
+| Scene API | Backend API support for deleting local scenes |
+| Physics Crash | Fixed Phaser collision crash related to map destruction |
 
 ## 2. RPG Scene Editor - Missing Features
 
