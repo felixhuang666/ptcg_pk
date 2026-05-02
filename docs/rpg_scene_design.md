@@ -23,15 +23,19 @@ create table public.game_scene (
 ### 2.1 map_list
 The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world.
 
+In `RpgMode`, scenes with multiple maps are supported by concurrently fetching all maps in the `map_list` and dynamically merging their layers and tilesets into a single virtual map object based on their `offset_position`. This allows the existing single-map Phaser rendering and physics logic to function seamlessly across composite scenes.
+
 ```json
 {
   "map_list": [
     {
+      "instance_id": "inst_map_1_01",
       "map_id": "map_1",
       "map_size": { "width": 40, "height": 40 },
       "offset_position": { "x": 0, "y": 0 }
     },
     {
+      "instance_id": "inst_map_2_01",
       "map_id": "map_2",
       "map_size": { "width": 20, "height": 40 },
       "offset_position": { "x": 40, "y": 0 }
