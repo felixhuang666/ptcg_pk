@@ -1,7 +1,7 @@
 # RPG Mode Design Document
 
 ## 1. Overview
-RPG Mode is a multi-player, real-time map exploration feature within "Monster Battle". It allows players to walk around the map, interact with others, chat in real-time, and trigger map events.
+RPG Mode is a multi-player, real-time map exploration feature within "Monster Battle". It allows players to walk around the map, interact with others, chat in real-time, and trigger map events. It also supports seamless loading of multi-map scenes, dynamically merging multiple Phaser map objects and tilesets into a single unified virtual space.
 
 ## 2. UI Design
 - **Map Viewport**: Central full-screen or maximized container powered by the Phaser game engine.
@@ -27,6 +27,7 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 - Serves dynamic static assets (sprites, tilesets) and map data via REST endpoints (`/api/map`, `/api/maps`, `/api/map/tilesets`).
 
 ## 4. External Data Interaction
+- **Quest and Location Saving**: The frontend continuously syncs the player's current location (`x`, `y`), `map_id`, and active `quest_id` to the `/api/user/location` endpoint. Upon re-entering RPG Mode, the game restores this state so the player resumes exactly where they left off.
 - **Database (Supabase)**: User authentication and persistent profiles/roles are synced via REST API endpoints (`/api/auth/me`).
 - **Map Data**: Stored dynamically on the server or in persistent storage (e.g., Supabase storage/database) and fetched at initialization.
 - **State Synchronization**: Position and animations are synchronized locally in memory on the server during the session. Map updates are broadcasted to active clients via `map_updated_v2` events.

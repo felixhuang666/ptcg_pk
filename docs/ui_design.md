@@ -35,7 +35,10 @@ The RPG Map Editor features a specialized, highly interactive interface for map 
   - *Tile Details*: Displays detailed metadata about the currently selected tile (ID, Source Image, Coordinates, Tags).
   - *Advanced Settings*: Provides tools to Rename the map, Resize dimensions (width/height), and modify block sizes.
 
-### 3.4 Camera Capture View
+### 3.4 Role Setting View
+- **Role Setting**: Allows player to modify their alias and access the camera to capture a selfie. The captured snapshot is immediately saved as a local asset and rendered as their profile picture.
+
+### 3.5 Camera Capture View
 - **Monster Camera Capture**: A modal overlay (`MonsterCameraCapture.tsx`) powered by `react-html5-camera-photo`. Accessible via the "測試相機" (Test Camera) button in the global top navigation bar of the App. It provides an interface to take photos, which are then compressed and uploaded to the server to be used as custom monster sprites.
 
 ## 4. Visual Elements
