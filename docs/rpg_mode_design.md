@@ -21,6 +21,7 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 - State management relies on Zustand (`appStore`) for user roles and global state.
 - Component communicates with Backend via WebSocket (`socket.io-client`).
 
+- Supports scenes with multiple maps by concurrently fetching all maps in the `map_list` and dynamically merging their layers and tilesets into a single virtual `mapData` object for rendering.
 ### 3.2 Backend (FastAPI + Socket.IO)
 - Hosts WebSocket server to manage player connections (`rpg_connect`, `player_moved`, `chat_message`).
 - Broadcasts real-time events (`current_players`, `player_joined`, `player_moved`, `player_left`, `chat_message`) back to all connected clients.

@@ -18,7 +18,11 @@
 - `backend/tests/test_main.py`: 3 tests, **Passed**
 - `backend/tests/test_real_api.py`: 2 tests, **Passed**
 - `backend/tests/test_save_local.py`: 1 test, **Passed**
-- Summary: 15 passed tests in 3.28s.
+- Summary: 15 passed tests in 4.15s.
+
+## Test Run Details
+- Date: 2026-05-08 15:57:32
+- Scope: Full Test Suite (Frontend, E2E, Backend)
 
 ## Changes Made
 - Updated `Makefile` to restrict Playwright to run with 1 worker (`npx playwright test --workers 1`) to prevent concurrent state conflict which could lead to flakiness (timeout) during the execution of `test_rpg_scene_editor.spec.ts`.
@@ -27,3 +31,4 @@
 - Fix camera max resolution 413 error and handling error.
 - Implement quest scene dropdown grouping for the RPG Mode.
 - Fix RPG mode rendering bug and missing sprite 404 issue.
+- Update test report documentation.
