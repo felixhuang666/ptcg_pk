@@ -23,6 +23,8 @@ create table public.game_scene (
 ### 2.1 map_list
 The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world.
 
+*Note: In older or alternative JSON structures, `map_list` may occasionally be nested under `scene_entities.map_list`. The frontend implementation defensively checks both locations.*
+
 ```json
 {
   "map_list": [
@@ -41,11 +43,14 @@ The `map_list` is a JSONB array that defines the spatial arrangement of individu
 ```
 
 ### 2.2 scene_entities
-The `scene_entities` JSONB structure holds instances of all dynamic objects, items, NPCs, and events placed globally within the scene coordinates.
+The `scene_entities` JSONB structure holds instances of all dynamic objects, items, NPCs, and events placed globally within the scene coordinates. This also includes `game_objects`, which refer to templates used to instantiate dynamic entities.
 
 ```json
 {
   "layers": [...],
+  "game_objects": [
+    { "id": "inst_dragon_boss_01", "template_id": "npc_boss_dragon", "position": { "x": 10, "y": 15 } }
+  ],
   "npcs": [
     { "id": "npc_1", "type": "merchant", "position": { "x": 15, "y": 20 } }
   ],
@@ -88,8 +93,8 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
 The Scene Editor respects the 6-layer architecture of individual maps (`base`, `decorations`, `obstacles`, `objectCollides`, `objectEvent`, `topLayer`), but introduces a new paradigm for dynamic entities.
 
 ### Integration Approach
-* **Static Map Layers (Layers 1-6)**: Loaded from individual map definitions based on the `map_list`. Rendered statically via Phaser tilemaps.
-* **Dynamic Scene Layer**: A virtual 7th layer managed by the Scene Editor. This layer contains Phaser Sprites and Objects (NPCs, Items) that have their own update loops and physics bodies.
+* **Static Map Layers (Layers 1-6)**: Loaded from individual map definitions based on the `map_list`. In RPG Mode, if a scene contains multiple maps, the system dynamically concurrently fetches all listed maps and merges them into a single virtual map object. It calculates a unified bounding box and composites their layers/tilesets, enabling seamless exploration across map boundaries within the scene.
+* **Dynamic Scene Layer**: A virtual 7th layer managed by the Scene Editor. This layer contains Phaser Sprites and Objects (NPCs, Items, Game Objects) that have their own update loops and physics bodies.
 * **Depth Sorting (Z-Index)**: Dynamic scene objects are depth-sorted based on their global Y-coordinate to ensure they render correctly in front of or behind map features (like trees on the `objectCollides` layer). The map's `topLayer` always renders above everything else to maintain dynamic transparency.
 
 ## 5. UI Design (Current Implementation)
