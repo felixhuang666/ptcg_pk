@@ -13,7 +13,7 @@ Game Object 採用三層架構設計：
 ## 2. Game Object Template (物件模板)
 
 以 JSON 格式描述，存放在 `public/assets/game_obj_templates/` 中。
-為了支援「地圖行走」與「戰鬥場景」的巨大差異，Template 需要支援多種動畫狀態與彈性的碰撞尺寸。
+為了支援「地圖行走」與「戰鬥場景」的巨大差異，Template 需要支援多種動畫狀態與彈性的碰撞尺寸。如果沒有設定精靈圖，也可以使用單張靜態圖片。
 
 ```jsonc
 {
@@ -24,6 +24,9 @@ Game Object 採用三層架構設計：
     // 預設容器大小 (地圖上)
     "container_width": 32,
     "container_height": 32,
+
+    // Default image fallback if sprite_sheets is empty (from assets/game_obj_img/)
+    "default_image": "object_default.jpg",
 
     // 定義各個腳本情境所需的所有 Sprite Sheets
     "sprite_sheets": [
