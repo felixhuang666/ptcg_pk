@@ -21,6 +21,7 @@ Depending on the active mode (`RpgMode` Play vs Edit, `RpgMapEditor`, `RpgSceneE
 *   **Refresh**: Reloads the current state or view (using `RefreshCw` icon).
 *   **Chat Toggle**: For authenticated players, a button to show or hide the global real-time chat interface (using `MessageSquare` icon).
 *   **Settings**: A button to open the RPG settings overlay, allowing users to switch between "Play Mode" and "Edit Mode" (using `Settings` icon).
+*   **Scene Dropdown**: A dropdown menu grouped by quest, allowing players to navigate between scenes linked to the active quest.
 
 #### 2.3.2 RpgMapEditor
 The dedicated Map Editor extends the top bar to become a full tool palette:

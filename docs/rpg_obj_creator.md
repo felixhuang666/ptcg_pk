@@ -42,6 +42,7 @@
 | 屬性 | 說明 | 支援格式 |
 |------|------|----------|
 | 精靈圖 | 素材檔案與切割尺寸 | .png, .jpg, .gif |
+| 預設圖片 | 靜態圖片後備支援 (支援相機拍照上傳) | .png, .jpg, .webp |
 | 動畫狀態 | 各狀態的幀率與順序 | idle, walk, run, attack, etc. |
 | 碰撞體 | 形狀、尺寸、位置偏移 | rectangle, circle, polygon |
 | 互動類型 | 玩家互動方式 | talk, pickup, open, attack |

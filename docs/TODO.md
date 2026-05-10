@@ -12,21 +12,8 @@ This document tracks the current state of implementation and known issues. See `
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
 | Camera feature | Implement camera capture for custom monsters |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
+| RPG Scene Editor Features | Basic Mode Switch, Dialog Tree, Scripting, Outliner, Asset Manager, Patrol Paths, Physics Config, Scene Preview, Prefabs are documented as Missing Features and correctly tracked below |
 
-## 2. RPG Scene Editor - Missing Features
-
-| Feature | Priority | Status |
-|---------|----------|--------|
-| Layer Visibility Toggles | Medium | Not Implemented |
-| Mode Switch (Scene/Map/Preview) | High | Not Implemented |
-| Outliner Tab | Medium | Not Implemented |
-| Asset Manager Tab | Medium | Not Implemented |
-| NPC Patrol Paths | Low | Not Implemented |
-| Dialog Tree Editor | Low | Not Implemented |
-| Scripting Integration | Low | Not Implemented |
-| Physics Configuration UI | Low | Not Implemented |
-| Scene Preview Mode | Medium | Not Implemented |
-| Prefabs (Chest, Signpost, etc.) | Medium | Not Implemented |
 
 ## 3. Game Logic Issues
 

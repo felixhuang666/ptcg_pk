@@ -50,6 +50,8 @@ Game Object 採用三層架構設計：
         "height": 32
     },
 
+    // 若無動畫，可使用預設靜態圖片
+    "default_image": "object_default.jpg",
     // 預設掛載的行為控制器
     "default_controller": "EncounterMonsterController"
 }
