@@ -14,7 +14,7 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 
 ### 3.1 Frontend (React + Phaser)
 - Developed using React 19 and Vite 6, utilizing `RpgMode.tsx` to handle React lifecycle, state management, and UI overlays.
-- `PhaserGame` (internal to `RpgMode.tsx`) handles map rendering across 6 distinct layers (`base`, `decorations`, `obstacles`, `objectCollides`, `objectEvent`, `topLayer`).
+- `PhaserGame` (internal to `RpgMode.tsx`) handles map rendering across 6 distinct layers (`base`, `decorations`, `obstacles`, `objectCollides`, `objectEvent`, `topLayer`). It supports rendering multi-map scenes by concurrently fetching all map configurations listed in the scene (`sceneData.map_list` or `sceneData.scene_entities.map_list`), calculating a global bounding box, and dynamically merging their tile data and tilesets into a single virtual `mapData` object.
 - Implements a Field of View (FOV) / Fog of War mechanism to cull visual visibility of out-of-range players/NPCs and draw darkness outside the player's immediate radius.
 - The `topLayer` actively monitors the player's coordinate to apply dynamic transparency (reducing alpha) when the player walks "under" an element on this layer.
 - Implements dynamic tileset loading (`/api/map/tilesets`) to accurately map tile IDs to the proper visual textures.

@@ -37,6 +37,7 @@ The RPG Map Editor features a specialized, highly interactive interface for map 
 
 ### 3.4 Camera Capture View
 - **Monster Camera Capture**: A modal overlay (`MonsterCameraCapture.tsx`) powered by `react-html5-camera-photo`. Accessible via the "測試相機" (Test Camera) button in the global top navigation bar of the App. It provides an interface to take photos, which are then compressed and uploaded to the server to be used as custom monster sprites.
+- **Player Camera Capture**: A similar modal overlay (`PlayerCameraCapture.tsx`) integrated into the `RoleSetting.tsx` component. It replaces the raw HTML5 implementation, utilizing `react-html5-camera-photo` to provide robust functionality (like switching between user and environment facing modes) for capturing and uploading player profile pictures (`player_${userId}.png`).
 
 ## 4. Visual Elements
 
