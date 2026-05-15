@@ -99,8 +99,9 @@
 
 ## 6. 實作需求
 
-### 6.1 Prompt 解析器
+### 6.1 Prompt 解析器與輸入
 - [x] 支援自然語言關鍵字識別 (初步實作)
+- [x] 提供玩家拍照上傳功能 (經由 `MonsterCameraCapture.tsx` 與 `/api/upload_monster_image` 端點)，支援切換前後鏡頭，將捕捉的畫面設定為物件的 `default_image` 並指派為 monster。
 - [ ] 驗證輸入的檔案是否存在於 `public/assets/`
 - [ ] 提供自動完成建議
 
