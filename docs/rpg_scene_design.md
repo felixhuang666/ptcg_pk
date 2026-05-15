@@ -21,7 +21,7 @@ create table public.game_scene (
 ```
 
 ### 2.1 map_list
-The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world.
+The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world. Note: in some scene payloads, this might be nested under `scene_entities.map_list` (a known technical debt item that the frontend handles defensively).
 
 ```json
 {
@@ -88,7 +88,7 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
 The Scene Editor respects the 6-layer architecture of individual maps (`base`, `decorations`, `obstacles`, `objectCollides`, `objectEvent`, `topLayer`), but introduces a new paradigm for dynamic entities.
 
 ### Integration Approach
-* **Static Map Layers (Layers 1-6)**: Loaded from individual map definitions based on the `map_list`. Rendered statically via Phaser tilemaps.
+* **Static Map Layers (Layers 1-6)**: Loaded from individual map definitions based on the `map_list`. Rendered statically via Phaser tilemaps. In RpgMode, multiple maps are dynamically merged into a single virtual `mapData` object to allow seamless movement across map chunks using the existing single-map rendering logic.
 * **Dynamic Scene Layer**: A virtual 7th layer managed by the Scene Editor. This layer contains Phaser Sprites and Objects (NPCs, Items) that have their own update loops and physics bodies.
 * **Depth Sorting (Z-Index)**: Dynamic scene objects are depth-sorted based on their global Y-coordinate to ensure they render correctly in front of or behind map features (like trees on the `objectCollides` layer). The map's `topLayer` always renders above everything else to maintain dynamic transparency.
 
