@@ -1,0 +1,1 @@
+# Update Test Report\n\n- **Prompt**: run backend test and e2e test\nif need to install package, update requirements.txt\n\ncreate a test report in docs/test_result.md\n- **Commit ID**: N/A\n- **Root Cause**: N/A\n- **Solution**: Ran the tests and updated the report with current metrics.
