@@ -17,7 +17,7 @@ This document tracks the current state of implementation and known issues. See `
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| Layer Visibility Toggles | Medium | Not Implemented |
+| Layer Visibility Toggles | Medium | Implemented |
 | Mode Switch (Scene/Map/Preview) | High | Not Implemented |
 | Outliner Tab | Medium | Not Implemented |
 | Asset Manager Tab | Medium | Not Implemented |

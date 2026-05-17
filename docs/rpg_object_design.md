@@ -117,14 +117,14 @@ Scene Editor 中的 Inspector 可以**覆蓋 (Override)** 模板的預設值，�
 - Game Object Template 讀取與解析
 - Scene Editor 中的物件模板面板
 - 基本的遊戲物件放置與屬性編輯
+- Controller 系統 (編輯器支援設定 Controller 的 `properties`)
+- 傳送點邏輯 (編輯器支援參數配置)
 
 ### 待實作功能
 | 功能 | 狀態 | 說明 |
 |------|------|------|
-| Controller 系統 | 待實作 | 需要完整的控制器框架 |
 | 碰撞檢測 | 待實作 | 與玩家互動觸發 |
 | 對話系統 | 待實作 | NPC 對話框顯示 |
-| 傳送點邏輯 | 待實作 | 場景切換 |
 | 寶箱系統 | 待實作 | 開啟/關閉狀態 |
 | 戰鬥觸發 | 待實作 | 遇敵轉場 |
 
@@ -134,5 +134,5 @@ Scene Editor 中的 Inspector 可以**覆蓋 (Override)** 模板的預設值，�
 1. **Palette 擴充**：左側選單增加 "Game Object Template" 類別，讀取 `public/assets/game_obj_templates`。
 2. **Layer 擴充**：允許拖拉 Object 到特製的 `Object Layer` 或通用的 Layer 上。
 3. **Inspector 擴充**：
-   - 點擊場景上的 Object 後，右側 Inspector 除了 Position、Scale，還要動態顯示該 Controller 所需要的 `properties` 欄位供設計師填寫 (例如讓設計師填入 `battle_scene_id`)。
+   - 點擊場景上的 Object 後，右側 Inspector 除了 Position、Scale，已可動態顯示該 Controller 所需要的 `properties` 欄位供設計師填寫 (例如讓設計師填入 `battle_scene_id`)。
    - 支援 Override Container Size (應付戰鬥場景放大需求)。
