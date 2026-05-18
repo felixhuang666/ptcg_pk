@@ -27,3 +27,4 @@
 - Fix camera max resolution 413 error and handling error.
 - Implement quest scene dropdown grouping for the RPG Mode.
 - Fix RPG mode rendering bug and missing sprite 404 issue.
+- Update docs to include Quest Editor and GameObjectTemplateCreator.

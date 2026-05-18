@@ -51,7 +51,10 @@ Game Object 採用三層架構設計：
     },
 
     // 預設掛載的行為控制器
-    "default_controller": "EncounterMonsterController"
+    "default_controller": "EncounterMonsterController",
+
+    // Optional fallback image if sprite_sheets are not provided or not ready
+    "default_image": "object_default.jpg"
 }
 ```
 
