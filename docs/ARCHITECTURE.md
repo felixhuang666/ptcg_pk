@@ -107,6 +107,8 @@
 | RpgMode | `RpgMode.tsx` | Multiplayer map exploration |
 | RpgMapEditor | `RpgMapEditor.tsx` | Tile-based map creation |
 | RpgSceneEditor | `RpgSceneEditor.tsx` | Multi-map scene composition |
+| QuestEditor | `QuestEditor.tsx` | Quest composition and scene linking |
+| GameObjectTemplateCreator | `GameObjectTemplateCreator.tsx` | UI tool to create object template |
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
 | Admin | `Admin.tsx` | Game settings panel |
@@ -132,11 +134,16 @@
 | POST | `/api/map` | Create/update map |
 | POST | `/api/map/generate` | Generate random map |
 | GET | `/api/map/tilesets` | List tilesets |
+| GET | `/api/quests` | List all quests |
+| GET | `/api/quest/{id}` | Get quest by ID |
+| POST | `/api/quest` | Create/update quest |
 | GET | `/api/scenes` | List all scenes |
 | GET | `/api/scene/{id}` | Get scene by ID |
 | POST | `/api/scene` | Create scene |
 | PUT | `/api/scene/{id}` | Update scene |
 | DELETE | `/api/scene/{id}` | Delete scene |
+| POST | `/api/upload_monster_image` | Upload monster image |
+| POST | `/api/upload_player_image` | Upload player image |
 
 ### Socket.IO Events
 
