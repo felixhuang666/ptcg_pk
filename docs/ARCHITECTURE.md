@@ -107,9 +107,12 @@
 | RpgMode | `RpgMode.tsx` | Multiplayer map exploration |
 | RpgMapEditor | `RpgMapEditor.tsx` | Tile-based map creation |
 | RpgSceneEditor | `RpgSceneEditor.tsx` | Multi-map scene composition |
+| QuestEditor | `QuestEditor.tsx` | Quest composition and scene linking |
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
 | Admin | `Admin.tsx` | Game settings panel |
+| PlayerCameraCapture | `PlayerCameraCapture.tsx` | Player avatar uploading |
+| MonsterCameraCapture | `MonsterCameraCapture.tsx` | Custom monster sprite camera capture |
 
 ### 4.2 Backend Modules
 
@@ -137,6 +140,12 @@
 | POST | `/api/scene` | Create scene |
 | PUT | `/api/scene/{id}` | Update scene |
 | DELETE | `/api/scene/{id}` | Delete scene |
+| GET | `/api/quests` | List all quests |
+| GET | `/api/quest/{id}` | Get quest by ID |
+| POST | `/api/quest` | Create quest |
+| PUT | `/api/quest/{id}` | Update quest |
+| DELETE | `/api/quest/{id}` | Delete quest |
+| POST | `/api/save_local` | Save entity locally |
 
 ### Socket.IO Events
 
@@ -182,6 +191,14 @@ interface AppState {
 
 ## 7. Game State (Backend)
 
+### 7.1 In-Memory Fallbacks
+The FastAPI backend uses global in-memory dictionaries as local state fallbacks. This pattern ensures the application and entity creation remain functional even when the Supabase database is not configured or fails.
+- `in_memory_maps`
+- `rpg_npcs`
+- `in_memory_scenes`
+- `in_memory_quests`
+
+### 7.2 Active Battle State
 ```typescript
 interface GameState {
   roomId: string;

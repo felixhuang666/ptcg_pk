@@ -3,6 +3,8 @@
 ## 1. Overview
 The RPG Scene Editor is a unified tool for creating and editing comprehensive RPG Scenes within "Monster Battle". An RPG Scene serves as a macro-level container that orchestrates multiple maps, NPCs, items, game objects, and events to create a cohesive game world for players to explore.
 
+At a higher level, Scenes are grouped under **Quests**, which act as the macro-level container for multi-scene gameplay. A Quest designates a `default_scene_id` as the player's entry point.
+
 The editor combines traditional map painting capabilities with scene composition, allowing designers to stitch individual maps together, populate them with interactive entities, and define complex game logic.
 
 ## 2. RPG Scene Structure
