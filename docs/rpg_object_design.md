@@ -117,6 +117,9 @@ Scene Editor 中的 Inspector 可以**覆蓋 (Override)** 模板的預設值，�
 - Game Object Template 讀取與解析
 - Scene Editor 中的物件模板面板
 - 基本的遊戲物件放置與屬性編輯
+- `GameObjectTemplateCreator` 可作為建立與編輯現有模板的介面 (傳入 `templateId`)
+- 支援靜態圖 (`default_image`) 作為未設定精靈圖的替代方案
+- 整合相機拍攝 (`MonsterCameraCapture`) 快速建立自訂實體照片
 
 ### 待實作功能
 | 功能 | 狀態 | 說明 |

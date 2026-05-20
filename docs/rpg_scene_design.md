@@ -69,6 +69,7 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
 - Export/Import scene JSON
 - Basic game object template support
 - Tileset integration for visual rendering
+- Game Object Template Creator acts as an editor with existing data populated if `templateId` is supplied
 
 ### 3.2 Missing/Planned Features
 | Feature | Status | Notes |
