@@ -36,7 +36,11 @@ The RPG Map Editor features a specialized, highly interactive interface for map 
   - *Advanced Settings*: Provides tools to Rename the map, Resize dimensions (width/height), and modify block sizes.
 
 ### 3.4 Camera Capture View
-- **Monster Camera Capture**: A modal overlay (`MonsterCameraCapture.tsx`) powered by `react-html5-camera-photo`. Accessible via the "測試相機" (Test Camera) button in the global top navigation bar of the App. It provides an interface to take photos, which are then compressed and uploaded to the server to be used as custom monster sprites.
+- **Monster Camera Capture**: A modal overlay (`MonsterCameraCapture.tsx`) powered by `react-html5-camera-photo`. Accessible via the "測試相機" (Test Camera) button in the global top navigation bar of the App, and within the `GameObjectTemplateCreator`. It provides an interface to take photos, which are then compressed and uploaded to the server to be used as custom monster sprites.
+- **Player Camera Capture**: A modal overlay (`PlayerCameraCapture.tsx`) functioning similarly to the monster capture, used within the Role Setting view to allow users to take a selfie for their avatar.
+
+### 3.5 Game Object Template Creator View
+- **Creator/Editor Interface**: The `GameObjectTemplateCreator.tsx` serves as both a creation tool and a dedicated editor for existing templates (activated when a `templateId` is passed in the URL). It supports configuring templates with animations (`sprite_sheets`) or static display via a `default_image`, and features direct camera integration for taking photos of real-world objects to use as game sprites.
 
 ## 4. Visual Elements
 
