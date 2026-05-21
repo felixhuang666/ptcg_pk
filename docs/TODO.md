@@ -12,6 +12,10 @@ This document tracks the current state of implementation and known issues. See `
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
 | Camera feature | Implement camera capture for custom monsters |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
+| Camera capture for custom monsters | Implemented `MonsterCameraCapture.tsx` |
+| Player selfie camera capture | Implemented `PlayerCameraCapture.tsx` |
+| Quest Editor implementation | Implemented `QuestEditor.tsx` |
+| Game Object Template Creator | Implemented `GameObjectTemplateCreator.tsx` as dual-purpose editor/creator |
 
 ## 2. RPG Scene Editor - Missing Features
 
