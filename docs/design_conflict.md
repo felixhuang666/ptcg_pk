@@ -20,3 +20,6 @@ This document tracks identified conflicts between original design specifications
 ## 4. RPG Scene Editor Feature Scope
 *   **Conflict**: `docs/rpg_scene_design.md` describes a comprehensive, engine-like tool featuring a scripting editor, node-based dialog trees, advanced physics integration, and interactive preview modes. The actual implementation in `src/components/RpgSceneEditor.tsx` is significantly simpler, primarily focusing on grid-based map chunk placement and basic entity positioning.
 *   **Resolution**: These aspirational features have been logged in `docs/TODO.md`. The design document currently overstates the capabilities of the editor. Future development phases will need to systematically implement these advanced features or the design spec must be scaled down to reflect MVP status.
+## 5. Game Object Editor Scope
+*   **Conflict**: The design implies a single 'Game Object Editor' for template creation, but the codebase implements `GameObjectTemplateCreator.tsx` which serves a dual purpose as both the interactive creator tool and the dedicated 'Game Object Editor' for existing templates.
+*   **Resolution**: Documentation in `docs/ARCHITECTURE.md` has been updated to clarify that `GameObjectTemplateCreator.tsx` handles both creation and editing of templates.
