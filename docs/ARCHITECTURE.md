@@ -26,6 +26,7 @@
 │   ├── maps/                     # Pre-built map JSON files
 │   ├── game_scene/               # Scene JSON files
 │   ├── game_obj_templates/       # NPC/object templates
+│   ├── quests/                   # Quest JSON files
 │   └── map_tileset/              # Tileset images & metadata
 ├── docs/                         # Design documentation
 └── dist/                         # Built frontend output
