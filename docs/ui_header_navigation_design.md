@@ -13,6 +13,9 @@ Across most RPG-related interfaces, the header generally contains:
 *   **Map Editor Toggle**: Quick switch button to access the standalone `RpgMapEditor` view.
 *   **Scene Editor Toggle**: Quick switch button to access the `RpgSceneEditor` view.
 *   **Fullscreen Toggle**: A button to enter or exit browser fullscreen mode (using `Maximize`/`Minimize` icons).
+*   **Quest Editor Toggle**: Quick switch button to access the `QuestEditor` view.
+*   **Sprite Sheet Editor Toggle**: Quick switch button to access the `SpriteSheetEditor` view.
+*   **Game Object Editor Toggle**: Quick switch button to access the `GameObjectTemplateCreator` view.
 
 ### 2.3 Context-Specific Actions
 Depending on the active mode (`RpgMode` Play vs Edit, `RpgMapEditor`, `RpgSceneEditor`), the header adapts to include tools specific to that mode.

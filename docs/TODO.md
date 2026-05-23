@@ -57,3 +57,8 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+
+
+### 5.2 UI Header Toggles vs Implementation
+- **Conflict**: The Header Navigation documentation defined buttons for map, scene, and fullscreen toggles, but additional components like `QuestEditor`, `GameObjectTemplateCreator`, and `SpriteSheetEditor` were created.
+- **Resolution**: Documentation in `docs/ui_header_navigation_design.md` and `docs/ARCHITECTURE.md` has been updated to include these components.
