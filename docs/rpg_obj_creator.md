@@ -33,7 +33,8 @@
   ],
   "collision": { "enabled": true, "width": 32, "height": 48, "shape": "rectangle" },
   "interaction": { "type": "dialog", "dialog_id": "merchant_dialog_01" },
-  "default_controller": "StaticNpcController"
+  "default_controller": "StaticNpcController",
+  "default_image": "merchant_default.png"
 }
 ```
 
@@ -42,6 +43,7 @@
 | 屬性 | 說明 | 支援格式 |
 |------|------|----------|
 | 精靈圖 | 素材檔案與切割尺寸 | .png, .jpg, .gif |
+| 預設圖片 | 若無精靈圖，可提供單張靜態圖片 | .png, .jpg, .gif |
 | 動畫狀態 | 各狀態的幀率與順序 | idle, walk, run, attack, etc. |
 | 碰撞體 | 形狀、尺寸、位置偏移 | rectangle, circle, polygon |
 | 互動類型 | 玩家互動方式 | talk, pickup, open, attack |
@@ -81,11 +83,12 @@
 │  │    動畫預覽: [▼idle]   │  │    形狀: [矩形 ▼]         │ │
 │  │    ▶ ━━━○━━━           │  │    寬: [32] 高: [48]      │ │
 │  │                        │  │                           │ │
-│  │    動畫列表:            │  │  互動:                    │ │
-│  │    ☑ idle   8fps       │  │    類型: [對話 ▼]         │ │
-│  │    ☐ walk  12fps       │  │    對話ID: [___________]  │ │
-│  │    ☐ run    10fps      │  │                           │ │
-│  │                        │  │  Controller:              │ │
+│  │    預設圖片: [_______] │  │  互動:                    │ │
+│  │                        │  │                           │ │
+│  │    動畫列表:            │  │  類型: [對話 ▼]         │ │
+│  │    ☑ idle   8fps       │  │    對話ID: [___________]  │ │
+│  │    ☐ walk  12fps       │  │                           │ │
+│  │    ☐ run    10fps      │  │  Controller:              │ │
 │  │                        │  │  [StaticNpcController]    │ │
 │  └───────────────────────┘  └───────────────────────────┘ │
 │                                                             │

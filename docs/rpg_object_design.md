@@ -44,6 +44,9 @@ Game Object 採用三層架構設計：
       }
     ],
 
+    // 可選：用於靜態顯示的預設圖片，若 sprite_sheets 為空或不存在則會退回使用此圖片
+    "default_image": "object_default.jpg",
+
     "collision": {
         "enabled": true,
         "width": 32,
