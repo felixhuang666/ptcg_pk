@@ -108,7 +108,11 @@
 | RpgMapEditor | `RpgMapEditor.tsx` | Tile-based map creation |
 | RpgSceneEditor | `RpgSceneEditor.tsx` | Multi-map scene composition |
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
+| GameObjectTemplateCreator | `GameObjectTemplateCreator.tsx` | Interactive tool to create game object templates |
+| QuestEditor | `QuestEditor.tsx` | Tool to manage quests and sequence multiple scenes |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
+| PlayerCameraCapture | `PlayerCameraCapture.tsx` | Avatar capture interface for player character |
+| MonsterCameraCapture | `MonsterCameraCapture.tsx` | Monster capture interface for custom monster sprites |
 | Admin | `Admin.tsx` | Game settings panel |
 
 ### 4.2 Backend Modules
