@@ -20,3 +20,11 @@ This document tracks identified conflicts between original design specifications
 ## 4. RPG Scene Editor Feature Scope
 *   **Conflict**: `docs/rpg_scene_design.md` describes a comprehensive, engine-like tool featuring a scripting editor, node-based dialog trees, advanced physics integration, and interactive preview modes. The actual implementation in `src/components/RpgSceneEditor.tsx` is significantly simpler, primarily focusing on grid-based map chunk placement and basic entity positioning.
 *   **Resolution**: These aspirational features have been logged in `docs/TODO.md`. The design document currently overstates the capabilities of the editor. Future development phases will need to systematically implement these advanced features or the design spec must be scaled down to reflect MVP status.
+
+## 5. Scene Data Structure Inconsistencies
+*   **Conflict**: The DB schema for scenes places `map_list` and `scene_entities` at the same root level. However, actual data fetched from the backend sometimes nests `map_list` inside `scene_entities` (i.e. `sceneData.scene_entities.map_list`).
+*   **Resolution**: Frontend components (`RpgSceneEditor.tsx`, `RpgMode.tsx`) use fallback logic to defensively check both `sceneData.map_list` and `sceneData.scene_entities?.map_list`. This has been documented in `docs/rpg_scene_design.md` but remains a structural conflict.
+
+## 6. Local Map Meta Saving Strategy
+*   **Conflict**: While map tile definitions (`tilesets`) are stored logically as part of the `map_meta` section within a map's `map_data` (local map architecture), saving locally via the backend splits this up. The backend explicitly extracts `map_meta` and saves it as a separate JSON file in a sibling `map_meta/` directory.
+*   **Resolution**: This behavior is intentional to decouple global tilesets from individual map instances, but it conflicts with how the frontend expects to package the JSON object during local persistence. This schema behavior needs formalization.

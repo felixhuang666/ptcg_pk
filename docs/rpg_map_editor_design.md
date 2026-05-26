@@ -37,5 +37,6 @@ Maps have evolved from a simple 2-layer structure to a comprehensive 6-layer arc
 
 ## 5. External Data Interaction
 - **Database (Supabase/Local Storage)**: Maps are stored server-side. The `/api/map` endpoint is responsible for persisting the map layout JSON objects to the underlying database.
+  - *Local Assets Fallback*: When saving locally via backend APIs (e.g. `/api/save_local`), the map structure undergoes an extraction process. In the local map architecture, `map_meta` (which contains tileset definitions) is nested inside `map_data` on the frontend. The backend explicitly extracts this `map_meta` object and saves it as a separate JSON file in a sibling `map_meta/` directory alongside the `maps/` directory.
 - **Map Retrieval**: React effect hooks fetch the list of available maps on component mount. Selecting a map triggers a re-fetch of the specific map data layout.
 - **Save Operations**: Emits updated map JSON payloads directly to the server, overriding the existing `id`.

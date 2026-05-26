@@ -23,6 +23,8 @@ create table public.game_scene (
 ### 2.1 map_list
 The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world.
 
+*Note: Due to current data structure variations and frontend parsing fallback logic (e.g., in `RpgSceneEditor` and `RpgMode`), the `map_list` can sometimes be nested under `sceneData.scene_entities.map_list` instead of being located directly at the top level `sceneData.map_list`. Frontend code must defensively check both paths.*
+
 ```json
 {
   "map_list": [
