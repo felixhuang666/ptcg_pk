@@ -57,3 +57,5 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+5. **Scene Data Schema Variation**: Address `map_list` occasionally nesting within `scene_entities.map_list` instead of directly on `sceneData.map_list`.
+6. **Local Map Meta Architecture**: Formalize the backend extraction of `map_meta` into a sibling `map_meta/` directory when maps are persisted locally, ensuring frontend logic aligns consistently.
