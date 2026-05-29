@@ -108,6 +108,10 @@
 | RpgMapEditor | `RpgMapEditor.tsx` | Tile-based map creation |
 | RpgSceneEditor | `RpgSceneEditor.tsx` | Multi-map scene composition |
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
+| QuestEditor | `QuestEditor.tsx` | Quest composition and scene linking |
+| GameObjectTemplateCreator | `GameObjectTemplateCreator.tsx` | Tool to create and edit game object templates |
+| PlayerCameraCapture | `PlayerCameraCapture.tsx` | Uploading custom player avatar images via camera |
+| MonsterCameraCapture | `MonsterCameraCapture.tsx` | Uploading custom monster sprites via camera |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
 | Admin | `Admin.tsx` | Game settings panel |
 
@@ -137,6 +141,9 @@
 | POST | `/api/scene` | Create scene |
 | PUT | `/api/scene/{id}` | Update scene |
 | DELETE | `/api/scene/{id}` | Delete scene |
+| GET | `/api/quests` | List all quests |
+| GET | `/api/quest/{id}` | Get quest by ID |
+| POST | `/api/save_local` | Save data to local assets |
 
 ### Socket.IO Events
 
