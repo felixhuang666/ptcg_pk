@@ -24,3 +24,8 @@ This document tracks actionable technical debt and planned features identified d
 *   **Action Items**:
     *   Implement robust fallback image generation or a default "missing texture" tileset.
     *   Ensure the active tileset metadata is deeply merged with safe defaults before rendering.
+
+## 5. Implement Real LLM API in GameObjectTemplateCreator
+*   **Description**: The AI generation engine in the `GameObjectTemplateCreator` is currently a hardcoded mock using keyword recognition. This needs to be replaced with a real LLM API integration.
+*   **Action Items**:
+    *   Integrate a real LLM API (e.g., OpenAI, Anthropic) to parse natural language prompts and generate valid Game Object Template JSON.
