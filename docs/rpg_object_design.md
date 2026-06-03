@@ -26,6 +26,8 @@ Game Object 採用三層架構設計：
     "container_height": 32,
 
     // 定義各個腳本情境所需的所有 Sprite Sheets
+    // If sprite_sheets is empty or missing, the system will fallback to "default_image" for a static display.
+    "default_image": "dragon_small_static.png",
     "sprite_sheets": [
       {
          "state": "map_idle",

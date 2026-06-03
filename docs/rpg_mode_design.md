@@ -3,6 +3,8 @@
 ## 1. Overview
 RPG Mode is a multi-player, real-time map exploration feature within "Monster Battle". It allows players to walk around the map, interact with others, chat in real-time, and trigger map events.
 
+The RPG mode uses "Quests" as top-level containers for multi-scene gameplay. A Quest stores a collection of scenes (`scene_list`) and designates a `default_scene_id` which acts as the player's entry point when a quest is selected in RPG Mode.
+
 ## 2. UI Design
 - **Map Viewport**: Central full-screen or maximized container powered by the Phaser game engine.
 - **Header Navigation**: Contains actions like 'Back', 'Refresh', 'Settings', 'Map/Scene Editor toggles, and a toggle for full-screen mode. It also includes a scene dropdown grouped by quest, allowing players to navigate between scenes linked to the active quest.
