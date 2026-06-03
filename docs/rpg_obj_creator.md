@@ -3,6 +3,8 @@
 ## 1. 定位
 在 RPG Scene Editor 中新增一個 Tab，提供 AI 輔助的 Game Object Template 生成功能。作為 `docs/rpg_object_design.md` 中 Template 系統的建立工具。
 
+The `GameObjectTemplateCreator.tsx` component serves a dual purpose as both the interactive creator tool (with AI mock generation) and the dedicated "Game Object Editor" for existing templates.
+
 ## 2. 使用流程
 
 ### 2.1 Prompt 輸入模式
