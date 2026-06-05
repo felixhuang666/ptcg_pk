@@ -110,6 +110,11 @@
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
 | Admin | `Admin.tsx` | Game settings panel |
+| QuestEditor | `QuestEditor.tsx` | Quest composition |
+| GameObjectTemplateCreator | `GameObjectTemplateCreator.tsx` | Interactive template editing / Game Object Editor |
+| PlayerCameraCapture | `PlayerCameraCapture.tsx` | Player avatar uploading |
+| MonsterCameraCapture | `MonsterCameraCapture.tsx` | Custom monster sprite camera capture |
+| RoleSetting | `RoleSetting.tsx` | Player role configuration |
 
 ### 4.2 Backend Modules
 
