@@ -12,6 +12,7 @@ This document tracks the current state of implementation and known issues. See `
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
 | Camera feature | Implement camera capture for custom monsters |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
+| RPG Scene Editor Controller UI | Supported configuring Controller properties for Game Objects within the inspector panel |
 
 ## 2. RPG Scene Editor - Missing Features
 
