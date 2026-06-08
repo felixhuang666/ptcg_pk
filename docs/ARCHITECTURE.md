@@ -110,8 +110,15 @@
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
 | Admin | `Admin.tsx` | Game settings panel |
+| QuestEditor | `QuestEditor.tsx` | Quest composition tool |
+| GameObjectTemplateCreator | `GameObjectTemplateCreator.tsx` | Interactive template editing tool |
+| PlayerCameraCapture | `PlayerCameraCapture.tsx` | Player avatar camera capture |
+| MonsterCameraCapture | `MonsterCameraCapture.tsx` | Custom monster sprite camera capture |
+| RoleSetting | `RoleSetting.tsx` | Player role configuration |
 
 ### 4.2 Backend Modules
+
+The backend is built with FastAPI and Socket.IO. It uses global in-memory dictionaries (e.g., `in_memory_maps`, `rpg_npcs`, `in_memory_scenes`, `in_memory_quests`) as local state fallbacks, ensuring the application remains functional even when the Supabase database is not configured or fails. User-specific local assets (like profile pictures) are saved using the persistent OAuth user ID (`oauth_data.id`) instead of the ephemeral `session_id`.
 
 | Module | File | Purpose |
 |--------|------|---------|
