@@ -26,6 +26,8 @@ Game Object 採用三層架構設計：
     "container_height": 32,
 
     // 定義各個腳本情境所需的所有 Sprite Sheets
+    // Note: If `sprite_sheets` is empty or missing, the frontend will dynamically check for and support a `default_image` fallback for static display.
+    "default_image": "public/assets/images/default.png",
     "sprite_sheets": [
       {
          "state": "map_idle",
@@ -131,7 +133,8 @@ Scene Editor 中的 Inspector 可以**覆蓋 (Override)** 模板的預設值，�
 ---
 
 ## 6. Editor UI 實作需求
-1. **Palette 擴充**：左側選單增加 "Game Object Template" 類別，讀取 `public/assets/game_obj_templates`。
+1. **GameObjectTemplateCreator.tsx**: This component serves a dual purpose as both an interactive creator tool and a dedicated Game Object Editor for existing templates.
+2. **Palette 擴充**：左側選單增加 "Game Object Template" 類別，讀取 `public/assets/game_obj_templates`。
 2. **Layer 擴充**：允許拖拉 Object 到特製的 `Object Layer` 或通用的 Layer 上。
 3. **Inspector 擴充**：
    - 點擊場景上的 Object 後，右側 Inspector 除了 Position、Scale，還要動態顯示該 Controller 所需要的 `properties` 欄位供設計師填寫 (例如讓設計師填入 `battle_scene_id`)。

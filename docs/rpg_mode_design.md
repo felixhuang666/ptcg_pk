@@ -6,6 +6,8 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 ## 2. UI Design
 - **Map Viewport**: Central full-screen or maximized container powered by the Phaser game engine.
 - **Header Navigation**: Contains actions like 'Back', 'Refresh', 'Settings', 'Map/Scene Editor toggles, and a toggle for full-screen mode. It also includes a scene dropdown grouped by quest, allowing players to navigate between scenes linked to the active quest.
+  - *Quests*: 'Quests' act as top-level containers for multi-scene gameplay. Each quest defines a `scene_list` and designates a `default_scene_id` as the entry point.
+  - *Scene Resolution*: Because the quest data fetched from `/api/quest/{id}` only contains a `scene_list` of IDs, the frontend independently fetches the global scene catalog (`/api/scenes`) to resolve scene names for UI elements like the dropdown.
 - **Chat Interface**: Floating/collapsible window showing real-time messages and an input field for sending chat messages to the current map session.
 - **Controls**: On-screen buttons (e.g., Attack/Action modes) are overlayed on top of the map viewport. Supports touch inputs and virtual joystick on mobile devices.
 - **Status Overlay**: Lightweight overlay providing current coordinates, map name, and current zoom level.
@@ -15,6 +17,8 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 ### 3.1 Frontend (React + Phaser)
 - Developed using React 19 and Vite 6, utilizing `RpgMode.tsx` to handle React lifecycle, state management, and UI overlays.
 - `PhaserGame` (internal to `RpgMode.tsx`) handles map rendering across 6 distinct layers (`base`, `decorations`, `obstacles`, `objectCollides`, `objectEvent`, `topLayer`).
+  - *Multi-map Composite Scenes*: Scenes containing multiple map instances are supported by concurrently fetching all maps in the `map_list` and dynamically merging their layers and tilesets into a single virtual `mapData` object.
+  - *Physics Collider Management*: During scene re-renders or transitions, physics colliders must be explicitly tracked and destroyed before destroying their associated tilemap layers to prevent "Cannot read properties of undefined" runtime errors.
 - Implements a Field of View (FOV) / Fog of War mechanism to cull visual visibility of out-of-range players/NPCs and draw darkness outside the player's immediate radius.
 - The `topLayer` actively monitors the player's coordinate to apply dynamic transparency (reducing alpha) when the player walks "under" an element on this layer.
 - Implements dynamic tileset loading (`/api/map/tilesets`) to accurately map tile IDs to the proper visual textures.

@@ -21,7 +21,7 @@ create table public.game_scene (
 ```
 
 ### 2.1 map_list
-The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world.
+The `map_list` is a JSONB array that defines the spatial arrangement of individual maps within the global scene coordinate system. Each map acts like a "chunk" of the world. *(Defensive Parsing Strategy: When parsing scene data in the frontend, logic must check both `sceneData.map_list` and the nested `sceneData.scene_entities.map_list`, as legacy or transitional data structures may nest this array.)*
 
 ```json
 {
