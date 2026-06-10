@@ -38,6 +38,11 @@ The RPG Map Editor features a specialized, highly interactive interface for map 
 ### 3.4 Camera Capture View
 - **Monster Camera Capture**: A modal overlay (`MonsterCameraCapture.tsx`) powered by `react-html5-camera-photo`. Accessible via the "測試相機" (Test Camera) button in the global top navigation bar of the App. It provides an interface to take photos, which are then compressed and uploaded to the server to be used as custom monster sprites.
 
+### 3.5 Editor & Utility Views
+- **Quest Editor View**: A dedicated view for quest composition, including managing scene lists, and setting default scene linking.
+- **Game Object Editor View**: Handled by `GameObjectTemplateCreator.tsx`, serving a dual purpose as both an interactive AI-assisted creator tool (currently mocked) and a structured editor for existing game object templates.
+- **Role Setting View**: A dedicated interface (`RoleSetting.tsx`) for player configuration, including custom selfie uploads mapped to the player's persistent identity.
+
 ## 4. Visual Elements
 
 ### 4.1 Color Palette
