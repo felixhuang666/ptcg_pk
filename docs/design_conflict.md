@@ -20,3 +20,7 @@ This document tracks identified conflicts between original design specifications
 ## 4. RPG Scene Editor Feature Scope
 *   **Conflict**: `docs/rpg_scene_design.md` describes a comprehensive, engine-like tool featuring a scripting editor, node-based dialog trees, advanced physics integration, and interactive preview modes. The actual implementation in `src/components/RpgSceneEditor.tsx` is significantly simpler, primarily focusing on grid-based map chunk placement and basic entity positioning.
 *   **Resolution**: These aspirational features have been logged in `docs/TODO.md`. The design document currently overstates the capabilities of the editor. Future development phases will need to systematically implement these advanced features or the design spec must be scaled down to reflect MVP status.
+
+## 5. Game Object Template Creator AI Mock vs LLM API
+*   **Conflict**: The design spec `docs/rpg_obj_creator.md` suggests an AI-assisted generator for Game Object Templates. However, the current implementation in `GameObjectTemplateCreator` utilizes a hardcoded mock using simple keyword recognition rather than a real LLM API integration.
+*   **Resolution**: This limitation has been logged as technical debt in `docs/TODO.md` and requires future integration with a real LLM service (like OpenAI or Anthropic API) to meet the full design requirements.
