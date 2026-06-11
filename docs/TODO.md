@@ -12,6 +12,8 @@ This document tracks the current state of implementation and known issues. See `
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
 | Camera feature | Implement camera capture for custom monsters |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
+| Player Selfie Upload | Implemented player selfie capture via `PlayerCameraCapture` and upload endpoint |
+| Multi-map Scene Rendering | Support rendering scenes with multiple maps dynamically merged in RPG Mode |
 
 ## 2. RPG Scene Editor - Missing Features
 
@@ -38,6 +40,10 @@ This document tracks the current state of implementation and known issues. See `
 ### 3.2 Event Layer Handling
 - **Issue**: `objectEvent` layer triggers not implemented in main `RpgMode` gameplay loop
 - **Action Needed**: Implement event dispatch system for step triggers
+
+### 3.3 Data Structure Inconsistencies
+- **Issue**: Scene `map_list` can be unpredictably nested under `scene_entities` in JSON data.
+- **Action Needed**: Normalize scene schema in backend and database to consistently place `map_list` at the root.
 
 ## 4. Data Persistence
 

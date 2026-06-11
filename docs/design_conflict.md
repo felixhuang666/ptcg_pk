@@ -20,3 +20,7 @@ This document tracks identified conflicts between original design specifications
 ## 4. RPG Scene Editor Feature Scope
 *   **Conflict**: `docs/rpg_scene_design.md` describes a comprehensive, engine-like tool featuring a scripting editor, node-based dialog trees, advanced physics integration, and interactive preview modes. The actual implementation in `src/components/RpgSceneEditor.tsx` is significantly simpler, primarily focusing on grid-based map chunk placement and basic entity positioning.
 *   **Resolution**: These aspirational features have been logged in `docs/TODO.md`. The design document currently overstates the capabilities of the editor. Future development phases will need to systematically implement these advanced features or the design spec must be scaled down to reflect MVP status.
+
+## 5. Scene `map_list` Data Structure Nesting
+*   **Conflict**: `docs/rpg_scene_design.md` specifies that `map_list` is a top-level property of a scene's JSON data. However, the backend implementation or historical local data sometimes nests `map_list` under `scene_entities.map_list`.
+*   **Resolution**: The frontend (`RpgMode.tsx` and scene parsing logic) has been updated to defensively check both `sceneData.map_list` and `sceneData.scene_entities.map_list` to successfully merge and render maps regardless of the data structure variance. This schema inconsistency remains technical debt to be resolved in the backend/database schema.
