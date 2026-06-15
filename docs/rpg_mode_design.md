@@ -15,6 +15,7 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 ### 3.1 Frontend (React + Phaser)
 - Developed using React 19 and Vite 6, utilizing `RpgMode.tsx` to handle React lifecycle, state management, and UI overlays.
 - `PhaserGame` (internal to `RpgMode.tsx`) handles map rendering across 6 distinct layers (`base`, `decorations`, `obstacles`, `objectCollides`, `objectEvent`, `topLayer`).
+- **Scene Map Merging**: Uses `loadAndMergeSceneMaps` to dynamically combine multiple mapped chunks (defined in a Scene's `map_list`) into a single cohesive virtual map structure to be rendered simultaneously by Phaser.
 - Implements a Field of View (FOV) / Fog of War mechanism to cull visual visibility of out-of-range players/NPCs and draw darkness outside the player's immediate radius.
 - The `topLayer` actively monitors the player's coordinate to apply dynamic transparency (reducing alpha) when the player walks "under" an element on this layer.
 - Implements dynamic tileset loading (`/api/map/tilesets`) to accurately map tile IDs to the proper visual textures.
@@ -29,7 +30,9 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 ## 4. External Data Interaction
 - **Database (Supabase)**: User authentication and persistent profiles/roles are synced via REST API endpoints (`/api/auth/me`).
 - **Map Data**: Stored dynamically on the server or in persistent storage (e.g., Supabase storage/database) and fetched at initialization.
-- **State Synchronization**: Position and animations are synchronized locally in memory on the server during the session. Map updates are broadcasted to active clients via `map_updated_v2` events.
+- **State Synchronization**:
+  - Real-time position and animations are synchronized locally in memory on the server during the session via WebSocket. Map updates are broadcasted to active clients via `map_updated_v2` events.
+  - Persistent state, such as the player's last active `quest_id`, `map_id` (scene), and coordinate position, are synced to the database via `/api/user/location` enabling players to seamlessly resume their adventure upon reconnecting.
 
 ## 5. Player Controls
 - **Movement**: WASD keys or arrow keys for desktop; virtual joystick for mobile.
