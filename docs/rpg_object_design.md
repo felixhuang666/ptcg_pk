@@ -25,6 +25,9 @@ Game Object 採用三層架構設計：
     "container_width": 32,
     "container_height": 32,
 
+    // 預設靜態圖片 (當 sprite_sheets 為空或無法載入時的 fallback)
+    "default_image": "boss_single_eye_orc.jpg",
+
     // 定義各個腳本情境所需的所有 Sprite Sheets
     "sprite_sheets": [
       {

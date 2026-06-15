@@ -20,3 +20,11 @@ This document tracks identified conflicts between original design specifications
 ## 4. RPG Scene Editor Feature Scope
 *   **Conflict**: `docs/rpg_scene_design.md` describes a comprehensive, engine-like tool featuring a scripting editor, node-based dialog trees, advanced physics integration, and interactive preview modes. The actual implementation in `src/components/RpgSceneEditor.tsx` is significantly simpler, primarily focusing on grid-based map chunk placement and basic entity positioning.
 *   **Resolution**: These aspirational features have been logged in `docs/TODO.md`. The design document currently overstates the capabilities of the editor. Future development phases will need to systematically implement these advanced features or the design spec must be scaled down to reflect MVP status.
+
+## 5. Game Object Animations vs. Static Images (Resolved)
+*   **Conflict**: The original `docs/rpg_object_design.md` strictly defined game object appearances using `sprite_sheets` for animations (e.g., `idle`, `walk`, `battle_atk`). However, the implementation required support for simpler, non-animated static props and objects captured via the player's camera.
+*   **Resolution**: Introduced a `default_image` fallback property in the template schema. The rendering logic now dynamically checks for `sprite_sheets` and falls back to rendering a scaled static image if animations are missing, accommodating both complex actors and simple props within the same system.
+
+## 6. Scene vs Quest Hierarchy (Resolved)
+*   **Conflict**: Early implementation and design directly mapped RPG Mode exploration to a single "Scene", but it became apparent that a higher-level organizational structure was needed to group related scenes together.
+*   **Resolution**: Introduced "Quests" as top-level containers. A Quest stores a collection of scenes and designates a `default_scene_id` acting as the entry point. The system now utilizes a Quest Editor, and the RPG mode restores state based on `quest_id`.

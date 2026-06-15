@@ -26,6 +26,7 @@
   "category": "npc",
   "container_width": 64,
   "container_height": 64,
+  "default_image": "merchant.jpg",
   "sprite_sheets": [
     { "state": "idle", "sprite_sheet_name": "merchant_idle", "frame_width": 64, "frame_height": 64, "frame_rate": 8 },
     { "state": "walk", "sprite_sheet_name": "merchant_walk", "frame_width": 64, "frame_height": 64, "frame_rate": 12 },
