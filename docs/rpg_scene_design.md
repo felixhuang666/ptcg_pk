@@ -8,6 +8,9 @@ The editor combines traditional map painting capabilities with scene composition
 ## 2. RPG Scene Structure
 A RPG Scene is not a single map; rather, it is a unified coordinate space where multiple maps and entities are placed.
 
+### Quests
+Quests act as top-level containers that orchestrate multi-scene gameplay. A Quest stores a collection of scenes (`scene_list`) and designates a `default_scene_id` which acts as the player's entry point when the quest is selected in RPG Mode.
+
 ### Table Schema
 ```sql
 create table public.game_scene (

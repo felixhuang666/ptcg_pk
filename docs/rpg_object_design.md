@@ -25,6 +25,9 @@ Game Object 採用三層架構設計：
     "container_width": 32,
     "container_height": 32,
 
+    // 預設圖片 (當 sprite_sheets 未提供或為空時的 fallback)
+    "default_image": "assets/game_obj_img/object_default.jpg",
+
     // 定義各個腳本情境所需的所有 Sprite Sheets
     "sprite_sheets": [
       {

@@ -10,7 +10,7 @@ This document tracks the current state of implementation and known issues. See `
 | Top Header Navigation | Documented in `docs/ui_header_navigation_design.md` |
 | RPG Sprite Sheet Editor Features | All advanced features (Manual Crop, Hotkeys, Offset/Gap, Grid, Zoom, Scaling, Reordering, Color Picker) implemented |
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
-| Camera feature | Implement camera capture for custom monsters |
+| Camera feature | Implement camera capture for custom monsters (`MonsterCameraCapture.tsx`) and player selfies (`PlayerCameraCapture.tsx`) |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
 
 ## 2. RPG Scene Editor - Missing Features
@@ -57,3 +57,4 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+5. **AI Template Generator**: The `GameObjectTemplateCreator` currently uses a hardcoded keyword-based mock instead of a real LLM API integration.
