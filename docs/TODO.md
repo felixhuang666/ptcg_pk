@@ -12,6 +12,7 @@ This document tracks the current state of implementation and known issues. See `
 | Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
 | Camera feature | Implement camera capture for custom monsters |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
+| Selfie Upload in Role Setting | Implemented camera interface in web for players to take and upload selfies to local assets |
 
 ## 2. RPG Scene Editor - Missing Features
 
