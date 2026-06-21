@@ -108,6 +108,11 @@
 | RpgMapEditor | `RpgMapEditor.tsx` | Tile-based map creation |
 | RpgSceneEditor | `RpgSceneEditor.tsx` | Multi-map scene composition |
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
+| QuestEditor | `QuestEditor.tsx` | Quest and scene composition |
+| GameObjectTemplateCreator | `GameObjectTemplateCreator.tsx` | Interactive NPC/Object template editing |
+| PlayerCameraCapture | `PlayerCameraCapture.tsx` | Player avatar upload |
+| MonsterCameraCapture | `MonsterCameraCapture.tsx` | Custom monster sprite camera capture |
+| RoleSetting | `RoleSetting.tsx` | Player role configuration |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
 | Admin | `Admin.tsx` | Game settings panel |
 
