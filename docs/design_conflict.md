@@ -20,3 +20,11 @@ This document tracks identified conflicts between original design specifications
 ## 4. RPG Scene Editor Feature Scope
 *   **Conflict**: `docs/rpg_scene_design.md` describes a comprehensive, engine-like tool featuring a scripting editor, node-based dialog trees, advanced physics integration, and interactive preview modes. The actual implementation in `src/components/RpgSceneEditor.tsx` is significantly simpler, primarily focusing on grid-based map chunk placement and basic entity positioning.
 *   **Resolution**: These aspirational features have been logged in `docs/TODO.md`. The design document currently overstates the capabilities of the editor. Future development phases will need to systematically implement these advanced features or the design spec must be scaled down to reflect MVP status.
+
+## 5. Quest Architecture Documentation
+*   **Conflict**: `docs/rpg_mode_design.md` and `docs/TODO.md` referenced a Quest system architecture and a `docs/rpg_quest_design.md` file, but the design spec file itself was missing from the repository, creating a gap in understanding the `scene_list` and `default_scene_id` mechanics.
+*   **Resolution**: Created `docs/rpg_quest_design.md` to properly document the top-level Quest container behavior, its schema, and UI integration, resolving the missing specification.
+
+## 6. AI Generation Engine Implementation
+*   **Conflict**: The GameObjectTemplateCreator mentions an AI generation feature, but it is currently implemented as a hardcoded mock using keyword recognition rather than a real LLM integration.
+*   **Resolution**: This has been logged as technical debt in `docs/TODO.md` to ensure it is replaced with a functional API integration in the future.
