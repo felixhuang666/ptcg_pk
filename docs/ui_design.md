@@ -13,7 +13,7 @@ The UI for "Monster Battle" is designed to be modern, dark-themed, and fully res
 ## 3. Layout Design
 
 ### 3.1 Mobile View (Portrait)
-- **Top Bar**: Game title and "Exit" button.
+- **Top Bar**: Game title, "Exit" button, and main navigation links (RPG, Arena, Editors).
 - **Opponent Section**: Located at the top. Shows opponent's name, HP bar, AP bar, and a small monster icon.
 - **Arena Area**: Central area showing both monsters facing each other. On mobile, this may be simplified to show icons or smaller versions of the SVGs.
 - **Player Section**: Located below the arena. Shows player's HP bar and monster info.
@@ -26,7 +26,13 @@ The UI for "Monster Battle" is designed to be modern, dark-themed, and fully res
 - **Center**: Large arena with animated monster SVGs and log window overlay.
 - **Bottom**: Full-width control panel for skills and dice.
 
-### 3.3 RPG Map Editor View
+### 3.3 Quest Editor View
+The Quest Editor manages high-level quest configurations and scene associations:
+- **Top Bar**: Provides global controls including "Back", "Save", "Add Quest", "Import/Export", and "AI Prompt" toggle for generative features.
+- **Left Sidebar**: Lists all available quests. Users can select a quest to edit its details.
+- **Center Canvas**: Displays the details of the selected quest. Includes the quest's name, the default scene to load (`default_scene_id`), and an editable list of scenes associated with the quest. Users can add or remove scenes from the quest's `scene_list`.
+
+### 3.4 RPG Map Editor View
 The RPG Map Editor features a specialized, highly interactive interface for map creation:
 - **Top Bar**: Provides global controls including Map Selection, Grid Toggle, Info Toggle, Mode Switch (Draw/Move), Layer Selection (`Base`, `Decor`, `Obs`, `ObjCol`, `ObjEvt`, `Top`), Eraser, Undo/Redo, Save, and Generate Map.
 - **Left Sidebar (Tilesets)**: Displays the active tileset and provides a grid to select specific tiles for painting. It also displays predefined logical IDs (e.g., Wall, Empty) when editing logical layers.
@@ -35,7 +41,7 @@ The RPG Map Editor features a specialized, highly interactive interface for map 
   - *Tile Details*: Displays detailed metadata about the currently selected tile (ID, Source Image, Coordinates, Tags).
   - *Advanced Settings*: Provides tools to Rename the map, Resize dimensions (width/height), and modify block sizes.
 
-### 3.4 Camera Capture View
+### 3.5 Camera Capture View
 - **Monster Camera Capture**: A modal overlay (`MonsterCameraCapture.tsx`) powered by `react-html5-camera-photo`. Accessible via the "測試相機" (Test Camera) button in the global top navigation bar of the App. It provides an interface to take photos, which are then compressed and uploaded to the server to be used as custom monster sprites.
 
 ## 4. Visual Elements
