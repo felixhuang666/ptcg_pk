@@ -27,8 +27,8 @@ RPG Mode is a multi-player, real-time map exploration feature within "Monster Ba
 - Serves dynamic static assets (sprites, tilesets) and map data via REST endpoints (`/api/map`, `/api/maps`, `/api/map/tilesets`).
 
 ## 4. External Data Interaction
-- **Database (Supabase)**: User authentication and persistent profiles/roles are synced via REST API endpoints (`/api/auth/me`).
-- **Map Data**: Stored dynamically on the server or in persistent storage (e.g., Supabase storage/database) and fetched at initialization.
+- **Database (Supabase)**: User authentication and persistent profiles/roles are synced via REST API endpoints (`/api/auth/me`). The player's current location, including their `quest_id`, `map_id`, and coordinates (`pos_x`, `pos_y`) are saved and restored to allow seamless continuation.
+- **Quest & Map Data**: Stored dynamically on the server or in persistent storage (e.g., Supabase database or local files) and fetched at initialization. When a quest is selected, the application fetches the quest's default scene and lists only scenes associated with that quest.
 - **State Synchronization**: Position and animations are synchronized locally in memory on the server during the session. Map updates are broadcasted to active clients via `map_updated_v2` events.
 
 ## 5. Player Controls
