@@ -107,6 +107,7 @@
 | RpgMode | `RpgMode.tsx` | Multiplayer map exploration |
 | RpgMapEditor | `RpgMapEditor.tsx` | Tile-based map creation |
 | RpgSceneEditor | `RpgSceneEditor.tsx` | Multi-map scene composition |
+| QuestEditor | `QuestEditor.tsx` | Multi-scene quest composition |
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
 | Admin | `Admin.tsx` | Game settings panel |
@@ -132,6 +133,9 @@
 | POST | `/api/map` | Create/update map |
 | POST | `/api/map/generate` | Generate random map |
 | GET | `/api/map/tilesets` | List tilesets |
+| GET | `/api/quests` | List all quests |
+| GET | `/api/quest/{id}` | Get quest by ID |
+| POST | `/api/quest` | Create or update quest |
 | GET | `/api/scenes` | List all scenes |
 | GET | `/api/scene/{id}` | Get scene by ID |
 | POST | `/api/scene` | Create scene |
