@@ -57,3 +57,14 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+5. **AI Generation Mocking**: The AI generation engine in the `GameObjectTemplateCreator` is currently a hardcoded mock using keyword recognition and needs to be replaced with a real LLM API integration.
+
+## 6. Design Conflicts
+
+### 6.1 `scene_entities` Schema Desync
+- **Conflict**: The `docs/rpg_scene_design.md` specifies a `scene_entities` object containing arrays for `npcs`, `items`, and `events`. However, the actual codebase extensively relies on a `game_objects` array nested within `scene_entities` to manage dynamic elements in `RpgSceneEditor.tsx` and `RpgMode.tsx`.
+- **Resolution Needed**: Update `docs/rpg_scene_design.md` to include `game_objects` as a primary array within the `scene_entities` definition.
+
+### 6.2 Map List Nesting Inconsistency
+- **Conflict**: Scene map lists are inconsistently structured in the backend payload. Sometimes `map_list` is present at the top level of `sceneData` (`sceneData.map_list`), and other times it is nested within `scene_entities` (`sceneData.scene_entities.map_list`).
+- **Resolution Needed**: Standardize the backend response to place `map_list` predictably. Currently, the frontend mitigates this by checking both paths.
