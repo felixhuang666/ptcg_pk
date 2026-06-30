@@ -57,3 +57,6 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+5. **AI Generation Engine Mock**: The AI generation engine in the `GameObjectTemplateCreator` is currently a hardcoded mock using keyword recognition and needs to be replaced with a real LLM API integration.
+6. **Phaser Collider Cleanup**: Explicitly keep track of and destroy physics colliders created via `this.physics.add.collider()` before destroying their associated tilemap layers during a scene re-render to prevent `Cannot read properties of undefined` runtime errors in the physics update step.
+7. **Map List Schema Standardization**: The `map_list` data structure can be found nested under `scene_entities.map_list` or directly at `map_list`. The backend schema needs to be standardized to resolve this discrepancy.
