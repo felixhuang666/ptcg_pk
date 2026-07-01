@@ -54,6 +54,9 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
   ],
   "events": [
     { "id": "evt_1", "trigger_type": "on_step", "action": "teleport", "position": { "x": 39, "y": 20 } }
+  ],
+  "game_objects": [
+    { "id": "inst_1", "template_id": "npc_boss_dragon", "position": { "x": 10, "y": 15 } }
   ]
 }
 ```

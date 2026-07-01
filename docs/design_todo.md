@@ -24,3 +24,6 @@ This document tracks actionable technical debt and planned features identified d
 *   **Action Items**:
     *   Implement robust fallback image generation or a default "missing texture" tileset.
     *   Ensure the active tileset metadata is deeply merged with safe defaults before rendering.
+## 5. Replace Mock AI Engine in GameObjectTemplateCreator
+*   **Description**: The AI generation engine for templates uses a mock keyword recognition.
+*   **Action Items**: Replace it with a real LLM API integration.

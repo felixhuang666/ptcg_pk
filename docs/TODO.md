@@ -57,3 +57,6 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+
+5. **Mock AI Engine**: GameObjectTemplateCreator uses hardcoded mock for AI generation, needs to be replaced with real LLM API.
+6. **RpgSceneEditor MVP**: The current Scene Editor focuses on chunk placement. Aspirational engine-like features (dialog trees, scripting, prefab, physics config) exist in specs but not in code.

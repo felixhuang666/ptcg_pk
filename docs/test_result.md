@@ -1,5 +1,9 @@
 # Test Results
 
+## Test Run Details
+- **Timestamp**: 2026-07-01 14:30:06
+- **Scope**: Frontend, Playwright E2E, Backend Pytest
+
 ## Frontend Tests
 ### Vitest (React Components)
 - `tests/App.test.tsx` (1 test): **Passed**
@@ -18,7 +22,7 @@
 - `backend/tests/test_main.py`: 3 tests, **Passed**
 - `backend/tests/test_real_api.py`: 2 tests, **Passed**
 - `backend/tests/test_save_local.py`: 1 test, **Passed**
-- Summary: 15 passed tests in 3.28s.
+- Summary: 15 passed tests.
 
 ## Changes Made
 - Updated `Makefile` to restrict Playwright to run with 1 worker (`npx playwright test --workers 1`) to prevent concurrent state conflict which could lead to flakiness (timeout) during the execution of `test_rpg_scene_editor.spec.ts`.
