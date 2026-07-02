@@ -57,3 +57,4 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+5. **Scene Entities Schema Standardization**: The `scene_entities` JSONB structure currently mixes a unified `game_objects` array with legacy `npcs`, `items`, and `events` arrays. This schema needs to be standardized to either fully utilize the template-driven `game_objects` system or cleanly deprecate the old arrays to prevent parsing conflicts.
