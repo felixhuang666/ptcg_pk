@@ -9,7 +9,7 @@ This document tracks the current state of implementation and known issues. See `
 | Map Layer Editor Toggle UI | Layer visibility toggles (eye icons) added to Map Editor top bar |
 | Top Header Navigation | Documented in `docs/ui_header_navigation_design.md` |
 | RPG Sprite Sheet Editor Features | All advanced features (Manual Crop, Hotkeys, Offset/Gap, Grid, Zoom, Scaling, Reordering, Color Picker) implemented |
-| Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities |
+| Quest Editor | Implemented scene lists, default scene linking, and both DB/Local saving capabilities, and documented schema in docs/rpg_quest_design.md |
 | Camera feature | Implement camera capture for custom monsters |
 | RPG Scene Dropdown | Add scene dropdown grouped by quest in RPG Mode |
 
