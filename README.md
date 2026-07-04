@@ -1,6 +1,6 @@
 # 怪獸對戰 (Monster Battle)
 
-這是一款基於 React + Vite + Express + Socket.IO 的即時回合制怪獸對戰遊戲。
+這是一款基於 React + Vite + FastAPI + Socket.IO 的即時回合制怪獸對戰遊戲。
 
 ## 功能特色
 - **人機對戰**：與電腦 AI 進行對戰。

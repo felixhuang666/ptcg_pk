@@ -20,3 +20,7 @@ This document tracks identified conflicts between original design specifications
 ## 4. RPG Scene Editor Feature Scope
 *   **Conflict**: `docs/rpg_scene_design.md` describes a comprehensive, engine-like tool featuring a scripting editor, node-based dialog trees, advanced physics integration, and interactive preview modes. The actual implementation in `src/components/RpgSceneEditor.tsx` is significantly simpler, primarily focusing on grid-based map chunk placement and basic entity positioning.
 *   **Resolution**: These aspirational features have been logged in `docs/TODO.md`. The design document currently overstates the capabilities of the editor. Future development phases will need to systematically implement these advanced features or the design spec must be scaled down to reflect MVP status.
+
+## 5. Backend Tech Stack Documentation Mismatch
+*   **Conflict**: The application was refactored to use a Python `FastAPI` backend (per `docs/ARCHITECTURE.md`), but project files such as `README.md` and `package.json` still contained references to the original Node.js `Express` stack. Furthermore, `server.ts` is an orphaned file that remains in the root.
+*   **Resolution**: `README.md` and `package.json` descriptions have been updated to reflect `FastAPI` instead of `Express`. The remaining architectural inconsistencies and the cleanup of `server.ts` are logged in `docs/TODO.md` for future cleanup.
