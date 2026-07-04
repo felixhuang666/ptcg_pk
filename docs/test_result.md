@@ -1,15 +1,20 @@
 # Test Results
 
+## Test Run Details
+- **Date**: Fri Jul 3 23:54:54 UTC 2026
+- **Scope**: Frontend (Vitest), E2E (Playwright), Backend (Pytest)
+
 ## Frontend Tests
 ### Vitest (React Components)
 - `tests/App.test.tsx` (1 test): **Passed**
 - Summary: 1/1 test suites passed, 1/1 tests passed.
+- Duration: 3.82s
 
 ### Playwright (E2E Tests)
 - `tests/real_frontend.spec.ts:3:1` › verify real frontend via dev login: **Passed**
 - `tests/test_rpg_scene_editor.spec.ts:5:1` › RPG Scene Editor - Import/Export Scene: **Passed**
 - `tests/verify_rpg.spec.ts:3:1` › verify RPG mode and Map Editor rendering: **Passed**
-- Summary: 3 passed tests.
+- Summary: 3 passed tests (17.7s)
 
 ## Backend Tests (Pytest)
 - `backend/tests/test_api_maps.py`: 4 tests, **Passed**
