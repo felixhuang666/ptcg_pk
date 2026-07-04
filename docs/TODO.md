@@ -30,12 +30,17 @@ This document tracks the current state of implementation and known issues. See `
 
 ## 3. Game Logic Issues
 
-### 3.1 Tile Index Inconsistencies
+### 3.1 Tech Stack Documentation Mismatch
+- **Issue**: `README.md` and `package.json` descriptions still reference "Express + Socket.IO", and `server.ts` remains as an orphaned file from before the FastAPI migration.
+- **Action Needed**: Update descriptions to accurately reflect the "FastAPI + Socket.IO" backend architecture, and optionally clean up orphaned files like `server.ts`.
+- **Workaround**: Documentation overrides applied to `README.md` and `package.json`.
+
+### 3.2 Tile Index Inconsistencies
 - **Issue**: Frontend `RpgMapEditor.tsx` sometimes handles tiles as 0-based and sometimes 1-based
 - **Action Needed**: Formal fix required in both map procedural generation and tilemap usage
 - **Workaround**: Code uses checks like `val !== 0 && val !== -1`
 
-### 3.2 Event Layer Handling
+### 3.3 Event Layer Handling
 - **Issue**: `objectEvent` layer triggers not implemented in main `RpgMode` gameplay loop
 - **Action Needed**: Implement event dispatch system for step triggers
 
