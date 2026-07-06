@@ -107,6 +107,7 @@
 | RpgMode | `RpgMode.tsx` | Multiplayer map exploration |
 | RpgMapEditor | `RpgMapEditor.tsx` | Tile-based map creation |
 | RpgSceneEditor | `RpgSceneEditor.tsx` | Multi-map scene composition |
+| QuestEditor | `QuestEditor.tsx` | Quest composition and scene linking |
 | SpriteSheetEditor | `SpriteSheetEditor.tsx` | Tileset creation tool |
 | BossSelect | `BossSelect.tsx` | Boss battle selection |
 | Admin | `Admin.tsx` | Game settings panel |
@@ -137,6 +138,11 @@
 | POST | `/api/scene` | Create scene |
 | PUT | `/api/scene/{id}` | Update scene |
 | DELETE | `/api/scene/{id}` | Delete scene |
+| GET | `/api/quests` | List all quests |
+| GET | `/api/quest/{id}` | Get quest by ID |
+| POST | `/api/quest` | Create quest |
+| PUT | `/api/quest/{id}` | Update quest |
+| DELETE | `/api/quest/{id}` | Delete quest |
 
 ### Socket.IO Events
 
