@@ -44,6 +44,9 @@ Game Object 採用三層架構設計：
       }
     ],
 
+    // Fallback static image if sprite_sheets is empty or not applicable
+    "default_image": "boss_dragon.jpg",
+
     "collision": {
         "enabled": true,
         "width": 32,
