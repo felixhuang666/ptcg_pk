@@ -57,3 +57,5 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+5. **Mock AI Generation Engine**: The AI generation engine in `GameObjectTemplateCreator` is currently a hardcoded mock using simple keyword recognition (e.g., matching "monster"). This needs to be replaced with a real LLM API integration.
+6. **Orphaned `server.ts`**: The project's backend was migrated from Node.js Express to Python FastAPI. The `server.ts` file in the root directory is an orphaned remnant from the old architecture and should be safely removed.
