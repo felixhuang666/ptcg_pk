@@ -41,11 +41,19 @@ The `map_list` is a JSONB array that defines the spatial arrangement of individu
 ```
 
 ### 2.2 scene_entities
-The `scene_entities` JSONB structure holds instances of all dynamic objects, items, NPCs, and events placed globally within the scene coordinates.
+The `scene_entities` JSONB structure holds instances of all dynamic objects, items, NPCs, and events placed globally within the scene coordinates. Note that game object templates (the core mechanism for interactive entities) are stored in the `game_objects` array.
 
 ```json
 {
   "layers": [...],
+  "game_objects": [
+    {
+      "id": "inst_dragon_boss_01",
+      "template_id": "npc_boss_dragon",
+      "layer_id": "object_layer",
+      "position": { "x": 10, "y": 15 }
+    }
+  ],
   "npcs": [
     { "id": "npc_1", "type": "merchant", "position": { "x": 15, "y": 20 } }
   ],

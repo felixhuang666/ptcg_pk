@@ -57,3 +57,4 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+5. **Scene Entities Schema Gap**: `scene_entities` in some historical docs was missing the `game_objects` array, which is the primary property used by `RpgSceneEditor` to store instantiated object templates.
