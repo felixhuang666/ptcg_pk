@@ -57,3 +57,5 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+5. **Quest Sync**: Quest data persistence uses a multi-layered approach (Supabase database, local `.json` files, and an in-memory cache) that must be kept synchronized when quests are saved locally via `/api/save_local`.
+6. **AI Generation Mock**: The AI generation engine in the `GameObjectTemplateCreator` is currently a hardcoded mock using keyword parsing, and needs to be replaced with a real LLM API integration.
