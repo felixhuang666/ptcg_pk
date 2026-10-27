@@ -46,6 +46,9 @@ The `scene_entities` JSONB structure holds instances of all dynamic objects, ite
 ```json
 {
   "layers": [...],
+  "game_objects": [
+    { "id": "obj_1", "template_id": "chest_gold", "position": { "x": 10, "y": 10 } }
+  ],
   "npcs": [
     { "id": "npc_1", "type": "merchant", "position": { "x": 15, "y": 20 } }
   ],
