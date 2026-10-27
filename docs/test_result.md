@@ -1,24 +1,19 @@
-# Test Results
+# Test Run Details
 
-## Frontend Tests
-### Vitest (React Components)
-- `tests/App.test.tsx` (1 test): **Passed**
-- Summary: 1/1 test suites passed, 1/1 tests passed.
+## 1. Test Summary
+- **Test Date:** 2026-10-27 00:00:49
 
-### Playwright (E2E Tests)
-- `tests/real_frontend.spec.ts:3:1` › verify real frontend via dev login: **Passed**
-- `tests/test_rpg_scene_editor.spec.ts:5:1` › RPG Scene Editor - Import/Export Scene: **Passed**
-- `tests/verify_rpg.spec.ts:3:1` › verify RPG mode and Map Editor rendering: **Passed**
-- Summary: 3 passed tests.
+### Frontend (Vitest)
+- **Status:** Passed (1/1 tests)
+- **Time:** 5.29s (transform 1.18s, setup 121ms, import 2.96s, tests 361ms, environment 1.52s)
 
-## Backend Tests (Pytest)
-- `backend/tests/test_api_maps.py`: 4 tests, **Passed**
-- `backend/tests/test_api_maps_resize.py`: 1 test, **Passed**
-- `backend/tests/test_api_scenes.py`: 4 tests, **Passed**
-- `backend/tests/test_main.py`: 3 tests, **Passed**
-- `backend/tests/test_real_api.py`: 2 tests, **Passed**
-- `backend/tests/test_save_local.py`: 1 test, **Passed**
-- Summary: 15 passed tests in 3.28s.
+### E2E Tests (Playwright)
+- **Status:** Passed (3/3 tests)
+- **Time:** 13.5s
+
+### Backend (Pytest)
+- **Status:** Passed (15/15 tests)
+- **Time:** 3.56s
 
 ## Changes Made
 - Updated `Makefile` to restrict Playwright to run with 1 worker (`npx playwright test --workers 1`) to prevent concurrent state conflict which could lead to flakiness (timeout) during the execution of `test_rpg_scene_editor.spec.ts`.
