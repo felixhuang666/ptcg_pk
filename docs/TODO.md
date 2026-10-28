@@ -57,3 +57,6 @@ This document tracks the current state of implementation and known issues. See `
 2. **Socket.IO Reconnection**: Handle reconnection scenarios gracefully
 3. **Map Procedural Generation**: Ensure deterministic output for same seed
 4. **Animation State Machine**: Player/NPC animations should have proper state transitions
+
+## 6. Discrepancies
+- In the RPG Scene schema, the `scene_entities` JSON block contains a `game_objects` array which stores templated objects. This is present in the implementation (`src/components/RpgSceneEditor.tsx`) but missing from some documentation. `docs/rpg_scene_design.md` was updated to reflect this.
