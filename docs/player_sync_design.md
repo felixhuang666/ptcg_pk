@@ -57,3 +57,6 @@ Stores permanent NPC data.
 - Client-side interpolation is used for smooth movement of other players.
 - Position updates are batched and sent at regular intervals to reduce network traffic.
 - Name tags and sprites are synchronized together to prevent visual desync.
+
+## Persistent Location
+The player's active quest and location in RPG Mode are maintained across sessions using the `/api/user/location` endpoint. This updates the `quest_id`, `map_id`, `pos_x`, and `pos_y` columns in the backend (e.g., in `game_player_data` in Supabase) alongside their position coordinates, allowing players to resume exactly where they left off.
