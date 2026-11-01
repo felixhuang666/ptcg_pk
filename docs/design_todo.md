@@ -7,7 +7,6 @@ This document tracks actionable technical debt and planned features identified d
 *   **Action Items**:
     *   Audit the backend map procedural generation scripts to ensure they output the correct index base.
     *   Audit the frontend `RpgMapEditor.tsx` and `RpgMode.tsx` to handle index mapping consistently when converting between the UI selection, the JSON `map_data` arrays, and Phaser's `putTileAt`.
-    *   Clean up redundant code like `val ? val : val` in the rendering loop.
 
 ## 2. Implement `objectEvent` Logic
 *   **Description**: The 6-layer architecture defines an `objectEvent` layer for triggers (teleports, cutscenes), but the main RPG game loop currently only renders them and does not process interactions.
