@@ -39,6 +39,11 @@ This document tracks the current state of implementation and known issues. See `
 - **Issue**: `objectEvent` layer triggers not implemented in main `RpgMode` gameplay loop
 - **Action Needed**: Implement event dispatch system for step triggers
 
+### 3.3 Scene map_list inconsistency
+- **Issue**: `map_list` and `layers` are sometimes stored at the top level of the scene object (e.g. `sceneData.map_list`) and sometimes nested inside `scene_entities` (e.g. `sceneData.scene_entities.map_list`).
+- **Action Needed**: Refactor the frontend and backend to use a single, unified structure for these properties.
+- **Workaround**: Code uses checks like `const sceneMapList = sceneData?.map_list || sceneData?.scene_entities?.map_list;`
+
 ## 4. Data Persistence
 
 ### 4.1 Supabase Integration
